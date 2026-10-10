@@ -1,0 +1,69 @@
+.blippi-parallax-scene {
+  position: absolute;
+  inset: -2%;
+  overflow: hidden;
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blippi-depth-layer {
+  position: absolute !important;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blippi-depth-layer > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.blippi-ambient-cloud > img { animation: blippi-cloud-drift 22s linear infinite alternate; }
+.blippi-ambient-sparkle > img { animation: blippi-sparkle 2.8s ease-in-out infinite; }
+.blippi-ambient-leaf > img { animation: blippi-leaf-sway 4.5s ease-in-out infinite alternate; }
+.blippi-ambient-water > img { animation: blippi-water-glint 3.2s ease-in-out infinite; }
+.blippi-ambient-dust > img { animation: blippi-dust-float 6s ease-in-out infinite alternate; }
+
+@keyframes blippi-cloud-drift {
+  from { transform: translate3d(-1.5%, 0, 0); }
+  to { transform: translate3d(1.5%, 0.5%, 0); }
+}
+
+@keyframes blippi-sparkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.9); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+
+@keyframes blippi-leaf-sway {
+  from { transform: rotate(-1.2deg) translateY(0); }
+  to { transform: rotate(1.2deg) translateY(-0.4%); }
+}
+
+@keyframes blippi-water-glint {
+  0%, 100% { opacity: 0.3; transform: translateX(-0.5%); }
+  50% { opacity: 0.78; transform: translateX(0.5%); }
+}
+
+@keyframes blippi-dust-float {
+  from { opacity: 0.2; transform: translate3d(-0.4%, 0.5%, 0); }
+  to { opacity: 0.55; transform: translate3d(0.5%, -0.5%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blippi-parallax-scene,
+  .blippi-depth-layer,
+  [class*='blippi-ambient-'] > img {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

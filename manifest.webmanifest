@@ -1,0 +1,29 @@
+{
+ "name": "Blippi Petualangan Penemuan",
+ "short_name": "Blippi",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "landscape",
+ "background_color": "#0E2A4A",
+ "theme_color": "#1F6FD1",
+ "lang": "id",
+ "icons": [
+  {
+   "src": "../Dunia-Emosi/assets/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "../Dunia-Emosi/assets/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "../Dunia-Emosi/assets/icon-512-maskable.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

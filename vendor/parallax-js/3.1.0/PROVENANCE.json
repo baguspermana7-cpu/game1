@@ -1,0 +1,11 @@
+{
+  "name": "parallax-js",
+  "version": "3.1.0",
+  "git_tag": "v3.1",
+  "git_commit": "5adb680c3d30f17d4fd311b042e420b269a42248",
+  "repository": "https://github.com/wagerfield/parallax",
+  "release_asset": "https://github.com/wagerfield/parallax/releases/download/v3.1/compiled.zip",
+  "license": "MIT",
+  "archive_sha256": "0a6269a4b23c73d19578d10a531b5c960e9ea9d26d7c9e95e191e780a2803129",
+  "vendored_file_sha256": "bf4d20b28de8c7f77428b24325ec3afb39b6f7e277f6b61666f3a0a17cc3b42b"
+}

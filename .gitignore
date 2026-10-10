@@ -1,0 +1,5 @@
+docs/mockups/
+node_modules/
+tools/_*.mjs
+*.pyc
+__pycache__/
