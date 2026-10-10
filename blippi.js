@@ -360,9 +360,8 @@
     var jd = btn(el, 'obtn bbtn', 130, 20, 360, 80, 'Petualangan kendaraan: darat, udara, luar angkasa, air', function () { if (w.BlippiTrip) w.BlippiTrip.open() })
     jd.setAttribute('data-act', 'petualangan')
     jd.innerHTML = ICON.play + '<span style="font-size:26px">JELAJAH DUNIA</span>'
-    var rb = btn(el, 'obtn', 130, 112, 300, 76, 'Balapan di arena', function () { if (w.BlippiRace) w.BlippiRace.open() })
-    rb.setAttribute('data-act', 'balapan')
-    rb.innerHTML = ICON.play + '<span style="font-size:26px">BALAPAN</span>'
+    // BALAPAN is withdrawn (owner 2026-10-10: vehicles on the wrong arena, no visible controls) until it is rebuilt
+    // per category - land 3-lane, sky invisible lanes, sea free steering - on the proven Mojo/Titanic engines
     topRight(el)
     logo(el, 'MEGA DISCOVERY ADVENTURE', [678, 108, 318, 40])
     // mission card
