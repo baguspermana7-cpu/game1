@@ -18,6 +18,8 @@
     'bg-garasi': true,
     'bg-hub': true,
     'bg-misi-jalan': true,
+    'bg-w01-m02-pasir': true,
+    'bg-w01-m03-bukit': true,
     'bg-misi-kincir': true,
     'bg-peta': true,
     'blippi-menunjuk': true,
@@ -83,6 +85,8 @@
     ['bg-peta', 'LATAR PETA - LAUTAN', 'scene', 1672, 941, 0, 'Peta', 'Lautan biru dan batu karang saja; pulau terpisah (pulau-*)'],
     ['bg-garasi', 'LATAR GARASI KENDARAAN', 'scene', 1672, 941, 0, 'Kendaraan, Bengkel, Penemuan, Bermain', 'Dalam garasi, lantai kosong untuk alas bundar'],
     ['bg-misi-kincir', 'LATAR TAMAN AIR', 'scene', 1672, 941, 0, 'Misi W02-M01', 'Taman air, jalan batu di depan, tanpa truk dan tanpa kincir'],
+    ['bg-w01-m02-pasir', 'LATAR HARTA DI BAWAH PASIR', 'scene', 1672, 941, 0, 'Misi W01-M02', 'Kotak pasir 3x3 di tengah, gerbang taman di kanan'],
+    ['bg-w01-m03-bukit', 'LATAR BUKIT DAN MUATAN', 'scene', 1672, 941, 0, 'Misi W01-M03', 'Lereng rumput kiri, jalur uji bergaris di depan'],
     ['bg-misi-jalan', 'LATAR KOTA RODA - SUNGAI', 'scene', 1672, 941, 0, 'Misi W01-M01', 'Sungai melintang kiri-kanan, tepi bawah dan atas rata'],
     // brand + Blippi (owner art only)
     ['logo-blippi', 'LOGO BLIPPI', 'logo', 250, 140, 1, 'Semua layar', 'Logo BLIPPI + dasi kupu-kupu, depan'],
@@ -185,7 +189,9 @@
   function painted (key) { return !!(PAINTED[key] && SHIPPED[PAINTED[key]]) }
 
   // owner art for the bridge plank is still wrong in the pack, so the PAPAN tool shows the shared library's wooden bridge segment
-  var SHARED = { 'tool-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp', 'prop-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp' }
+  var SHARED = { 'tool-baca': '../Dunia-Emosi/assets/db/lib/game/treasure-map.webp', 'tool-gali': 'assets/blippi/modul-bucket-sempit.webp', 'tool-pasang': '../Dunia-Emosi/assets/db/lib/game/gear.webp',
+    'tool-kira': '../Dunia-Emosi/assets/db/lib/game/question-block.webp', 'tool-uji': 'assets/blippi/yard-tanjakan.webp', 'tool-antar': '../Dunia-Emosi/assets/db/lib/game/crate-wood.webp',
+    'stiker-harta': '../Dunia-Emosi/assets/db/lib/game/treasure-chest.webp', 'stiker-bukit': '../Dunia-Emosi/assets/db/lib/mojo-chase/items/ramp.webp', 'tool-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp', 'prop-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp' }
   function src (key) { return SHARED[key] || (SHIPPED[key] ? BASE + key + '.webp' : null) }
 
   function labelSize (row) {

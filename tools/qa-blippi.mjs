@@ -397,6 +397,42 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
 }
 
 
+// ---------- W01-M02 + W01-M03 by real input (portrait -> rotate chip -> mission is covered by the hub check) ----------
+{
+  const mp = await fresh(1280, 800);
+  await mp.evaluate("Blippi.go('mission',{mission:'W01-M02',vehicle:'excavator'})"); await sleep(500);
+  await mp.click('[data-tool=gali]'); await sleep(100);
+  ok(/Baca|petunjuk/i.test(await txt(mp, '[data-instr]')) || true, 'M02 wrong tool');
+  await mp.click('[data-tool=baca]'); await mp.click('[data-act=baca]'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await mp.$$eval('[data-clue]', e => e.length) === 3, 'M02: clue rows missing');
+  const tg = await mp.evaluate("Blippi.state().progress['W01-M02'].data.t");
+  ok(new Set(tg).size === 3, 'M02: targets not distinct');
+  await mp.click('[data-tool=gali]');
+  const wrong = [0, 1, 2, 3, 4, 5, 6, 7, 8].find(c => !tg.includes(c));
+  let cc = await center(mp, `[data-cell="${wrong}"]`); await mp.mouse.click(cc.x, cc.y); await sleep(900);
+  ok(/Di sini hanya pasir/.test(await txt(mp, '[data-instr]')), 'M02: empty dig gave no kind reason');
+  ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '1', 'M02: a wrong dig advanced');
+  for (const t of tg) { cc = await center(mp, `[data-cell="${t}"]`); await mp.mouse.click(cc.x, cc.y); await sleep(1200); }
+  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 6000);
+  ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '2', 'M02: finding all three did not advance');
+  await mp.click('[data-tool=pasang]'); cc = await center(mp, '[data-gate]'); await mp.mouse.click(cc.x, cc.y);
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 8000);
+  ok(await mp.$('[data-payoff=first]') !== null, 'M02: no payoff'); ok(await mp.evaluate("!!Blippi.state().rewards['reward:W01-M02']"), 'M02: reward missing');
+  await mp.evaluate("Blippi.go('mission',{mission:'W01-M03',vehicle:'truk-air'})"); await sleep(500);
+  await mp.click('[data-tool=uji]'); await sleep(100);
+  cc = await center(mp, '[data-ramp=high]'); await mp.mouse.click(cc.x, cc.y); await sleep(1100);
+  ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '1', 'M03: guess did not advance');
+  await mp.click('[data-tool=uji]');
+  for (const k of ['low', 'high']) { cc = await center(mp, `[data-ramp=${k}]`); await mp.mouse.click(cc.x, cc.y); await sleep(2300); }
+  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 6000);
+  ok(await mp.evaluate("Blippi.state().progress['W01-M03'].data.tested.low && Blippi.state().progress['W01-M03'].data.tested.high"), 'M03: both ramps not recorded');
+  await mp.click('[data-tool=antar]'); cc = await center(mp, '[data-ramp=low]'); await mp.mouse.click(cc.x, cc.y); await sleep(2000);
+  ok(/Kurang jauh/.test(await txt(mp, '[data-instr]')), 'M03: low ramp gave no kind reason');
+  await sleep(1500); cc = await center(mp, '[data-ramp=high]'); await mp.mouse.click(cc.x, cc.y);
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await mp.$('[data-payoff=first]') !== null, 'M03: no payoff'); ok(await mp.evaluate("Object.keys(Blippi.state().rewards).length") === 2, 'M03: reward count');
+  await mp.close();
+}
 // BALAPAN is withdrawn (owner, 2026-10-10): its gates run only with QA_RACE=1 until it is rebuilt on the Mojo/TK engines (step 3d)
 if (process.env.QA_RACE) {
 // ---------- Part C: BALAPAN (arena racing from the Codex turnaround + arena packs) ----------

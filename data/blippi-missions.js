@@ -12,7 +12,7 @@
         { id: 'ban-jalan', name: 'BAN JALAN', art: 'modul-ban-jalan', info: 'Ban halus. Melaju mulus di jalan yang keras.' },
         { id: 'ban-berpola', name: 'BAN BERPOLA', art: 'modul-ban-berpola', info: 'Ban bergerigi. Tidak mudah tergelincir di lumpur.' }
       ] },
-    { id: 'truk-air', name: 'TRUK AIR', art: 'veh-truk-air', thumb: 'thumb-truk-air', tags: ['pump_water', 'spray'],
+    { id: 'truk-air', name: 'TRUK AIR', art: 'veh-truk-air', thumb: 'thumb-truk-air', tags: ['pump_water', 'spray', 'haul'],
       say: 'Ayo alirkan air!', demo: { id: 'spray', label: 'COBA SEMPROT' },
       modules: [
         { id: 'pompa', name: 'POMPA', art: 'modul-pompa', info: 'Pompa mendorong air dari tangki lewat selang.' },
@@ -27,7 +27,7 @@
   ]
 
   var WORLDS = [
-    { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', art: 'pulau-kota-roda', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
+    { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03'], art: 'pulau-kota-roda', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
     { id: 'taman-air', name: 'TAMAN AIR', mission: 'W02-M01', art: 'pulau-taman-air', artDone: 'pulau-taman-air-aktif', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
     { id: 'eco-park', name: 'ECO PARK', locked: 'Terbuka setelah Taman Air.', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
@@ -64,6 +64,53 @@
       },
       hints: ['Papan yang bergaris menunggu kamu.', 'Seret papan dari tumpukan ke tempat yang bergaris.', 'Lihat tanganku. Ketuk tumpukan papan ini!']
     },
+    'W01-M02': {
+      id: 'W01-M02', world: 'kota-roda', title: 'Harta di Bawah Pasir', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',
+      needs: ['dig'], vehicle: 'excavator', bg: 'bg-w01-m02-pasir',
+      reward: { key: 'reward:W01-M02', sticker: 'stiker-harta', stickerName: 'Stiker Harta' },
+      worldDelta: 'kota-roda:harta-pasir',
+      steps: [
+        { id: 'baca', label: 'BACA', tool: 'baca', toolName: 'PETUNJUK', toolArt: 'tool-baca', icon: 'bulb',
+          instr: 'Ketuk gulungan petunjuk untuk membaca.', wrong: 'Baca petunjuknya dulu. Menggali nanti ya.' },
+        { id: 'gali', label: 'GALI', tool: 'gali', toolName: 'GALI', toolArt: 'tool-gali', icon: 'box',
+          instr: 'Pilih bucket, lalu ketuk petak pasir untuk menggali.', wrong: 'Pakai bucket untuk menggali petak pasir.' },
+        { id: 'pasang', label: 'PASANG', tool: 'pasang', toolName: 'PASANG', toolArt: 'tool-pasang', icon: 'wheel',
+          instr: 'Antar tiga benda ke gerbang taman.', wrong: 'Antar bendanya ke gerbang setelah semuanya ketemu.' }
+      ],
+      lines: {
+        start: 'Ada tiga benda terkubur di pasir. Baca petunjuknya!',
+        read: 'Petunjuk dibaca. Gali petak yang cocok!',
+        found: 'Ketemu!',
+        empty: 'Di sini hanya pasir. Baca petunjuknya lagi ya.',
+        allFound: 'Semua ketemu! Antar ke gerbang taman.',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Taman punya tiga benda baru!'
+      },
+      hints: ['Gulungan petunjuk bercahaya. Baca dulu.', 'Lihat kotak kecil di petunjuk: petak oranye itu tempatnya.', 'Lihat tanganku. Gali di sini!']
+    },
+    'W01-M03': {
+      id: 'W01-M03', world: 'kota-roda', title: 'Bukit dan Muatan', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',
+      needs: ['haul'], vehicle: 'truk-air', bg: 'bg-w01-m03-bukit',
+      reward: { key: 'reward:W01-M03', sticker: 'stiker-bukit', stickerName: 'Stiker Bukit' },
+      worldDelta: 'kota-roda:bukit-uji',
+      steps: [
+        { id: 'kira', label: 'KIRA-KIRA', tool: 'kira', toolName: 'KIRA-KIRA', toolArt: 'tool-kira', icon: 'bulb',
+          instr: 'Ramp mana yang membuat truk meluncur lebih jauh?', wrong: 'Tebak dulu ramp yang lebih jauh. Uji nanti ya.' },
+        { id: 'uji', label: 'UJI', tool: 'uji', toolName: 'UJI', toolArt: 'tool-uji', icon: 'wheel',
+          instr: 'Pilih UJI, lalu coba kedua ramp.', wrong: 'Tebakanmu sudah tersimpan. Sekarang saatnya menguji.' },
+        { id: 'antar', label: 'ANTAR', tool: 'antar', toolName: 'ANTAR', toolArt: 'tool-antar', icon: 'box',
+          instr: 'Antar muatan sampai garis biru. Pilih ramp yang tepat!', wrong: 'Ujinya sudah selesai. Sekarang antar muatan.' }
+      ],
+      lines: {
+        start: 'Satu ramp rendah, satu tinggi. Mana yang lebih jauh?',
+        guess: 'Tebakan tersimpan. Ayo buktikan!',
+        both: 'Ramp tinggi meluncur lebih jauh. Dua penanda tersimpan!',
+        short: 'Kurang jauh. Muatan berhenti di garis kuning. Coba ramp yang lain!',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Muatan sampai di garis biru!'
+      },
+      hints: ['Kartu ramp bercahaya. Ketuk salah satu.', 'Ramp yang lebih tinggi memberi dorongan lebih kuat.', 'Lihat tanganku. Ketuk ramp ini!']
+    },
     'W02-M01': {
       id: 'W02-M01', world: 'taman-air', title: 'Kincir yang Menunggu', sub: 'Taman Air', thumb: 'thumb-taman-air',
       needs: ['pump_water'], vehicle: 'truk-air', bg: 'bg-misi-kincir',
@@ -96,7 +143,9 @@
 
   var STICKERS = [
     { id: 'W01-M01', name: 'Stiker Buggy', art: 'stiker-buggy' },
-    { id: 'W02-M01', name: 'Stiker Kincir', art: 'stiker-kincir' }
+    { id: 'W02-M01', name: 'Stiker Kincir', art: 'stiker-kincir' },
+    { id: 'W01-M02', name: 'Stiker Harta', art: 'stiker-harta' },
+    { id: 'W01-M03', name: 'Stiker Bukit', art: 'stiker-bukit' }
   ]
 
   var HUB_LINES = {
@@ -113,7 +162,7 @@
     stickers: STICKERS,
     hubLines: HUB_LINES,
     firstMission: 'W01-M01',
-    order: ['W01-M01', 'W02-M01'],
+    order: ['W01-M01', 'W02-M01', 'W01-M02', 'W01-M03'],
     stickerTotal: 30
   }
 })(window)

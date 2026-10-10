@@ -134,7 +134,7 @@
     setInstr(text, true)
     B.sfx('bad')
     clearTimeout(run.warnT)
-    run.warnT = setTimeout(function () { if (run && !run.dead) setInstr(run.m.steps[run.step].instr) }, 3400)
+    run.warnT = setTimeout(function () { if (run && !run.dead && run.m.steps[run.step]) setInstr(run.m.steps[run.step].instr) }, 3400)
   }
 
   function renderSteps () {
@@ -233,7 +233,7 @@
     if (run.ctl.hint) run.ctl.hint(run.hint)
     if (run.hint >= 2) speak(msg)
     clearTimeout(run.warnT)
-    run.warnT = setTimeout(function () { if (run && !run.dead) setInstr(run.m.steps[run.step].instr) }, 4200)
+    run.warnT = setTimeout(function () { if (run && !run.dead && run.m.steps[run.step]) setInstr(run.m.steps[run.step].instr) }, 4200)
   }
 
   function pause () {

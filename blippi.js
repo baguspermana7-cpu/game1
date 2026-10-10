@@ -440,7 +440,7 @@
     var th = at(el, 'thumb', 560, 710 - ex, 140, 74)
     if (sw.thumb) th.appendChild(A.frame(sw.thumb))
     else { th.innerHTML = '<div class="lockic">' + ICON.lock.replace('class="f"', 'style="fill:#fff;stroke:none"') + '</div>'; th.firstChild.style.position = 'absolute' }
-    var m = sw.mission ? D.missions[sw.mission] : null
+    var m = sw.mission ? D.missions[worldMission(sw)] : null
     var t1 = txt(el, 'title', 718, 708 - ex, 226, 40, sw.name === 'TAMAN AIR' ? 'Taman Air' : titleCase(sw.name))
     t1.style.textAlign = 'left'; t1.style.fontSize = '31px'
     var t2 = txt(el, '', 720, 752 - ex, 226, 38, m ? m.title : sw.locked)
@@ -454,6 +454,13 @@
     jb.innerHTML = ICON.play + '<span style="font-size:30px">JELAJAHI</span>'
     if (!m) { jb.disabled = true; jb.setAttribute('aria-disabled', 'true') }
     nav(el, 'peta', [325, 797, 1090, 128])
+  }
+  // the next unfinished mission of a world (its last one when all are done)
+  function worldMission (wd) {
+    var l = wd.missions || [wd.mission]
+    var i
+    for (i = 0; i < l.length; i++) if (!missionDone(l[i])) return l[i]
+    return l[l.length - 1]
   }
   function titleCase (s) {
     return s.toLowerCase().replace(/(^|\s)([a-z])/g, function (m0, a, b) { return a + b.toUpperCase() })

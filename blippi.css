@@ -281,3 +281,4 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:poin
 .phchip{top:auto;bottom:210px}
 .phf.f2{left:auto;right:30%;height:48%;z-index:0}
 .phf.f3{z-index:1}
+.glowpanel{animation:gl 1.1s ease-in-out infinite}
