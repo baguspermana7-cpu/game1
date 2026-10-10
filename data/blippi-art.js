@@ -184,7 +184,9 @@
   var PAINTED = { 'hub-garasi': 'bg-hub', 'hub-meja-peta': 'bg-hub', 'hub-papan': 'bg-hub' }
   function painted (key) { return !!(PAINTED[key] && SHIPPED[PAINTED[key]]) }
 
-  function src (key) { return SHIPPED[key] ? BASE + key + '.webp' : null }
+  // owner art for the bridge plank is still wrong in the pack, so the PAPAN tool shows the shared library's wooden bridge segment
+  var SHARED = { 'tool-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp', 'prop-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp' }
+  function src (key) { return SHARED[key] || (SHIPPED[key] ? BASE + key + '.webp' : null) }
 
   function labelSize (row) {
     var len = Math.max(6, row.label.length)

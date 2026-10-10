@@ -43,10 +43,10 @@
       worldDelta: 'kota-roda:jalur-taman',
       steps: [
         { id: 'pasang', label: 'PASANG', tool: 'papan', toolName: 'PAPAN', toolArt: 'tool-papan', icon: 'plank',
-          instr: 'Pilih satu jalur, lalu pasang tiga papan.',
+          instr: 'Seret papan dari tumpukan ke jembatan. Tiga papan ya!',
           wrong: 'Belum waktunya. Sekarang kita pasang papan dulu.' },
         { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'tool-jalan', icon: 'wheel',
-          instr: 'Tahan tombol JALAN agar buggy melaju.',
+          instr: 'Tahan tombol JALAN agar buggy menyeberang.',
           wrong: 'Pasang papan dulu, baru buggy bisa jalan.' },
         { id: 'antar', label: 'ANTAR', tool: 'paket', toolName: 'PAKET', toolArt: 'tool-paket', icon: 'box',
           instr: 'Ketuk paket untuk mengantar ke bendera.',
@@ -54,15 +54,15 @@
       ],
       lines: {
         start: 'Ada sungai di depan. Ayo buat jalan!',
-        pickRoute: 'Bagus! Sekarang pasang papannya satu per satu.',
+        pickRoute: 'Bagus! Seret papannya satu per satu.',
         board: 'Satu papan terpasang!',
         built: 'Jembatan jadi! Tahan JALAN untuk menyeberang.',
         arrive: 'Sampai! Ketuk paketnya untuk mengantar.',
-        retryNear: 'Tidak apa-apa. Coba ketuk tempat papan yang bergaris.',
+        retryNear: 'Tidak apa-apa. Taruh papan di tempat yang bergaris ya.',
         wrongTool: 'Belum waktunya. Pakai alat yang menyala oranye ya.',
         win: 'Hore! Jalur taman pertama sudah jadi!'
       },
-      hints: ['Papan yang bergaris menunggu kamu.', 'Ketuk tempat papan yang bergaris, satu per satu.', 'Lihat tanganku. Ketuk di sini!']
+      hints: ['Papan yang bergaris menunggu kamu.', 'Seret papan dari tumpukan ke tempat yang bergaris.', 'Lihat tanganku. Ketuk tumpukan papan ini!']
     },
     'W02-M01': {
       id: 'W02-M01', world: 'taman-air', title: 'Kincir yang Menunggu', sub: 'Taman Air', thumb: 'thumb-taman-air',

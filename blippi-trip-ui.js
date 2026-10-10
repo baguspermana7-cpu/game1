@@ -192,6 +192,7 @@
     var sc = el('div', 'tscore', wrap)
     sc.innerHTML = STAR
     $.score = el('u', '', sc, '0')
+    $.combo = el('b', 'tcombo', sc, '')
     // Blippi's speech line
     var sp = el('div', 'tsay', $.run)
     sp.setAttribute('aria-live', 'polite')
@@ -217,6 +218,7 @@
   function tick (run) {
     if (run !== curRun || !$.fill) return
     if (run.stars !== lastStars) { lastStars = run.stars; $.score.textContent = String(run.stars) }
+    if ($.combo) { var cb = run.combo >= 2 ? 'x' + run.combo : ''; if ($.combo.textContent !== cb) $.combo.textContent = cb }
     var p = Math.round(run.progress * 200) / 2
     if (p !== lastProg) {
       lastProg = p

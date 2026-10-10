@@ -70,7 +70,7 @@
       tool: function () { return run.tool },
       data: function () { return run.data },
       restore: saved && saved.step > 0 ? saved : null,
-      at: B.at, art: B.art, sfx: B.sfx, toRef: B.toRef, tween: tween, reduced: reduced,
+      at: B.at, art: B.art, B: B, sfx: B.sfx, toRef: B.toRef, tween: tween, reduced: reduced,
       touch: touch, warn: warn, advance: advance, persist: persist,
       later: function (fn, ms) { var id = setTimeout(function () { if (run && !run.dead) fn() }, ms); run.timers.push(id); return id },
       shakeTool: shakeTool, glowTool: glowTool,

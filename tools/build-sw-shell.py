@@ -21,6 +21,7 @@ for pr in re.findall(r"props: \[([^\]]+)\]", d):
     for x in re.findall(r"'([a-z0-9\-]+)'", pr): lib.add('mojo-chase/props/' + x)
 for x in re.findall(r"deco: \[([^\]]+)\]", d):
     for y in re.findall(r"'([a-z0-9\-]+)'", x): lib.add('tk-world/' + y)
+lib.add('kereta-tile/bridge')
 for ob in ['cone', 'crate', 'barrel', 'tyres-2', 'coin', 'star', 'boost-pad']: lib.add('mojo-chase/items/' + ob)
 lib = {k for k in lib if not k.endswith('/')}
 # only keep keys that exist

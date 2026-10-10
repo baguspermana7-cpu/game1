@@ -48,7 +48,7 @@ async function layout(p, label, expectRot) {
   if (expectRot) {
     ok(r.rot !== 'none', `${label}: rotate prompt missing`);
     const rb = await p.evaluate(() => { const e = document.getElementById('rotTrip').getBoundingClientRect(); return [e.width, e.height, e.left >= 0 && e.right <= innerWidth && e.bottom <= innerHeight]; });
-    ok(rb[0] >= 56 && rb[1] >= 56 && rb[2], `${label}: portrait JELAJAH DUNIA button small/off-screen ${JSON.stringify(rb)}`);
+    ok(rb[0] >= 56 && rb[1] >= 56 && rb[2] && await p.$('.phb') !== null, `${label}: portrait JELAJAH DUNIA button small/off-screen ${JSON.stringify(rb)}`);
     return;
   }
   ok(r.inside, `${label}: stage outside viewport`);
@@ -133,10 +133,16 @@ await p.click('[data-act=mulai]'); await sleep(200);
 ok(await p.evaluate(() => Blippi.current()) === 'mission', 'hub card did not open mission');
 await p.click('[data-tool=paket]'); await sleep(100);
 ok(/Belum waktunya|nanti|dulu/i.test(await txt(p, '[data-instr]')), 'W01 wrong tool: no kind message');
-await p.click('[data-cross=R]'); await p.click('[data-cross=L]'); await sleep(100);
-ok(/sudah memilih/i.test(await txt(p, '[data-instr]')), 'W01 other-route tap: no kind message');
-await p.click('[data-cross=R]'); await p.click('[data-cross=R]'); await sleep(900);
-ok(await p.evaluate(() => document.querySelector('.step.on').getAttribute('data-step')) === '1', 'W01 boards did not advance to step 2');
+await p.click('[data-tool=papan]');
+{ // wrong drop floats back with a kind line, then real drags snap three planks onto the bridge slots
+  let c0 = await center(p, '[data-plank-pile]');
+  await p.mouse.move(c0.x, c0.y); await p.mouse.down(); await p.mouse.move(c0.x + 60, c0.y - 220, { steps: 6 }); await p.mouse.up(); await sleep(500);
+  ok(/Tidak apa-apa|bergaris/i.test(await txt(p, '[data-instr]')), 'W01 wrong drop: no kind line');
+  ok(await p.$$eval('[data-board=on]', e => e.length) === 0, 'W01 wrong drop placed a plank');
+  for (const sl of ['S0', 'S1', 'S2']) { c0 = await center(p, '[data-plank-pile]'); const t0 = await center(p, '[data-slot=' + sl + ']'); await p.mouse.move(c0.x, c0.y); await p.mouse.down(); await p.mouse.move(t0.x, t0.y, { steps: 8 }); await p.mouse.up(); await sleep(650); }
+}
+await sleep(500);
+ok(await p.evaluate(() => document.querySelector('.step.on').getAttribute('data-step')) === '1', 'W01 planks did not complete the bridge');
 await p.reload({ waitUntil: 'load' }); await p.evaluate("Blippi.go('mission',{mission:'W01-M01',vehicle:'buggy'})"); await sleep(200);
 ok(await p.evaluate(() => document.querySelector('.step.on').getAttribute('data-step')) === '1', 'W01 resume lost step');
 await p.click('[data-tool=jalan]');
@@ -391,6 +397,8 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
 }
 
 
+// BALAPAN is withdrawn (owner, 2026-10-10): its gates run only with QA_RACE=1 until it is rebuilt on the Mojo/TK engines (step 3d)
+if (process.env.QA_RACE) {
 // ---------- Part C: BALAPAN (arena racing from the Codex turnaround + arena packs) ----------
 // 0. authored route data sanity for EVERY arena x orientation (never inferred at runtime): closed loop, start on the centerline,
 //    HUD rectangles clear of the road, obstacle polygons valid, plate files present
@@ -428,7 +436,7 @@ for (const [w, h] of [[1280, 800], [1024, 768], [844, 390], [390, 844]]) {
   await tripLayout(tp, `race-arena@${w}x${h}`, '#race .tscr.on');
   await tp.evaluate("BlippiRace.goto('pre')"); await sleep(700);
   await tripLayout(tp, `race-pre@${w}x${h}`, '#race .tscr.on');
-  await tp.click('[data-act=mulai-balap]'); await sleep(900);
+  await tp.click('[data-act=mulai-balap]'); await sleep(500); await waitFor(tp, "!document.querySelector('.riris.on')", 6000); await sleep(150);
   await tripLayout(tp, `race-count@${w}x${h}`, '#race .tscr.on');
   await tp.close();
 }
@@ -570,6 +578,7 @@ for (const [vw, vh, arena, veh, ori] of [[390, 844, 'pelabuhan', 'tugboat', 'por
   ok(await rm.evaluate("document.querySelector('.riris') && getComputedStyle(document.querySelector('.riris')).display === 'none'"), 'reduced motion: iris wipe still shown');
   await rm.close();
 }
+}
 // 5. JELAJAH DUNIA uses the owner families (floatplane, boats, road vehicles) instead of the shared stand-ins
 {
   const jp = await fresh(1280, 800);
@@ -581,6 +590,7 @@ for (const [vw, vh, arena, veh, ori] of [[390, 844, 'pelabuhan', 'tugboat', 'por
   ok(await jp.evaluate("!!BlippiTrip.img('race:recycling-truck/standard-rear')"), 'DARAT does not draw the owner road vehicle');
   await jp.close();
 }
+if (process.env.QA_RACE) {
 // 6. race perf (work per frame of our own code)
 {
   const pp = await fresh(1280, 800);
@@ -594,7 +604,7 @@ for (const [vw, vh, arena, veh, ori] of [[390, 844, 'pelabuhan', 'tugboat', 'por
   ok(wk <= 5, `race perf: own work p90 ${wk.toFixed(1)} ms > 5 ms budget (= 20 ms at 4x)`);
   await pp.close();
 }
-
+}
 ok(errors.length === 0, 'page errors: ' + errors.slice(0, 3).join(' | '));
 await b.close();
 console.log(fails.map(f => 'FAIL ' + f).join('\n'));

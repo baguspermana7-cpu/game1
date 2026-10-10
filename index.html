@@ -17,44 +17,56 @@
   screen, built to the owner's UI references on a fixed 1672x941 canvas. Art is placeholder frames from
   data/blippi-art.js until the owner's files are added (assets/blippi/<key>.webp + the key in SHIPPED).
 -->
-<link rel="stylesheet" href="blippi-motion.css?v=g1-20261010z">
-<link rel="stylesheet" href="blippi.css?v=g1-20261010z">
-<link rel="stylesheet" href="blippi-trip.css?v=g1-20261010z">
+<link rel="stylesheet" href="blippi-motion.css?v=g1-20261010j">
+<link rel="stylesheet" href="blippi.css?v=g1-20261010j">
+<link rel="stylesheet" href="blippi-trip.css?v=g1-20261010j">
 </head>
 <body>
 <div id="stage" aria-live="off"></div>
-<div id="rot" role="alert">
-  <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="6" width="24" height="46" rx="5"/><path d="M30 46h4"/><path d="M52 24c4 3 6 7 6 11M6 34c0-4 2-8 6-11"/></svg>
-  <div>Putar perangkatmu ke samping<br>supaya petualangan bisa dimulai.</div>
-  <button type="button" id="rotTrip" class="rotbtn">JELAJAH DUNIA<small>Kendaraan: bisa dimainkan sambil berdiri</small></button>
+<div id="rot" role="region" aria-label="Beranda Blippi">
+  <div class="phtitle">BLIPPI</div>
+  <div class="phsub">Petualangan Penemuan</div>
+  <div class="phbubble" id="phSay">Halo! Aku Blippi. Mau main apa hari ini?</div>
+  <div class="phcast">
+    <img class="phb" src="assets/blippi/cast-blippi-wave.webp" alt="" draggable="false">
+    <img class="phf f1" src="assets/blippi/cast-cat.webp" alt="" draggable="false">
+    <img class="phf f2" src="assets/blippi/cast-guide.webp" alt="" draggable="false">
+    <img class="phf f3" src="assets/blippi/cast-builder.webp" alt="" draggable="false">
+  </div>
+  <div class="phbtns">
+    <button type="button" id="rotMisi" class="rotbtn">MISI PETUALANGAN<small id="phMisiSub">Putar ke samping untuk bermain</small></button>
+    <button type="button" id="rotTrip" class="rotbtn blue">JELAJAH DUNIA<small>Darat, udara, angkasa, air</small></button>
+  </div>
+  <div class="phchip" id="phChip" hidden><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="6" width="24" height="46" rx="5"/><path d="M52 24c4 3 6 7 6 11M6 34c0-4 2-8 6-11"/></svg>Putar perangkatmu ke samping</div>
 </div>
 <noscript>Game ini butuh JavaScript.</noscript>
-<script src="../Dunia-Emosi/games/data/save-engine.js?v=g1-20261010z"></script>
-<script src="data/blippi-art.js?v=g1-20261010z"></script>
-<script src="data/blippi-vfx.js?v=g1-20261010z"></script>
-<script src="vendor/parallax-js/3.1.0/parallax.min.js?v=g1-20261010z"></script>
-<script src="blippi-parallax-adapter.js?v=g1-20261010z"></script>
-<script src="blippi-fx.js?v=g1-20261010z"></script>
-<script src="data/blippi-missions.js?v=g1-20261010z"></script>
-<script src="blippi.js?v=g1-20261010z"></script>
-<script src="blippi-mission.js?v=g1-20261010z"></script>
-<script src="blippi-jalan.js?v=g1-20261010z"></script>
-<script src="blippi-panels.js?v=g1-20261010z"></script>
-<script src="../Dunia-Emosi/games/data/soal-engine.js?v=g1-20261010z"></script>
-<script src="../Dunia-Emosi/games/data/soal-gen-matematika.js?v=g1-20261010z"></script>
-<script src="data/soal-pack-blippi.js?v=g1-20261010z"></script>
-<script src="data/blippi-trip.js?v=g1-20261010z"></script>
-<script src="blippi-trip.js?v=g1-20261010z"></script>
-<script src="blippi-trip-land.js?v=g1-20261010z"></script>
-<script src="blippi-trip-air.js?v=g1-20261010z"></script>
-<script src="blippi-trip-top.js?v=g1-20261010z"></script>
-<script src="blippi-trip-ui.js?v=g1-20261010z"></script>
-<script src="data/blippi-race-data.js?v=g1-20261010z"></script>
-<script src="data/blippi-race-routes.js?v=g1-20261010z"></script>
-<script src="blippi-race.js?v=g1-20261010z"></script>
-<script src="blippi-race-ui.js?v=g1-20261010z"></script>
+<script src="../Dunia-Emosi/games/data/save-engine.js?v=g1-20261010j"></script>
+<script src="data/blippi-art.js?v=g1-20261010j"></script>
+<script src="data/blippi-vfx.js?v=g1-20261010j"></script>
+<script src="vendor/parallax-js/3.1.0/parallax.min.js?v=g1-20261010j"></script>
+<script src="blippi-parallax-adapter.js?v=g1-20261010j"></script>
+<script src="blippi-fx.js?v=g1-20261010j"></script>
+<script src="data/blippi-missions.js?v=g1-20261010j"></script>
+<script src="blippi.js?v=g1-20261010j"></script>
+<script src="blippi-mission.js?v=g1-20261010j"></script>
+<script src="blippi-jalan.js?v=g1-20261010j"></script>
+<script src="blippi-panels.js?v=g1-20261010j"></script>
+<script src="../Dunia-Emosi/games/data/soal-engine.js?v=g1-20261010j"></script>
+<script src="../Dunia-Emosi/games/data/soal-gen-matematika.js?v=g1-20261010j"></script>
+<script src="data/soal-pack-blippi.js?v=g1-20261010j"></script>
+<script src="data/blippi-trip.js?v=g1-20261010j"></script>
+<script src="blippi-trip.js?v=g1-20261010j"></script>
+<script src="blippi-trip-land.js?v=g1-20261010j"></script>
+<script src="blippi-trip-air.js?v=g1-20261010j"></script>
+<script src="blippi-trip-top.js?v=g1-20261010j"></script>
+<script src="blippi-trip-ui.js?v=g1-20261010j"></script>
+<script src="data/blippi-race-data.js?v=g1-20261010j"></script>
+<script src="data/blippi-race-routes.js?v=g1-20261010j"></script>
+<script src="blippi-race.js?v=g1-20261010j"></script>
+<script src="blippi-race-ui.js?v=g1-20261010j"></script>
 
+<script src="blippi-phub.js?v=g1-20261010j"></script>
 <script>document.getElementById("rotTrip").addEventListener("click",function(){if(window.BlippiTrip)window.BlippiTrip.open()})</script>
-<script src="sw-reload.js?v=g1-20261010z"></script>
+<script src="sw-reload.js?v=g1-20261010j"></script>
 </body>
 </html>

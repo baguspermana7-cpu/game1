@@ -276,6 +276,8 @@
     r.slowT = Math.max(0, r.slowT - dt)
     r.boostT = Math.max(0, r.boostT - dt)
     r.hitT = Math.max(0, r.hitT - dt)
+    r.comboT = Math.max(0, (r.comboT || 0) - dt)
+    if (r.comboT === 0 && r.combo) r.combo = 0
     var target = r.slowT > 0 ? 0.42 : (r.boostT > 0 ? 1.65 : 1)
     r.mul += (target - r.mul) * Math.min(1, dt * 5)
     if (r.state === 'finishing') { r.finishT += dt; r.mul = lerp(r.mul, 0.55, Math.min(1, dt * 2)) }
@@ -392,7 +394,10 @@
   function say (t) { if (UI && UI.say) UI.say(t) }
   function collect (x, y, big) {
     if (!run) return
-    run.stars += big ? 2 : 1
+    run.combo = (run.combo || 0) + 1
+    run.stars += (big ? 2 : 1) + (run.combo % 5 === 0 ? 1 : 0)
+    if (run.combo % 5 === 0) { say('Kombo ' + run.combo + '! Bintang bonus!'); fx('gold-star', x, y - 30, 180) }
+    run.comboT = 3
     B().sfx('collect')
     fx('spark', x, y, 120)
     if (run.lvl.cat === 'air') fx('droplets', x, y + 10, 130)
@@ -401,6 +406,7 @@
   function bump (x, y) {
     if (!run || run.slowT > 0.2) return
     run.bumps++
+    run.combo = 0
     run.slowT = 1.1
     run.hitT = 0.9
     B().sfx('bump')

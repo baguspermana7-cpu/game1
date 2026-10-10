@@ -1,48 +1,52 @@
-/* G32 Blippi -- W01-M01 "Jalan Pertamaku" on the shared mission template.
- * Step 1 place three bridge boards on the LEFT or RIGHT crossing, step 2 hold to drive the buggy
- * over what you built, step 3 deliver the parcel; the park path appears. */
+/* G32 Blippi -- W01-M01 "Jalan Pertamaku", played INSIDE bg-misi-jalan.
+ * Geometry (reference px, authored against the plate): left bank start pad ~(430,478), river gap between the two stone abutments
+ * x 672..1078 (y ~500..520), right bank goal ~(1330,455). Three bridge segments snap onto the gap, then the buggy drives over them.
+ * Step 1: drag a plank from the pile on the left bank to a dashed slot (tap also works; a wrong drop floats back with a kind line).
+ * Step 2: HOLD to drive: suspension bob, the planks dip as the buggy passes. Step 3: deliver the parcel to the flag on the right bank.
+ * Plank art is the shared library's wooden trestle-bridge segment (../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp). */
 (function (w) {
   'use strict'
   var B = w.Blippi
-  var A = w.BlippiArt
+  var PLANK = '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp'
+  var SLOTS = [{ x: 740, y: 503 }, { x: 872, y: 511 }, { x: 1004, y: 518 }]
+  var PILE = { x: 250, y: 500 }
+  var START = { x: 480, y: 462 }
+  var PATH = [START, { x: 672, y: 494 }, { x: 1078, y: 516 }, { x: 1230, y: 500 }]
+  var FLAG = { x: 1335, y: 470 }
+  var SW = 166
+  var SH = 166
 
-  var XS = { L: 560, R: 1110 }
-  var BOARD_Y = [335, 381, 427]
-  var START = { x: 836, y: 570 }
-  var FLAG = { x: 836, y: 285 }
-
-  function pathFor (route) {
-    var cx = XS[route]
-    return [START, { x: cx, y: START.y }, { x: cx, y: FLAG.y }, FLAG]
-  }
-  function lengths (pts) {
-    var out = []
+  function lens () {
+    var legs = []
     var tot = 0
     var i
-    for (i = 0; i < pts.length - 1; i++) {
-      var d = Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y)
-      out.push(d)
-      tot += d
-    }
-    return { legs: out, total: tot }
+    for (i = 0; i < PATH.length - 1; i++) { var d = Math.hypot(PATH[i + 1].x - PATH[i].x, PATH[i + 1].y - PATH[i].y); legs.push(d); tot += d }
+    return { legs: legs, total: tot }
   }
-  function at (pts, len, dist) {
+  var LEN = lens()
+  function at (dist) {
     var d = dist
     var i
-    for (i = 0; i < len.legs.length; i++) {
-      if (d <= len.legs[i]) {
-        var k = len.legs[i] ? d / len.legs[i] : 0
-        return { x: pts[i].x + (pts[i + 1].x - pts[i].x) * k, y: pts[i].y + (pts[i + 1].y - pts[i].y) * k }
-      }
-      d -= len.legs[i]
+    for (i = 0; i < LEN.legs.length; i++) {
+      if (d <= LEN.legs[i]) { var k = d / LEN.legs[i]; return { x: PATH[i].x + (PATH[i + 1].x - PATH[i].x) * k, y: PATH[i].y + (PATH[i + 1].y - PATH[i].y) * k } }
+      d -= LEN.legs[i]
     }
-    return pts[pts.length - 1]
+    return PATH[PATH.length - 1]
+  }
+  function plankImg (parent, cls) {
+    var i = new Image()
+    i.alt = ''
+    i.draggable = false
+    i.src = PLANK
+    i.className = cls || 'plk'
+    i.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;pointer-events:none;clip-path:inset(0 0 13% 0)'
+    if (parent) parent.appendChild(i)
+    return i
   }
 
   var mod = { mount: function (api) {
     var sc = api.scene
     var L = api.lines
-    var route = null
     var placed = []
     var dist = 0
     var holding = false
@@ -50,45 +54,40 @@
     var delivered = false
     var rs = api.restore
     var saved = api.data() || {}
-    if (rs) { route = saved.route || 'R'; placed = [0, 1, 2] }
-    if (rs && rs.step >= 2) dist = 1e9
+    var drag = null
+    if (rs) { placed = [0, 1, 2]; if (rs.step >= 2) dist = LEN.total }
+    void saved
 
-    // the gap itself is gameplay, drawn in CSS (not art)
-    var river = api.at(sc, 'river', 0, 330, 1672, 140)
-    river.style.cssText += ';background:repeating-linear-gradient(90deg,rgba(255,255,255,.35) 0 40px,transparent 40px 90px),linear-gradient(#58B7F5,#2E8FE0);border-top:8px solid #E9D8A8;border-bottom:8px solid #E9D8A8;pointer-events:none'
-    var slots = {}
-    var cross = {}
-    ;['L', 'R'].forEach(function (r) {
-      slots[r] = []
-      var c = api.at(sc, 'cross', XS[r] - 75, 326, 150, 148, 'button')
-      c.type = 'button'
-      c.setAttribute('data-cross', r)
-      c.setAttribute('aria-label', 'Jalur ' + (r === 'L' ? 'kiri' : 'kanan') + ': pasang papan')
-      c.style.cssText += ';background:none;border:0;cursor:pointer;z-index:3;padding:0'
-      c.addEventListener('click', function () { tapCross(r) })
-      cross[r] = c
-      BOARD_Y.forEach(function (y, i) {
-        var s = document.createElement('div')
-        s.style.cssText = 'position:absolute;left:5px;top:' + (y - 326) + 'px;width:140px;height:48px;border:4px dashed #FFB347;border-radius:12px;background:rgba(255,255,255,.18)'
-        s.setAttribute('data-slot', r + i)
-        c.appendChild(s)
-        slots[r].push(s)
-      })
-      var lb = api.at(sc, 'jl', XS[r] - 70, 480, 140, 40)
-      lb.style.cssText += ';font:900 26px/40px Nunito,sans-serif;color:#fff;text-align:center;text-shadow:0 2px 4px rgba(0,0,0,.6);pointer-events:none'
-      lb.textContent = r === 'L' ? 'KIRI' : 'KANAN'
+    var slotEls = SLOTS.map(function (s, i) {
+      var e = api.at(sc, 'jslot', s.x - SW / 2, s.y - 78, SW, SH)
+      e.setAttribute('data-slot', 'S' + i)
+      e.style.pointerEvents = 'none'
+      var ph = document.createElement('div')
+      ph.className = 'jslot-ph'
+      ph.style.cssText = 'position:absolute;left:2px;right:2px;top:38px;height:70px;border:4px dashed #FFB347;border-radius:14px;background:rgba(255,255,255,.22);box-shadow:0 0 14px rgba(255,190,60,.55)'
+      e.appendChild(ph)
+      return e
     })
+    var shadow = api.at(sc, 'shd', 0, 0, 180, 30)
+    var pile = api.at(sc, 'jpile', PILE.x - 120, PILE.y - 110, 240, 190, 'button')
+    pile.type = 'button'
+    pile.setAttribute('data-plank-pile', '1')
+    pile.setAttribute('aria-label', 'Tumpukan papan: seret ke jembatan')
+    pile.style.cssText += ';background:none;border:0;padding:0;cursor:grab;touch-action:none;z-index:4'
+    ;[[-22, 8], [20, 0], [0, -14]].forEach(function (o) { var h = document.createElement('div'); h.style.cssText = 'position:absolute;left:' + (60 + o[0] * 1.3) + 'px;top:' + (30 + o[1] * 1.3) + 'px;width:130px;height:130px'; plankImg(h); pile.appendChild(h) })
     var flag = api.art(sc, 'prop-bendera', FLAG.x - 35, FLAG.y - 110, 70, 110)
-    var park = api.art(sc, 'prop-jalur-taman', 340, 215, 420, 120, 'park')
+    void flag
+    var park = api.art(sc, 'prop-jalur-taman', 1130, 540, 420, 120, 'park')
     park.style.opacity = '0'
     park.setAttribute('data-park', 'off')
-    var buggy = api.art(sc, 'veh-buggy-misi', 0, 0, 200, 130, 'jbuggy')
+    var buggy = api.art(sc, 'veh-buggy-misi', 0, 0, 240, 156, 'jbuggy')
     buggy.setAttribute('data-buggy', '1')
-    var box = api.art(sc, 'prop-paket', 0, 0, 90, 80, 'jbox')
+    buggy.firstChild.style.transform = 'scaleX(-1)'
+    var box = api.art(sc, 'prop-paket', 0, 0, 80, 70, 'jbox')
     box.style.zIndex = '1'
     box.style.cursor = 'pointer'
     box.setAttribute('data-box', '1')
-    var go = api.at(sc, 'obtn bbtn', 686, 655, 300, 66, 'button')
+    var go = api.at(sc, 'obtn bbtn', 686, 700, 300, 66, 'button')
     go.type = 'button'
     go.textContent = 'TAHAN UNTUK JALAN'
     go.style.fontSize = '26px'
@@ -98,70 +97,105 @@
     go.style.pointerEvents = 'none'
     go.style.zIndex = '6'
 
-    function place (pt) {
-      buggy.style.transform = 'translate(' + (pt.x - 100) + 'px,' + (pt.y - 65) + 'px)'
-      box.style.transform = 'translate(' + (pt.x + 10) + 'px,' + (pt.y + 5) + 'px)'
-    }
-    function board (r, i) {
-      var s = slots[r][i]
-      s.style.border = 'none'
-      s.style.background = 'none'
-      s.innerHTML = ''
-      var b = A.frame('prop-papan')
-      b.style.cssText += ';pointer-events:none'
-      s.appendChild(b)
-      s.setAttribute('data-board', 'on')
-    }
-    function refreshSlots () {
-      ;['L', 'R'].forEach(function (r) {
-        cross[r].style.opacity = route && route !== r ? '.35' : '1'
-      })
-    }
-    if (route) { [0, 1, 2].forEach(function (i) { board(route, i) }) }
-    refreshSlots()
-
-    function tapCross (r) {
-      var s
-      var i = [0, 1, 2].filter(function (k) { return placed.indexOf(k) < 0 })[0]
-      if (api.step() !== 0) return
-      api.touch()
-      if (api.tool() !== 'papan') { api.warn(L.wrongTool); api.shakeTool('papan'); return }
-      if (route && route !== r) { api.warn('Kamu sudah memilih jalur ' + (route === 'L' ? 'kiri' : 'kanan') + '. Selesaikan dulu ya. Jalur lain boleh dicoba nanti!'); return }
-      if (i == null) return
-      s = slots[r][i]
-      if (!route) { route = r; refreshSlots(); api.sfx('ok') }
-      placed = placed.concat([i])
-      board(r, i)
-      api.sfx('tap')
-      api.fx('spark', XS[r], BOARD_Y[i] + 24, 150)
-      s.classList.remove('bounce'); void s.offsetWidth; s.classList.add('bounce')
-      if (placed.length >= 3) {
-        api.persist({ route: route })
-        api.later(function () { api.advance() }, 450)
+    function place (pt, t) {
+      var bob = holding || t ? Math.sin((t || 0) * 0.03) * 3.2 : 0
+      var rot = holding || t ? Math.sin((t || 0) * 0.021) * 1.6 : 0
+      buggy.style.transform = 'translate(' + (pt.x - 120) + 'px,' + (pt.y - 130 + bob) + 'px) rotate(' + rot + 'deg)'
+      box.style.transform = 'translate(' + (pt.x - 30) + 'px,' + (pt.y - 105 + bob) + 'px)'
+      shadow.style.transform = 'translate(' + (pt.x - 90) + 'px,' + (pt.y - 24) + 'px)'
+      var i
+      for (i = 0; i < SLOTS.length; i++) {
+        if (placed.indexOf(i) < 0) continue
+        var dip = 8 * Math.max(0, 1 - Math.abs(pt.x - SLOTS[i].x) / 120)
+        slotEls[i].style.transform = 'translateY(' + dip.toFixed(1) + 'px)'
       }
     }
+    function nextFree () { var i; for (i = 0; i < 3; i++) if (placed.indexOf(i) < 0) return i; return -1 }
+    function show (i, anim) {
+      var e = slotEls[i]
+      e.innerHTML = ''
+      plankImg(e)
+      e.setAttribute('data-board', 'on')
+      if (anim && e.animate && !api.reduced()) e.animate([{ transform: 'translateY(-70px) scale(1.12)', opacity: 0 }, { transform: 'translateY(6px) scale(1)', opacity: 1, offset: 0.7 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.23,1,.32,1)' })
+    }
+    placed.forEach(function (i) { show(i, false) })
 
-    function pts () { return pathFor(route || 'R') }
-    function len () { return lengths(pts()) }
+    function put (i) {
+      if (api.step() !== 0 || placed.indexOf(i) >= 0) return
+      placed = placed.concat([i])
+      show(i, true)
+      api.sfx('bump')
+      api.fx('dust', SLOTS[i].x, SLOTS[i].y + 40, 170)
+      api.fx('spark', SLOTS[i].x, SLOTS[i].y - 20, 130)
+      api.warn(L.board)
+      if (placed.length >= 3) {
+        api.persist({ route: 'R' })
+        api.later(function () { api.sfx('ok'); SLOTS.forEach(function (s) { api.fx('gold-star', s.x, s.y - 30, 170) }); api.advance() }, 520)
+      }
+    }
+    function toolOk () {
+      if (api.step() !== 0) return false
+      api.touch()
+      if (api.tool() !== 'papan') { api.warn(L.wrongTool); api.shakeTool('papan'); return false }
+      return true
+    }
+    // drag from the pile; drop near a free slot snaps, anywhere else floats back
+    pile.addEventListener('pointerdown', function (ev) {
+      if (!toolOk() || nextFree() < 0) return
+      var g = api.at(sc, 'jghost', 0, 0, 120, 120)
+      g.style.zIndex = '20'
+      g.style.pointerEvents = 'none'
+      plankImg(g)
+      var p = B.toRef(ev.clientX, ev.clientY)
+      drag = { g: g, x0: p.x, y0: p.y, moved: 0, id: ev.pointerId }
+      g.style.transform = 'translate(' + (p.x - 60) + 'px,' + (p.y - 60) + 'px) scale(1.08)'
+      try { pile.setPointerCapture(ev.pointerId) } catch (e) { /* synthetic */ }
+    })
+    pile.addEventListener('pointermove', function (ev) {
+      if (!drag) return
+      var p = B.toRef(ev.clientX, ev.clientY)
+      drag.moved = Math.max(drag.moved, Math.hypot(p.x - drag.x0, p.y - drag.y0))
+      drag.g.style.transform = 'translate(' + (p.x - 60) + 'px,' + (p.y - 60) + 'px) scale(1.08)'
+      drag.p = p
+    })
+    function end (ev) {
+      if (!drag) return
+      var d = drag
+      drag = null
+      var p = d.p || B.toRef(ev.clientX, ev.clientY)
+      var best = -1
+      var bd = 120
+      var i
+      for (i = 0; i < 3; i++) { if (placed.indexOf(i) >= 0) continue; var dd = Math.hypot(p.x - SLOTS[i].x, p.y - SLOTS[i].y); if (dd < bd) { bd = dd; best = i } }
+      var done = function () { if (d.g.parentNode) d.g.parentNode.removeChild(d.g) }
+      if (d.moved < 10) { done(); best = nextFree() } // a plain tap places the next plank
+      if (best >= 0) { done(); put(best) } else if (d.moved >= 10) {
+        api.warn(L.retryNear)
+        api.sfx('bad')
+        api.tween({ x: p.x - 60, y: p.y - 60 }, { x: PILE.x - 60, y: PILE.y - 60 }, 320, function (q) { d.g.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)' }, done)
+      }
+    }
+    pile.addEventListener('pointerup', end)
+    pile.addEventListener('pointercancel', function () { if (drag) { if (drag.g.parentNode) drag.g.parentNode.removeChild(drag.g); drag = null } })
 
     function loop (t0) {
       var last = t0
       function f (t) {
         if (!holding || api.step() !== 1) return
-        var dt = Math.min(60, t - last)
+        var dt = Math.min(50, t - last)
         last = t
         if (!api.paused()) {
-          dist += dt * 0.34
-          var l = len()
-          if (dist >= l.total) {
-            dist = l.total
-            place(at(pts(), l, dist))
+          dist += dt * 0.3
+          if (Math.random() < 0.18) api.fx('dust', at(dist).x - 70, at(dist).y + 10, 70)
+          if (dist >= LEN.total) {
+            dist = LEN.total
+            place(at(dist), t)
             holding = false
-            api.persist({ route: route })
+            api.persist({ route: 'R' })
             api.advance()
             return
           }
-          place(at(pts(), l, dist))
+          place(at(dist), t)
         }
         raf = requestAnimationFrame(f)
       }
@@ -176,7 +210,7 @@
       try { ev.target.setPointerCapture && ev.target.setPointerCapture(ev.pointerId) } catch (e) { /* ignore */ }
       loop(performance.now())
     }
-    function stopHold () { holding = false }
+    function stopHold () { holding = false; place(at(dist), 0) }
     ;[go, buggy].forEach(function (el) {
       el.style.touchAction = 'none'
       el.addEventListener('pointerdown', startHold)
@@ -194,18 +228,22 @@
     function deliver () {
       delivered = true
       api.sfx('ok')
-      var from = { x: FLAG.x - 45, y: FLAG.y + 100 }
-      api.tween(from, { x: FLAG.x + 60, y: FLAG.y - 20 }, 500, function (p) { box.style.transform = 'translate(' + p.x + 'px,' + p.y + 'px)' }, function () {
-        api.persist({ route: route })
+      var from = { x: PATH[3].x - 30, y: PATH[3].y - 105 }
+      api.tween(from, { x: FLAG.x - 30, y: FLAG.y + 20 }, 520, function (p) { box.style.transform = 'translate(' + p.x + 'px,' + (p.y - Math.sin(Math.min(1, (p.x - from.x) / Math.max(1, FLAG.x - 30 - from.x)) * Math.PI) * 70) + 'px)' }, function () {
+        api.fx('confetti', FLAG.x, FLAG.y, 260)
+        api.persist({ route: 'R' })
         api.advance()
       })
     }
 
-    place(rs && rs.step >= 2 ? at(pts(), len(), len().total) : START)
+    place(rs && rs.step >= 2 ? at(LEN.total) : START, 0)
     var ctl = {
       onStep: function (n) {
         go.style.opacity = n === 1 ? '1' : '0'
         go.style.pointerEvents = n === 1 ? 'auto' : 'none'
+        pile.style.opacity = n === 0 ? '1' : '0'
+        pile.style.pointerEvents = n === 0 ? 'auto' : 'none'
+        slotEls.forEach(function (e) { var ph = e.querySelector('.jslot-ph'); if (ph) ph.style.display = n === 0 ? 'block' : 'none' })
         box.style.pointerEvents = n === 2 ? 'auto' : 'none'
         if (n === 2) { box.classList.add('glow') }
       },
@@ -213,13 +251,12 @@
       hint: function (lvl) {
         var s = api.step()
         if (s === 0) {
-          var r = route || 'R'
-          cross[r].classList.add('glow'); setTimeout(function () { cross[r].classList.remove('glow') }, 2600)
-          if (lvl >= 4 && api.tool() === 'papan') tapCross(r)
+          pile.classList.add('glow'); setTimeout(function () { pile.classList.remove('glow') }, 2600)
+          if (lvl >= 4 && api.tool() === 'papan' && nextFree() >= 0) put(nextFree())
         } else if (s === 1) {
           if (api.tool() !== 'jalan') api.glowTool('jalan', 3000)
           go.classList.add('glow'); setTimeout(function () { go.classList.remove('glow') }, 2600)
-          if (lvl >= 4 && api.tool() === 'jalan') { dist = len().total; place(at(pts(), len(), dist)); api.persist({ route: route }); api.advance() }
+          if (lvl >= 4 && api.tool() === 'jalan') { dist = LEN.total; place(at(dist), 0); api.persist({ route: 'R' }); api.advance() }
         } else {
           if (api.tool() !== 'paket') api.glowTool('paket', 3000)
           box.classList.add('glow')
