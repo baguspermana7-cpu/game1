@@ -3,7 +3,7 @@
 import puppeteer from 'puppeteer';
 const URL_ = 'http://localhost:8090/game1/';
 const fails = []; let checks = 0;
-process.on('uncaughtException', e => { console.log(fails.map(f => 'FAIL ' + f).join('\n')); console.log('ABORT ' + String(e.stack).split('\n').filter(l => /qa-blippi|_race-only/.test(l)).join(' | ')); process.exit(1); });
+process.on('uncaughtException', e => { console.log(fails.map(f => 'FAIL ' + f).join('\n')); console.log('ABORT ' + String(e.stack).split('\n').slice(0,4).join(' | ')); process.exit(1); });
 const ok = (c, m) => { checks++; if (!c) fails.push(m); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const safeClick = async (p, sel) => { for (let i = 0; i < 4; i++) { try { await p.waitForSelector(sel, { timeout: 6000 }); await p.click(sel); return true; } catch (e) { await sleep(200); } } return false; };
@@ -155,6 +155,7 @@ ok(await p.evaluate(() => document.querySelector('[data-park]').getAttribute('da
 ok(await p.evaluate(() => Object.keys(Blippi.state().rewards).length) === 1, 'W01 reward count');
 // 3. W02-M01 by real pointer, from the hub card (recommended is now W02)
 await p.click('[data-act=lanjut]'); await sleep(200);
+await p.evaluate("Blippi.commit(s => { ['W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'].forEach(i => { s.done[i] = 1; }); })");
 await p.evaluate("Blippi.go('hub')"); await sleep(100);
 ok((await txt(p, '[data-card=mission] ~ .title') || await txt(p, '.title')).length > 0, 'hub card');
 await p.click('[data-nav=peta]'); await sleep(150);
@@ -433,8 +434,51 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   ok(await mp.$('[data-payoff=first]') !== null, 'M03: no payoff'); ok(await mp.evaluate("Object.keys(Blippi.state().rewards).length") === 2, 'M03: reward count');
   await mp.close();
 }
+// ---------- W01-M04 + W01-M05 by real input ----------
+{
+  const mp = await fresh(1280, 800);
+  await mp.evaluate("Blippi.go('mission',{mission:'W01-M04',vehicle:'truk-air'})"); await sleep(600);
+  ok(await waitFor(mp, "[...document.querySelectorAll('#m-scene .ghost')].some(g => g.style.opacity === '1') && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'M04: no glowing target + demo hand within 4 s of the start');
+  await mp.click('[data-piece=short]'); await sleep(300);
+  ok(/Pendek belum sampai/.test(await txt(mp, '[data-instr]')), 'M04: short beam gave no kind reason');
+  ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '0', 'M04: a short beam advanced');
+  await mp.click('[data-piece=post]'); await sleep(1300);
+  ok(await mp.evaluate("Blippi.state().progress['W01-M04'].data.plan") === 'short', 'M04: short+post plan not saved');
+  let tc = await center(mp, '[data-truck]'); await mp.click('[data-tool=sambung]');
+  await mp.mouse.click(tc.x, tc.y); await sleep(1100);
+  ok(/belum jadi/.test(await txt(mp, '[data-instr]')), 'M04: truck crossed (or said nothing) before the bridge existed');
+  for (const [piece, sock] of [['post', 'post'], ['short', 'sl'], ['short', 'sr']]) {
+    const c = await center(mp, `[data-piece=${piece}]`); await mp.mouse.move(c.x, c.y); await mp.mouse.down(); await mp.mouse.move(c.x + 30, c.y - 30, { steps: 3 });
+    if (piece === 'short' && sock === 'sl') { await mp.mouse.move(40, 40, { steps: 6 }); await mp.mouse.up(); await sleep(500); ok(/bergaris/.test(await txt(mp, '[data-instr]')), 'M04: a missed drop gave no kind reason'); const c2 = await center(mp, '[data-piece=short]'); await mp.mouse.move(c2.x, c2.y); await mp.mouse.down(); await mp.mouse.move(c2.x + 30, c2.y - 30, { steps: 3 }); }
+    const t = await center(mp, `[data-socket=${sock}]`); await mp.mouse.move(t.x, t.y, { steps: 8 }); await mp.mouse.up(); await sleep(600);
+  }
+  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 5000);
+  ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '2', 'M04: three pieces placed did not advance');
+  await mp.click('[data-tool=lewat]'); tc = await center(mp, '[data-truck]'); await mp.mouse.click(tc.x, tc.y);
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await mp.$('[data-payoff=first]') !== null, 'M04: no payoff'); ok(await mp.evaluate("!!Blippi.state().rewards['reward:W01-M04']"), 'M04: reward missing');
+  await mp.evaluate("Blippi.go('mission',{mission:'W01-M05',vehicle:'excavator'})"); await sleep(600);
+  ok(await waitFor(mp, "[...document.querySelectorAll('#m-scene .ghost')].some(g => g.style.opacity === '1') && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'M05: no glowing target + demo hand within 4 s of the start');
+  await mp.click('[data-job=mainan]'); await sleep(300);
+  ok(/Mainan butuh pasir/.test(await txt(mp, '[data-instr]')), 'M05: toys before sand gave no kind reason');
+  ok(await mp.evaluate("document.querySelectorAll('[data-order]:not([data-order=\"\"])').length") === 0, 'M05: toys were accepted before sand');
+  for (const j of ['mainan', 'pasir', 'mainan', 'gerbang']) { await mp.click(`[data-job=${j}]`); await sleep(200); }
+  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 4000);
+  ok(JSON.stringify(await mp.evaluate("Blippi.state().progress['W01-M05'].data.order")) === '["pasir","mainan","gerbang"]', 'M05: plan order not saved');
+  await mp.click('[data-tool=kerja]'); let zc = await center(mp, '[data-zone=gerbang]'); await mp.mouse.click(zc.x, zc.y); await sleep(500);
+  ok(/giliran/.test(await txt(mp, '[data-instr]')), 'M05: out-of-order job gave no kind reason');
+  for (const j of ['pasir', 'mainan', 'gerbang']) { zc = await center(mp, `[data-zone=${j}]`); await mp.mouse.click(zc.x, zc.y); await sleep(j === 'pasir' ? 2400 : 2800); }
+  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 6000);
+  ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '2', 'M05: three jobs did not advance');
+  await mp.click('[data-tool=buka]'); zc = await center(mp, '[data-zone=gerbang]'); await mp.mouse.click(zc.x, zc.y);
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await mp.$('[data-payoff=first]') !== null && await mp.$('[data-badge]') !== null, 'M05: no payoff / badge'); ok(await mp.evaluate("!!Blippi.state().rewards['reward:W01-M05']"), 'M05: reward missing');
+  ok(await mp.evaluate("Blippi.missionDone('W01-M05') && Blippi.state().world['kota-roda:taman-buka'] === 1"), 'M05: world change missing');
+  await mp.close();
+}
 // ---------- pause/resume/reload state of every mission ----------
-for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'truk-air', { pred: 'high', tested: { low: true, high: false } }], ['W02-M01', 'truk-air', { connected: true }]]) {
+for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'truk-air', { pred: 'high', tested: { low: true, high: false } }], ['W01-M04', 'truk-air', { plan: 'long', placed: [] }], ['W01-M05', 'excavator', { order: ['pasir', 'gerbang', 'mainan'], done: ['pasir'] }], ['W02-M01', 'truk-air', { connected: true }]]) {
+
   const rp = await fresh(1280, 800);
   await rp.evaluate(([i, d]) => { Blippi.commit(s => { s.progress[i] = { step: 1, data: d }; }); }, [id, data]);
   await rp.reload({ waitUntil: 'load' });
@@ -445,6 +489,8 @@ for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02',
   await rp.click('[data-act=lanjut]'); await sleep(200);
   ok(await rp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '1', `${id}: resume changed the step`);
   if (id === 'W01-M02') ok(await rp.$$eval('[data-clue]', e => e.length) === 3 && await rp.evaluate("document.querySelectorAll('.dcell').length") === 9, 'M02: resume lost clues/cells');
+  if (id === 'W01-M04') ok(await rp.$$eval('[data-socket]', e => e.length) === 1, 'M04: resume lost the span socket');
+  if (id === 'W01-M05') ok(await rp.$$eval('[data-built]', e => e.length) === 2, 'M05: resume lost the built sand');
   if (id === 'W01-M03') ok(await rp.$$eval('[data-ramp]', e => e.length) === 2, 'M03: resume lost the ramps');
   await rp.close();
 }

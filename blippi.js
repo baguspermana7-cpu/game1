@@ -391,7 +391,7 @@
     var sel = params.world || state.mapSel || D.missions[recommended().id].world
     bgslot(el, 'bg-peta')
     D.worlds.forEach(function (wd) {
-      var done = wd.mission && missionDone(wd.mission)
+      var done = worldDone(wd)
       var key = (done && wd.artDone) ? wd.artDone : wd.art
       var b = wd.box
       // the picture is drawn larger than the hotspot box and centred on it, so it sits over the island the background already paints
@@ -409,17 +409,17 @@
         isl.insertBefore(base, isl.firstChild)
         if (freshFlags.map === wd.id) { freshFlags.map = null; var top = isl.lastChild; if (top.animate && !(w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches)) top.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1100, delay: 350, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'backwards' }) }
       }
-      if (done && wd.artDone) at(isl, 'mini-wheel', iw * 0.18, ih * 0.25, 86, 86).innerHTML = wheelSvg()
+      if (done && wd.id === 'taman-air') at(isl, 'mini-wheel', iw * 0.18, ih * 0.25, 86, 86).innerHTML = wheelSvg()
     })
     D.worlds.forEach(function (wd) {
-      var done = wd.mission && missionDone(wd.mission)
-      var l = at(el, 'islbl' + (wd.locked ? ' lk' : (done ? ' dn' : '')), wd.label[0], wd.label[1], wd.label[2], wd.label[3])
+      var done = worldDone(wd)
+      var l = at(el, 'islbl' + (lockedOf(wd) ? ' lk' : (done ? ' dn' : '')), wd.label[0], wd.label[1], wd.label[2], wd.label[3])
       l.textContent = wd.name
       l.setAttribute('data-world-label', wd.id)
       l.setAttribute('role', 'button')
       l.addEventListener('click', function () { sfx('tap'); go('map', { world: wd.id }, true) })
       if (done) at(el, 'badge', wd.label[0] + wd.label[2] - 30, wd.label[1] - 16, 52, 52).innerHTML = ICON.check
-      if (wd.locked) {
+      if (lockedOf(wd)) {
         at(el, 'badge', wd.label[0] + wd.label[2] - 30, wd.label[1] - 16, 52, 52).innerHTML = ICON.lock.replace('class="f"', 'style="fill:#fff;stroke:none"')
       }
     })
@@ -440,10 +440,10 @@
     var th = at(el, 'thumb', 560, 710 - ex, 140, 74)
     if (sw.thumb) th.appendChild(A.frame(sw.thumb))
     else { th.innerHTML = '<div class="lockic">' + ICON.lock.replace('class="f"', 'style="fill:#fff;stroke:none"') + '</div>'; th.firstChild.style.position = 'absolute' }
-    var m = sw.mission ? D.missions[worldMission(sw)] : null
+    var m = sw.mission && !lockedOf(sw) ? D.missions[worldMission(sw)] : null
     var t1 = txt(el, 'title', 718, 708 - ex, 226, 40, sw.name === 'TAMAN AIR' ? 'Taman Air' : titleCase(sw.name))
     t1.style.textAlign = 'left'; t1.style.fontSize = '31px'
-    var t2 = txt(el, '', 720, 752 - ex, 226, 38, m ? m.title : sw.locked)
+    var t2 = txt(el, '', 720, 752 - ex, 226, 38, m ? m.title : lockedOf(sw))
     t2.style.cssText += ';font:800 ' + (m ? 18 : 15) + 'px/1.1 Nunito,sans-serif;color:#13318A;text-align:left'
     t2.setAttribute('data-card-sub', '1')
     var jb = btn(el, 'obtn', 948, 712 - ex, 232, 70, 'Jelajahi', function () {
@@ -455,6 +455,9 @@
     if (!m) { jb.disabled = true; jb.setAttribute('aria-disabled', 'true') }
     nav(el, 'peta', [325, 797, 1090, 128])
   }
+  // a world's finale (M05) closes it; a world with `after` opens when that mission is done (PRD order), otherwise `locked` text stays
+  function lockedOf (wd) { return wd.locked && !(wd.after && missionDone(wd.after)) ? wd.locked : '' }
+  function worldDone (wd) { return !!(wd.finale ? missionDone(wd.finale) : (wd.mission && missionDone(wd.mission))) }
   // the next unfinished mission of a world (its last one when all are done)
   function worldMission (wd) {
     var l = wd.missions || [wd.mission]

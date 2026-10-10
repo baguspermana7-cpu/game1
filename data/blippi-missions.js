@@ -27,8 +27,8 @@
   ]
 
   var WORLDS = [
-    { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03'], art: 'pulau-kota-roda', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
-    { id: 'taman-air', name: 'TAMAN AIR', mission: 'W02-M01', art: 'pulau-taman-air', artDone: 'pulau-taman-air-aktif', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
+    { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'], finale: 'W01-M05', art: 'pulau-kota-roda', artDone: 'pulau-kota-roda-selesai', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
+    { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', art: 'pulau-taman-air', artDone: 'pulau-taman-air-aktif', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
     { id: 'eco-park', name: 'ECO PARK', locked: 'Terbuka setelah Taman Air.', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
@@ -111,6 +111,60 @@
       },
       hints: ['Kartu ramp bercahaya. Ketuk salah satu.', 'Ramp yang lebih tinggi memberi dorongan lebih kuat.', 'Lihat tanganku. Ketuk ramp ini!']
     },
+    'W01-M04': {
+      id: 'W01-M04', world: 'kota-roda', title: 'Jembatan untuk Semua', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',
+      needs: ['haul'], vehicle: 'truk-air', bg: 'bg-w01-m04-jembatan',
+      reward: { key: 'reward:W01-M04', sticker: 'stiker-jembatan', stickerName: 'Stiker Jembatan' },
+      worldDelta: 'kota-roda:jembatan-akses',
+      steps: [
+        { id: 'pilih', label: 'PILIH', tool: 'balok', toolName: 'BALOK', toolArt: 'tool-balok', icon: 'bulb',
+          instr: 'Pilih balok untuk sungai.', wrong: 'Pilih balok dulu. Memasang nanti ya.' },
+        { id: 'pasang', label: 'PASANG', tool: 'sambung', toolName: 'PASANG', toolArt: 'tool-sambung', icon: 'wheel',
+          instr: 'Seret ke garis oranye.', wrong: 'Balok sudah dipilih. Pasang di garis oranye.' },
+        { id: 'lewat', label: 'LEWATI', tool: 'lewat', toolName: 'LEWATI', toolArt: 'tool-jalan', icon: 'box',
+          instr: 'Ketuk truk untuk menyeberang.', wrong: 'Jembatan sudah jadi. Sekarang ketuk truk untuk menyeberang.' }
+      ],
+      lines: {
+        start: 'Sungai memisahkan jalan dan taman. Ayo buat jembatan!',
+        short: 'Pendek belum sampai. Coba yang panjang, atau pakai tiang!',
+        postFirst: 'Tiang saja belum cukup. Pilih balok dulu ya.',
+        planLong: 'Balok panjang cukup untuk menjangkau sungai!',
+        planShort: 'Dua balok pendek dan satu tiang di tengah. Bisa juga!',
+        miss: 'Belum pas. Taruh di tempat yang bergaris ya.',
+        wrongSpot: 'Itu bukan tempat untuk bagian ini. Cari yang bentuknya cocok.',
+        placed: 'Terpasang!',
+        built: 'Jembatan jadi! Ketuk truk untuk menyeberang.',
+        wait: 'Jembatannya belum jadi. Truk menunggu di tepi sungai.',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Jembatan terbuka untuk semua!'
+      },
+      hints: ['Cari tempat yang bergaris oranye di sungai.', 'Lihat bayangan bagian itu di tempatnya.', 'Lihat tanganku. Seret seperti ini!']
+    },
+    'W01-M05': {
+      id: 'W01-M05', world: 'kota-roda', title: 'Hari Pembukaan Taman', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',
+      needs: ['dig'], vehicle: 'excavator', bg: 'bg-w01-m05-pembukaan',
+      reward: { key: 'reward:W01-M05', sticker: 'stiker-taman', stickerName: 'Stiker Taman', badge: 'lencana-w01', badgeName: 'Lencana Kota Roda' },
+      worldDelta: 'kota-roda:taman-buka',
+      steps: [
+        { id: 'rencana', label: 'RENCANA', tool: 'rencana', toolName: 'RENCANA', toolArt: 'tool-rencana', icon: 'bulb',
+          instr: 'Ketuk tiga kartu berurutan.', wrong: 'Susun rencana dulu. Bekerja nanti ya.' },
+        { id: 'kerja', label: 'KERJA', tool: 'kerja', toolName: 'KERJA', toolArt: 'tool-pasang', icon: 'wheel',
+          instr: 'Ketuk tempat yang menyala.', wrong: 'Rencanamu sudah jadi. Sekarang kerjakan satu per satu.' },
+        { id: 'buka', label: 'BUKA', tool: 'buka', toolName: 'BUKA', toolArt: 'tool-buka', icon: 'box',
+          instr: 'Ketuk gerbang untuk membuka!', wrong: 'Semua siap. Sekarang buka gerbangnya.' }
+      ],
+      lines: {
+        start: 'Hari ini taman dibuka! Pilih mana yang dikerjakan dulu.',
+        planned: 'Rencana siap! Kerjakan satu per satu.',
+        toysFirst: 'Mainan butuh pasir dulu. Taruh PASIR lebih awal ya.',
+        turn: 'Sekarang giliran yang menyala, sesuai rencanamu.',
+        done1: 'Selesai satu!',
+        ready: 'Semua siap! Ketuk gerbang untuk membuka taman.',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Taman Kota Roda resmi dibuka!'
+      },
+      hints: ['Kartu yang menyala bisa diketuk berikutnya.', 'Pasir dulu, supaya mainan punya tempat berdiri.', 'Lihat tanganku. Ketuk di sini!']
+    },
     'W02-M01': {
       id: 'W02-M01', world: 'taman-air', title: 'Kincir yang Menunggu', sub: 'Taman Air', thumb: 'thumb-taman-air',
       needs: ['pump_water'], vehicle: 'truk-air', bg: 'bg-misi-kincir',
@@ -145,7 +199,9 @@
     { id: 'W01-M01', name: 'Stiker Buggy', art: 'stiker-buggy' },
     { id: 'W02-M01', name: 'Stiker Kincir', art: 'stiker-kincir' },
     { id: 'W01-M02', name: 'Stiker Harta', art: 'stiker-harta' },
-    { id: 'W01-M03', name: 'Stiker Bukit', art: 'stiker-bukit' }
+    { id: 'W01-M03', name: 'Stiker Bukit', art: 'stiker-bukit' },
+    { id: 'W01-M04', name: 'Stiker Jembatan', art: 'stiker-jembatan' },
+    { id: 'W01-M05', name: 'Stiker Taman', art: 'stiker-taman' }
   ]
 
   var HUB_LINES = {
@@ -162,7 +218,7 @@
     stickers: STICKERS,
     hubLines: HUB_LINES,
     firstMission: 'W01-M01',
-    order: ['W01-M01', 'W02-M01', 'W01-M02', 'W01-M03'],
+    order: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05', 'W02-M01'],
     stickerTotal: 30
   }
 })(window)

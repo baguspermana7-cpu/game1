@@ -92,7 +92,18 @@
       run.idle++
       if (run.idle === 8 && run.hint < 1) { run.hint = 1; run.ctl.hint && run.ctl.hint(1) }
     }, 1000)
+    kickDemo()
     document.addEventListener('visibilitychange', onVis)
+  }
+
+  // owner rule: within ~3 s of every step the target glows and a hand shows the first action (never completes it). A mission may supply ctl.demo().
+  function kickDemo () {
+    clearTimeout(run.demoT)
+    var st = run.step
+    run.demoT = setTimeout(function () {
+      if (!run || run.dead || run.paused || run.winning || run.step !== st || run.idle < 2) return
+      if (run.ctl.demo) run.ctl.demo(st); else if (run.ctl.hint) run.ctl.hint(1)
+    }, 2600)
   }
 
   function onVis () { if (document.hidden && run && !run.dead && !run.paused && !run.winning && B.current() === 'mission') pause() }
@@ -101,6 +112,7 @@
     if (!run) return
     run.dead = true
     clearInterval(run.idleT)
+    clearTimeout(run.demoT)
     run.timers.forEach(clearTimeout)
     if (run.raf) cancelAnimationFrame(run.raf)
     if (run.ctl && run.ctl.destroy) run.ctl.destroy()
@@ -222,6 +234,7 @@
     renderTray()
     setInstr(run.m.steps[run.step].instr)
     if (run.ctl.onStep) run.ctl.onStep(run.step, false)
+    kickDemo()
   }
 
   function hintPress () {
@@ -264,13 +277,13 @@
       B.txt(box, 'title', 0, 28, 760, 56, 'Hore!').style.fontSize = '58px'
       var line = B.txt(box, '', 40, 100, 680, 70, m.lines.win)
       line.style.cssText += ';font:900 30px/1.2 Nunito,sans-serif;color:#13318A;text-align:center'
-      B.art(box, m.reward.sticker, 270, 180, 220, 220, 'pp')
+      if (m.reward.badge) { B.art(box, m.reward.sticker, 130, 180, 220, 220, 'pp'); B.art(box, m.reward.badge, 410, 180, 220, 220, 'pp').setAttribute('data-badge', m.reward.badge) } else B.art(box, m.reward.sticker, 270, 180, 220, 220, 'pp')
       var cel = B.art(p, 'blippi-menunjuk', 40, 270, 300, 580, 'idle-blippi')
       cel.style.zIndex = '2'
       if (cel.animate && !(w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches)) cel.animate([{ transform: 'translateY(40px) scale(.9)', opacity: 0 }, { transform: 'translateY(-14px) scale(1.04)', opacity: 1, offset: .6 }, { transform: 'none', opacity: 1 }], { duration: 620, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'backwards' })
       B.sfx('win')
       if (w.BlippiFX) { w.BlippiFX.burst(p, 'spark', 220, 320, 260); w.BlippiFX.burst(p, 'confetti', 1450, 330, 300) }
-      var l2 = B.txt(box, '', 40, 405, 680, 50, first ? ('Kamu dapat ' + m.reward.stickerName + (m.reward.vehicle ? ' dan ' + B.titleCase(B.vehicleById(m.reward.vehicle).name) + ' jadi milikmu!' : '!')) : 'Kamu sudah punya stikernya. Main lagi kapan saja!')
+      var l2 = B.txt(box, '', 40, 405, 680, 50, first ? ('Kamu dapat ' + m.reward.stickerName + (m.reward.badge ? ' dan ' + m.reward.badgeName : '') + (m.reward.vehicle ? ' dan ' + B.titleCase(B.vehicleById(m.reward.vehicle).name) + ' jadi milikmu!' : '!')) : 'Kamu sudah punya stikernya. Main lagi kapan saja!')
       l2.style.cssText += ';font:800 24px/1.2 Nunito,sans-serif;color:#C4500A;text-align:center'
       var nb = B.btn(box, 'obtn', 230, 462, 300, 80, 'Lanjut', function () { B.go('map', { world: m.world }) })
       nb.textContent = 'LANJUT'
