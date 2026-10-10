@@ -205,6 +205,7 @@
     if (!scr) return
     if (cur && screens[cur] && screens[cur].leave) screens[cur].leave()
     if (w.BlippiFX) w.BlippiFX.stop()
+    if (w.BlippiLife) w.BlippiLife.stop()
     closeModal()
     if (cur && !noTrail && cur !== name) trail.push(cur)
     cur = name
@@ -222,6 +223,7 @@
     for (i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i] === el)
     stage.setAttribute('data-screen', name)
     if (w.BlippiFX) w.BlippiFX.start(el)
+    if (w.BlippiLife) w.BlippiLife.start(el)
     A.spread(el)
   }
   function back () {
