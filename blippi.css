@@ -223,3 +223,9 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:poin
 .bgslot .blippi-depth-layer{pointer-events:none}
 .fxl>img{position:absolute;width:auto;height:auto;object-fit:fill;pointer-events:none}
 .fxl.blippi-ambient-cloud>img{animation-duration:26s}
+
+/* portrait home: the dedicated portrait hub plate + the one mode that is portrait-native */
+#rot{background:linear-gradient(rgba(11,36,71,.5),rgba(11,36,71,.72)),url(assets/blippi/bg-hub--portrait.webp) center/cover no-repeat}
+.rotbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:72px;min-width:min(86vw,360px);padding:10px 26px;border-radius:44px;color:#fff;font:700 28px/1 Fredoka,Nunito,sans-serif;
+  background:linear-gradient(#FFA23F,#F06A12 60%,#E85A08);border:4px solid #FFC987;box-shadow:0 7px 0 #B6460A,0 12px 18px rgba(80,30,0,.4);text-shadow:0 2px 0 rgba(120,40,0,.5);cursor:pointer}
+.rotbtn small{font:800 15px/1.2 Nunito,sans-serif;text-shadow:none;opacity:.95}

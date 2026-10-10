@@ -272,9 +272,9 @@
         var r = T.answer(i)
         if (r === 'ok') {
           b.classList.add('good')
-          fb.textContent = 'Benar! Hebat. Siap? Jalan!'
+          fb.textContent = 'Benar! ' + (q.explain && q.explain.indexOf('Jawabannya') !== 0 ? q.explain + ' ' : '') + 'Siap? Jalan!'
           lock(ch)
-          finishQuiz(sc, 1300)
+          finishQuiz(sc, 2000)
         } else if (r === 'again') {
           b.classList.add('bad')
           b.disabled = true

@@ -3,3 +3,4 @@ node_modules
 tools/_*.mjs
 *.pyc
 __pycache__/
+docs/sheets/

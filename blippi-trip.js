@@ -208,8 +208,9 @@
     }
     run.gates = lvl.gates.map(function (f) { return { f: f, done: false } })
     resize()
+    var mine = run
     load(E.assets(lvl).concat(FXK), function () {
-      if (!run || run.lvl !== lvl) return
+      if (!run || run !== mine) return
       run.eng = E.make(run)
       run.state = 'play'
       UI.hud(run)
@@ -279,6 +280,7 @@
     if (r.state === 'finishing') { r.finishT += dt; r.mul = lerp(r.mul, 0.55, Math.min(1, dt * 2)) }
     r.rate = r.lvl.speed * r.mul
     r.eng.update(dt)
+    if (r.lvl.cat !== 'darat') r.in.moves.length = 0
     if (r.state === 'finishing') {
       if (r.finishT > 1.6) finish()
       return
@@ -419,8 +421,8 @@
     var q = null
     var tries = 0
     var grade = run.lvl.id.slice(-1) < '3' ? 1 : 2
-    while (tries++ < 6) {
-      var got = SE.pick({ game: 'blippi', context: 'gate', avatar: 'auto', count: 1, grade: grade, exclude: seenQ })
+    while (tries++ < 10) {
+      var got = SE.pick({ game: 'blippi', context: 'gate', avatar: 'auto', count: 1, grade: tries > 3 ? 2 : grade, exclude: seenQ })
       q = got && got[0]
       if (q && seenQ.indexOf(q.id) < 0) break
       q = null
