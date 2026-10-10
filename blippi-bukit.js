@@ -48,23 +48,23 @@
     if (tested.high) flag('high', STOP.high)
 
     // the truck (3/4 front, grows toward the viewer) + its crate
-    var truck = api.at(sc, '', 0, 0, 330, 200)
+    var truck = api.at(sc, '', 0, 0, 520, 315)
     truck.style.zIndex = '5'
     truck.style.pointerEvents = 'none'
     truck.style.transformOrigin = '50% 100%'
-    api.art(truck, 'veh-truk-air', 0, 0, 330, 200, '')
+    api.art(truck, 'veh-truk-air', 0, 0, 520, 315, '')
     var crate = document.createElement('img')
     crate.src = '../Dunia-Emosi/assets/db/lib/game/crate-wood.webp'
     crate.alt = ''
-    crate.style.cssText = 'position:absolute;left:100px;top:6px;width:110px;height:100px;object-fit:contain;opacity:0'
+    crate.style.cssText = 'position:absolute;left:160px;top:10px;width:170px;height:155px;object-fit:contain;opacity:0'
     truck.appendChild(crate)
-    var shadow = api.at(sc, 'shd', 0, 0, 280, 40)
+    var shadow = api.at(sc, 'shd', 0, 0, 440, 60)
     shadow.style.zIndex = '4'
     function setTruck (yb, scale) {
-      scale = scale == null ? 0.5 + (yb - START_Y) / 700 : scale
-      var s = Math.max(0.5, Math.min(1.05, scale))
-      truck.style.transform = 'translate(' + (TX - 165) + 'px,' + (yb - 200) + 'px) scale(' + s + ')'
-      shadow.style.transform = 'translate(' + (TX - 140) + 'px,' + (yb - 14) + 'px) scale(' + s + ')'
+      scale = scale == null ? 0.62 + (yb - START_Y) / 500 : scale
+      var s = Math.max(0.62, Math.min(1.05, scale))
+      truck.style.transform = 'translate(' + (TX - 260) + 'px,' + (yb - 315) + 'px) scale(' + s + ')'
+      shadow.style.transform = 'translate(' + (TX - 220) + 'px,' + (yb - 20) + 'px) scale(' + s + ')'
     }
     setTruck(START_Y)
 

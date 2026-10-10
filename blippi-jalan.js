@@ -68,7 +68,7 @@
       e.appendChild(ph)
       return e
     })
-    var shadow = api.at(sc, 'shd', 0, 0, 180, 30)
+    var shadow = api.at(sc, 'shd', 0, 0, 220, 36)
     var pile = api.at(sc, 'jpile', PILE.x - 120, PILE.y - 110, 240, 190, 'button')
     pile.type = 'button'
     pile.setAttribute('data-plank-pile', '1')
@@ -80,7 +80,7 @@
     var park = api.art(sc, 'prop-jalur-taman', 1130, 540, 420, 120, 'park')
     park.style.opacity = '0'
     park.setAttribute('data-park', 'off')
-    var buggy = api.art(sc, 'veh-buggy-misi', 0, 0, 240, 156, 'jbuggy')
+    var buggy = api.art(sc, 'veh-buggy-misi', 0, 0, 290, 189, 'jbuggy')
     buggy.setAttribute('data-buggy', '1')
     buggy.firstChild.style.transform = 'scaleX(-1)'
     var box = api.art(sc, 'prop-paket', 0, 0, 80, 70, 'jbox')
@@ -100,9 +100,9 @@
     function place (pt, t) {
       var bob = holding || t ? Math.sin((t || 0) * 0.03) * 3.2 : 0
       var rot = holding || t ? Math.sin((t || 0) * 0.021) * 1.6 : 0
-      buggy.style.transform = 'translate(' + (pt.x - 120) + 'px,' + (pt.y - 130 + bob) + 'px) rotate(' + rot + 'deg)'
-      box.style.transform = 'translate(' + (pt.x - 30) + 'px,' + (pt.y - 105 + bob) + 'px)'
-      shadow.style.transform = 'translate(' + (pt.x - 90) + 'px,' + (pt.y - 24) + 'px)'
+      buggy.style.transform = 'translate(' + (pt.x - 145) + 'px,' + (pt.y - 160 + bob) + 'px) rotate(' + rot + 'deg)'
+      box.style.transform = 'translate(' + (pt.x - 30) + 'px,' + (pt.y - 130 + bob) + 'px)'
+      shadow.style.transform = 'translate(' + (pt.x - 110) + 'px,' + (pt.y - 26) + 'px)'
       var i
       for (i = 0; i < SLOTS.length; i++) {
         if (placed.indexOf(i) < 0) continue

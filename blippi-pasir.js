@@ -121,14 +121,14 @@
       api.later(function () { api.advance() }, 600)
     }
 
-    var bucket = api.art(sc, 'modul-bucket-sempit', 0, 0, 150, 180, 'bucket')
+    var bucket = api.art(sc, 'modul-bucket-sempit', 0, 0, 230, 275, 'bucket')
     bucket.style.cssText += ';opacity:0;pointer-events:none;z-index:6;transform-origin:50% 100%'
     function popItem (i, cell) {
       var it = ITEMS[i]
-      var d = api.at(sc, '', COLX[cell % 3] - 55, ROWY[Math.floor(cell / 3)] - 110, 110, 110)
+      var d = api.at(sc, '', COLX[cell % 3] - 80, ROWY[Math.floor(cell / 3)] - 150, 160, 160)
       d.style.zIndex = '7'
       d.style.pointerEvents = 'none'
-      pic(d, it, 110)
+      pic(d, it, 160)
       if (d.animate && !api.reduced()) d.animate([{ transform: 'translateY(40px) scale(.4)', opacity: 0 }, { transform: 'translateY(-26px) scale(1.15)', opacity: 1, offset: .55 }, { transform: 'translateY(-14px) scale(1)', opacity: 1 }], { duration: 520, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'forwards' })
       api.later(function () { if (d.parentNode) { d.style.transition = 'opacity .5s'; d.style.opacity = '0'; setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d) }, 520) } }, 1500)
       api.fx('gold-star', COLX[cell % 3], ROWY[Math.floor(cell / 3)] - 60, 170)
@@ -141,8 +141,8 @@
       dug = dug.concat([c])
       var x = COLX[c % 3]
       var y = ROWY[Math.floor(c / 3)]
-      bucket.style.left = (x - 75) + 'px'
-      bucket.style.top = (y - 150) + 'px'
+      bucket.style.left = (x - 115) + 'px'
+      bucket.style.top = (y - 230) + 'px'
       bucket.style.opacity = '1'
       if (bucket.animate && !api.reduced()) bucket.animate([{ transform: 'translateY(-90px) rotate(-14deg)', opacity: 0 }, { transform: 'translateY(8px) rotate(0)', opacity: 1, offset: .45 }, { transform: 'translateY(-60px) rotate(8deg)', opacity: 0 }], { duration: 560, easing: 'cubic-bezier(.23,1,.32,1)' })
       api.sfx('bump')

@@ -433,6 +433,21 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   ok(await mp.$('[data-payoff=first]') !== null, 'M03: no payoff'); ok(await mp.evaluate("Object.keys(Blippi.state().rewards).length") === 2, 'M03: reward count');
   await mp.close();
 }
+// ---------- pause/resume/reload state of every mission ----------
+for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'truk-air', { pred: 'high', tested: { low: true, high: false } }], ['W02-M01', 'truk-air', { connected: true }]]) {
+  const rp = await fresh(1280, 800);
+  await rp.evaluate(([i, d]) => { Blippi.commit(s => { s.progress[i] = { step: 1, data: d }; }); }, [id, data]);
+  await rp.reload({ waitUntil: 'load' });
+  await rp.evaluate(([i, v]) => Blippi.go('mission', { mission: i, vehicle: v }), [id, veh]); await sleep(600);
+  ok(await rp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '1', `${id}: reload lost the saved step`);
+  await rp.click('[data-act=pause]'); await sleep(200);
+  ok(await rp.$('[data-act=lanjut]') !== null, `${id}: pause modal missing`);
+  await rp.click('[data-act=lanjut]'); await sleep(200);
+  ok(await rp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '1', `${id}: resume changed the step`);
+  if (id === 'W01-M02') ok(await rp.$$eval('[data-clue]', e => e.length) === 3 && await rp.evaluate("document.querySelectorAll('.dcell').length") === 9, 'M02: resume lost clues/cells');
+  if (id === 'W01-M03') ok(await rp.$$eval('[data-ramp]', e => e.length) === 2, 'M03: resume lost the ramps');
+  await rp.close();
+}
 // BALAPAN is withdrawn (owner, 2026-10-10): its gates run only with QA_RACE=1 until it is rebuilt on the Mojo/TK engines (step 3d)
 if (process.env.QA_RACE) {
 // ---------- Part C: BALAPAN (arena racing from the Codex turnaround + arena packs) ----------
