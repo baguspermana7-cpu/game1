@@ -112,6 +112,9 @@
     }
     var T0 = run
     var DL = []
+    var pool = []
+    var poolN = 0
+    function item (d, kind, o) { var it = pool[poolN] || (pool[poolN] = {}); poolN++; it.d = d; it.kind = kind; it.o = o; return it }
     var pi0 = 0
     var ei0 = 0
     function sortFar (a, b2) { return b2.d - a.d }
@@ -215,12 +218,13 @@
       // world objects far -> near
       var drawList = DL
       drawList.length = 0
+      poolN = 0
       var i
       while (pi0 < props.length && props[pi0].z - Z < -1.2) pi0++
-      for (i = pi0; i < props.length; i++) { var pr = props[i]; var dd2 = pr.z - Z; if (dd2 >= DMAX) break; drawList.push({ d: dd2, kind: 'prop', o: pr }) }
+      for (i = pi0; i < props.length; i++) { var pr = props[i]; var dd2 = pr.z - Z; if (dd2 >= DMAX) break; drawList.push(item(dd2, 'prop', pr)) }
       while (ei0 < ents.length && ents[ei0].z - Z < -1.2) ei0++
-      for (i = ei0; i < ents.length; i++) { var en = ents[i]; var de = en.z - Z; if (de >= DMAX) break; if (en.st !== 2) drawList.push({ d: de, kind: 'ent', o: en }) }
-      for (i = 0; i < gateZ.length + 1; i++) { var gz = i < gateZ.length ? gateZ[i] : run.len; var dg = gz - Z; if (dg > -1.2 && dg < DMAX) drawList.push({ d: dg, kind: i < gateZ.length ? 'gate' : 'finish', o: { z: gz } }) }
+      for (i = ei0; i < ents.length; i++) { var en = ents[i]; var de = en.z - Z; if (de >= DMAX) break; if (en.st !== 2) drawList.push(item(de, 'ent', en)) }
+      for (i = 0; i < gateZ.length + 1; i++) { var gz = i < gateZ.length ? gateZ[i] : run.len; var dg = gz - Z; if (dg > -1.2 && dg < DMAX) drawList.push(item(dg, i < gateZ.length ? 'gate' : 'finish', { z: gz })) }
       drawList.sort(sortFar)
       var playerDrawn = false
       for (i = 0; i < drawList.length; i++) {

@@ -113,7 +113,7 @@
   }
 
   /* ---------- state + save (per avatar) ---------- */
-  function fresh () { return { v: 1, done: {}, rewards: {}, world: {}, progress: {}, vehicle: 'buggy', sound: true, trip: { lv: {}, rw: {} } } }
+  function fresh () { return { v: 1, done: {}, rewards: {}, world: {}, progress: {}, vehicle: 'buggy', sound: true, trip: { lv: {}, rw: {} }, race: { best: {}, ghost: {}, runs: 0 } } }
   var state = load()
   function load () {
     var base = fresh()
@@ -124,7 +124,8 @@
       return {
         v: 1,
         done: p.done || {}, rewards: p.rewards || {}, world: p.world || {}, progress: p.progress || {},
-        vehicle: p.vehicle || 'buggy', sound: p.sound !== false, trip: p.trip && p.trip.lv ? p.trip : { lv: {}, rw: {} }
+        vehicle: p.vehicle || 'buggy', sound: p.sound !== false, trip: p.trip && p.trip.lv ? p.trip : { lv: {}, rw: {} },
+        race: p.race && p.race.best ? p.race : { best: {}, ghost: {}, runs: 0 }
       }
     } catch (e) { return base }
   }
@@ -356,6 +357,9 @@
     var jd = btn(el, 'obtn bbtn', 130, 20, 360, 80, 'Petualangan kendaraan: darat, udara, luar angkasa, air', function () { if (w.BlippiTrip) w.BlippiTrip.open() })
     jd.setAttribute('data-act', 'petualangan')
     jd.innerHTML = ICON.play + '<span style="font-size:26px">JELAJAH DUNIA</span>'
+    var rb = btn(el, 'obtn', 130, 112, 300, 76, 'Balapan di arena', function () { if (w.BlippiRace) w.BlippiRace.open() })
+    rb.setAttribute('data-act', 'balapan')
+    rb.innerHTML = ICON.play + '<span style="font-size:26px">BALAPAN</span>'
     topRight(el)
     logo(el, 'MEGA DISCOVERY ADVENTURE', [678, 108, 318, 40])
     // mission card

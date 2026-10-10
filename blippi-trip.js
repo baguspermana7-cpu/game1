@@ -21,6 +21,7 @@
     var k = String(key)
     if (k.indexOf('lib:') === 0) return '../Dunia-Emosi/assets/db/lib/' + k.slice(4) + '.webp'
     if (k.indexOf('g:') === 0) return 'assets/blippi/' + k.slice(2) + '.webp'
+    if (k.indexOf('race:') === 0) return 'assets/race/' + k.slice(5) + '.webp'
     if (k.indexOf('fx:') === 0) return V[k.slice(3)] ? V[k.slice(3)].file : ''
     return k
   }
@@ -198,7 +199,7 @@
     if (!E) return false
     var cv = UI.showRun(lvl)
     run = {
-      lvl: lvl, E: E, cv: cv, c: cv.getContext('2d'), W: 0, H: 0, scale: 1, dpr: 1,
+      lvl: lvl, E: E, cv: cv, c: cv.getContext('2d'), W: 0, H: 0, scale: 0.8, dpr: 1,
       rnd: rng(opts.seed || ((Date.now() & 0xffff) + 17)), len: lvl.len * (opts.len || 1),
       progress: 0, mul: 1, slowT: 0, boostT: 0, hitT: 0, rate: lvl.speed, t: 0,
       stars: 0, starTotal: 0, bumps: 0, state: 'loading', fxs: [], gates: [], quiz: null, qlog: [], bonus: 0,
@@ -234,7 +235,7 @@
     var r = cv.parentNode.getBoundingClientRect()
     run.W = Math.max(200, Math.round(r.width))
     run.H = Math.max(200, Math.round(r.height))
-    run.dpr = Math.min(w.devicePixelRatio || 1, 1.5)
+    run.dpr = Math.min(w.devicePixelRatio || 1, 1.25)
     var k = run.dpr * run.scale
     cv.width = Math.round(run.W * k)
     cv.height = Math.round(run.H * k)

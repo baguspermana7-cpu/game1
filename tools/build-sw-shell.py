@@ -42,6 +42,8 @@ files += ['../Dunia-Emosi/games/data/save-engine.js' + vq, '../Dunia-Emosi/games
           '../Dunia-Emosi/assets/apple-touch-icon.png', '../Dunia-Emosi/assets/favicon-32.png']
 for f in sorted(glob.glob(os.path.join(ROOT, 'assets', 'blippi', '*.webp')) + glob.glob(os.path.join(ROOT, 'assets', 'vfx', '*.webp'))):
     files.append('./' + os.path.relpath(f, ROOT))
+for f in sorted(glob.glob(os.path.join(ROOT, 'assets', 'race', '*', '*.webp')) + glob.glob(os.path.join(ROOT, 'assets', 'arena', '*.webp'))):
+    files.append('./' + os.path.relpath(f, ROOT))
 files += ['../Dunia-Emosi/assets/db/lib/' + k + '.webp' for k in lib]
 sw = open(os.path.join(ROOT, 'sw.js')).read()
 body = 'const SHELL = [\n' + ',\n'.join(' "%s"' % f for f in files) + '\n]'

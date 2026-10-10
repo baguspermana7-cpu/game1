@@ -381,7 +381,7 @@
         c.fillStyle = 'rgba(10,50,90,.1)'
         c.beginPath(); c.ellipse(x + 5, y + 8 + bob, ps * 0.4, ps * 0.8, 0, 0, 6.3); c.fill()
         c.save(); c.translate(x, y + bob); c.rotate(tilt * 0.5 + wob + roll); c.globalAlpha = alpha
-        run.spr(c, lvl.veh, 0, 0, ps * 1.0, ps * 1.75, {})
+        run.spr(c, lvl.veh, 0, 0, ps * 1.25, ps * 1.5, {})
         c.restore()
         // bow splash
         c.fillStyle = th.foam

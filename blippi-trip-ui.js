@@ -137,7 +137,7 @@
       var num = el('span', 'tnum', b, String(i + 1))
       void num
       var ph = el('span', 'tlpic', b)
-      imgEl(typeof l.veh === 'string' && l.veh.indexOf(':') > 0 ? l.veh : cat.icon, '', ph)
+      imgEl(l.vui || (typeof l.veh === 'string' && l.veh.indexOf(':') > 0 ? l.veh : cat.icon), '', ph)
       var tx = el('span', 'tltx', b)
       el('b', '', tx, l.name)
       el('em', '', tx, open ? l.vname : 'Selesaikan level sebelumnya')

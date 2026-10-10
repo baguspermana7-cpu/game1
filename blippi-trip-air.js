@@ -14,7 +14,7 @@
   function sstep (a, b, v) { var t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t) }
 
   function assets (lvl) {
-    var a = ['lib:vehicles/airplane', 'g:veh-seaplane-sisi', 'lib:nature/cloud', 'lib:mojo-chase/cmid/' + lvl.theme.far, 'lib:game/hot-air-balloon', 'lib:animals/eagle',
+    var a = [lvl.veh, 'lib:nature/cloud', 'lib:mojo-chase/cmid/' + lvl.theme.far, 'lib:game/hot-air-balloon', 'lib:animals/eagle',
       'lib:animals/parrot', 'lib:game/star', 'lib:nature/sun', 'lib:nature/moon-stars', 'lib:nature/rainbow', 'lib:tk-world/palm-island', 'lib:tk-world/lighthouse-island', 'lib:tk-world/storm-cloud',
       'fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:droplets', 'fx:ripple', 'fx:bubbles']
     return a
@@ -183,24 +183,8 @@
       c.translate(G.px, py)
       c.rotate(rot + wob)
       c.globalAlpha = alpha
-      var own = T.img('g:veh-seaplane-sisi')
-      if (own) run.spr(c, 'g:veh-seaplane-sisi', 0, 0, ps * 1.15, ps * 0.9, {})
-      else {
-        // floats (pontoons) + struts under the shared airplane
-        c.fillStyle = '#FFFFFF'
-        c.strokeStyle = '#7A8BB0'
-        c.lineWidth = 3
-        c.beginPath(); c.moveTo(-ps * 0.18, ps * 0.2); c.lineTo(-ps * 0.2, ps * 0.4); c.moveTo(ps * 0.12, ps * 0.2); c.lineTo(ps * 0.14, ps * 0.4); c.stroke()
-        var fl = c.createLinearGradient(0, ps * 0.38, 0, ps * 0.5)
-        fl.addColorStop(0, '#FFC27A'); fl.addColorStop(1, '#F4761A')
-        c.fillStyle = fl
-        run.rrect(c, -ps * 0.38, ps * 0.38, ps * 0.62, ps * 0.1, ps * 0.05)
-        c.fill()
-        c.fillStyle = 'rgba(255,255,255,.7)'
-        run.rrect(c, -ps * 0.34, ps * 0.4, ps * 0.5, ps * 0.02, ps * 0.01)
-        c.fill()
-        run.spr(c, 'lib:vehicles/airplane', 0, -ps * 0.04, ps * 1.1, ps * 0.85, { flip: true })
-      }
+      // owner floatplane (side view faces left; we fly right, so flipped). Floats are part of the art.
+      run.spr(c, lvl.veh, 0, 0, ps * 1.35, ps * 1.0, { flip: true })
       c.restore()
       if (run.boostT > 0 && !run.reduced()) run.spr(c, 'fx:speed', G.px - ps * 0.8, py, ps, ps * 0.5, { alpha: 0.6, flip: true })
     }

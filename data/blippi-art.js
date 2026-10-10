@@ -141,8 +141,7 @@
     // free-play yard
     ['yard-tanjakan', 'TANJAKAN', 'prop', 300, 140, 1, 'Bermain', 'Tanjakan kayu, samping'],
     ['yard-kerucut', 'KERUCUT', 'prop', 70, 90, 1, 'Bermain', 'Kerucut oranye, depan'],
-    // Petualangan Kendaraan (canvas runs): until these ship, the run draws the shared-library plane + code-drawn floats / the shared rocket sticker
-    ['veh-seaplane-sisi', 'PESAWAT LAUT - SAMPING', 'vehicle', 760, 420, 1, 'Petualangan Udara', 'Pesawat laut dari samping, hidung ke kanan, dua pelampung di bawah, tanpa baling-baling kabur'],
+    // Petualangan Kendaraan (canvas runs): the floatplane/boats/road vehicles now come from the owner's turnaround pack (assets/race); the rocket is still the shared sticker until this ships
     ['veh-roket', 'ROKET KECIL - DARI ATAS', 'vehicle', 420, 560, 1, 'Petualangan Luar Angkasa', 'Roket kecil tegak, ujung ke atas, jendela bulat, tanpa api (api digambar kode)']
   ]
 
@@ -286,6 +285,21 @@
     }
     void ik
   }
+
+  // warm the HTTP/decoder cache for every shipped picture right after load (idle), so entering a scene never pops in
+  function warm () {
+    var keys = Object.keys(SHIPPED)
+    var i = 0
+    function next () {
+      if (i >= keys.length) return
+      var im = new Image()
+      im.decoding = 'async'
+      im.src = BASE + keys[i++] + '.webp'
+      if (im.decode) im.decode().then(next, next); else next()
+    }
+    next()
+  }
+  if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 1500 }); else w.setTimeout(warm, 400)
 
   w.BlippiArt = { painted: painted, spread: spread, src: src, fill: fill, frame: frame, catalog: CATALOG, index: INDEX, shipped: SHIPPED, base: BASE }
 })(window)

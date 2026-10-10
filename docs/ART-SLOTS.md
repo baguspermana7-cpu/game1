@@ -71,7 +71,6 @@ Blippi hanya dari aset pemilik (tidak digambar dari imajinasi, tidak memakai art
 | `stiker-buggy` | STIKER BUGGY | Misi W01-M01, Penemuan | 220 x 220 | Transparan | Stiker bulat buggy |
 | `yard-tanjakan` | TANJAKAN | Bermain | 300 x 140 | Transparan | Tanjakan kayu, samping |
 | `yard-kerucut` | KERUCUT | Bermain | 70 x 90 | Transparan | Kerucut oranye, depan |
-| `veh-seaplane-sisi` | PESAWAT LAUT - SAMPING | Petualangan Udara | 760 x 420 | Transparan | Pesawat laut dari samping, hidung ke kanan, dua pelampung di bawah, tanpa baling-baling kabur |
 | `veh-roket` | ROKET KECIL - DARI ATAS | Petualangan Luar Angkasa | 420 x 560 | Transparan | Roket kecil tegak, ujung ke atas, jendela bulat, tanpa api (api digambar kode) |
 
-Total: 67 slot. (Petualangan Kendaraan memakai art library bersama dari Dunia-Emosi; dua slot terakhir adalah art pemilik yang diminta kemudian.)
+Total: 66 slot. (Petualangan Kendaraan memakai art library bersama dari Dunia-Emosi; dua slot terakhir adalah art pemilik yang diminta kemudian.)
