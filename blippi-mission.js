@@ -43,7 +43,7 @@
     // chrome
     B.circle(el, 'pause', 25, 22, 'Jeda', pause).setAttribute('data-act', 'pause')
     B.circle(el, 'home', 125, 22, 'Ke beranda', function () { B.home() })
-    B.art(el, 'logo-blippi', 1465, 22, 185, 100, 'logo')
+    if (w.BlippiArt.src('logo-blippi')) B.art(el, 'logo-blippi', 1465, 22, 185, 100, 'logo')
     var tp = B.at(el, 'pill big', 586, 12, 500, 58)
     tp.textContent = m.title
     var sb = B.at(el, 'bar stepbar', 470, 74, 735, 80)
@@ -547,6 +547,7 @@
         if (n === 1 && !initial) api.sfx('ok')
         if (n >= 2) flow(false)
       },
+      demo: function () { ctl.hint(1); ctl.hint(3) },
       onTool: function (id) {
         if (id === 'katup') { valve.classList.add('glow'); api.later(function () { valve.classList.remove('glow') }, 2200) }
         if (id === 'pompa') { pump.classList.add('glow'); api.later(function () { pump.classList.remove('glow') }, 2200) }

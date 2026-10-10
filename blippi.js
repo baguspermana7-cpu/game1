@@ -251,7 +251,7 @@
     circle(el, 'lock', 1572, 18, 'Area orang tua', function () { w.BlippiPanels.parent() })
   }
   function logo (el, pillText, pill) {
-    art(el, 'logo-blippi', 711, 8, 250, 140, 'logo')
+    if (A.src('logo-blippi')) art(el, 'logo-blippi', 711, 8, 250, 140, 'logo')
     var p = at(el, 'pill', pill[0], pill[1], pill[2], pill[3])
     p.textContent = pillText
     p.style.fontSize = pillText.length > 18 ? '17px' : '22px'

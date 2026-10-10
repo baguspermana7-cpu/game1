@@ -52,7 +52,7 @@ async function layout(p, label, expectRot) {
     return;
   }
   ok(r.inside, `${label}: stage outside viewport`);
-  ok(r.phs > 0 && r.nolabel === 0, `${label}: placeholders ${r.phs}, unlabeled ${r.nolabel}`);
+  ok(r.phs === 0, `${label}: ${r.phs} visible placeholder box(es) — kids must never see an unfilled art slot`);
   ok(r.clash.length === 0, `${label}: label chips intersect ${r.clash.slice(0, 3).join(',')}`);
   ok(r.out.length === 0, `${label}: label chip outside viewport ${r.out.slice(0, 3).join(',')}`);
   ok(r.small.length === 0, `${label}: touch targets <56px ${r.small.slice(0, 4).join(',')}`);
@@ -475,6 +475,13 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   ok(await mp.$('[data-payoff=first]') !== null && await mp.$('[data-badge]') !== null, 'M05: no payoff / badge'); ok(await mp.evaluate("!!Blippi.state().rewards['reward:W01-M05']"), 'M05: reward missing');
   ok(await mp.evaluate("Blippi.missionDone('W01-M05') && Blippi.state().world['kota-roda:taman-buka'] === 1"), 'M05: world change missing');
   await mp.close();
+}
+// ---------- owner clarity rule: every mission shows its goal (glowing target) and demonstrates the first action (hand) within 4 s ----------
+for (const [id, veh] of [['W01-M01', 'buggy'], ['W01-M02', 'excavator'], ['W01-M03', 'truk-air'], ['W02-M01', 'truk-air']]) {
+  const rp = await fresh(1280, 800);
+  await rp.evaluate(([i, v]) => Blippi.go('mission', { mission: i, vehicle: v }), [id, veh]);
+  ok(await waitFor(rp, "[...document.querySelectorAll('#m-scene .ghost')].some(g => g.style.opacity === '1' || getComputedStyle(g).opacity > 0.5) && document.querySelectorAll('#m-scene .glow, .tray .glow').length > 0", 5000), id + ': no glowing target + demo hand within 5 s of the start');
+  await rp.close();
 }
 // ---------- pause/resume/reload state of every mission ----------
 for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'truk-air', { pred: 'high', tested: { low: true, high: false } }], ['W01-M04', 'truk-air', { plan: 'long', placed: [] }], ['W01-M05', 'excavator', { order: ['pasir', 'gerbang', 'mainan'], done: ['pasir'] }], ['W02-M01', 'truk-air', { connected: true }]]) {

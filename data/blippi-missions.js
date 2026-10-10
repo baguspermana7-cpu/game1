@@ -43,7 +43,7 @@
       worldDelta: 'kota-roda:jalur-taman',
       steps: [
         { id: 'pasang', label: 'PASANG', tool: 'papan', toolName: 'PAPAN', toolArt: 'tool-papan', icon: 'plank',
-          instr: 'Seret papan dari tumpukan ke jembatan. Tiga papan ya!',
+          instr: 'Seret tiga papan ke jembatan.',
           wrong: 'Belum waktunya. Sekarang kita pasang papan dulu.' },
         { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'tool-jalan', icon: 'wheel',
           instr: 'Tahan tombol JALAN agar buggy menyeberang.',
@@ -71,11 +71,11 @@
       worldDelta: 'kota-roda:harta-pasir',
       steps: [
         { id: 'baca', label: 'BACA', tool: 'baca', toolName: 'PETUNJUK', toolArt: 'tool-baca', icon: 'bulb',
-          instr: 'Ketuk gulungan petunjuk untuk membaca.', wrong: 'Baca petunjuknya dulu. Menggali nanti ya.' },
+          instr: 'Ketuk gulungan petunjuk.', wrong: 'Baca petunjuknya dulu. Menggali nanti ya.' },
         { id: 'gali', label: 'GALI', tool: 'gali', toolName: 'GALI', toolArt: 'tool-gali', icon: 'box',
-          instr: 'Pilih bucket, lalu ketuk petak pasir untuk menggali.', wrong: 'Pakai bucket untuk menggali petak pasir.' },
+          instr: 'Ketuk petak pasir yang cocok.', wrong: 'Pakai bucket untuk menggali petak pasir.' },
         { id: 'pasang', label: 'PASANG', tool: 'pasang', toolName: 'PASANG', toolArt: 'tool-pasang', icon: 'wheel',
-          instr: 'Antar tiga benda ke gerbang taman.', wrong: 'Antar bendanya ke gerbang setelah semuanya ketemu.' }
+          instr: 'Antar benda ke gerbang.', wrong: 'Antar bendanya ke gerbang setelah semuanya ketemu.' }
       ],
       lines: {
         start: 'Ada tiga benda terkubur di pasir. Baca petunjuknya!',
@@ -95,11 +95,11 @@
       worldDelta: 'kota-roda:bukit-uji',
       steps: [
         { id: 'kira', label: 'KIRA-KIRA', tool: 'kira', toolName: 'KIRA-KIRA', toolArt: 'tool-kira', icon: 'bulb',
-          instr: 'Ramp mana yang membuat truk meluncur lebih jauh?', wrong: 'Tebak dulu ramp yang lebih jauh. Uji nanti ya.' },
+          instr: 'Ramp mana lebih jauh?', wrong: 'Tebak dulu ramp yang lebih jauh. Uji nanti ya.' },
         { id: 'uji', label: 'UJI', tool: 'uji', toolName: 'UJI', toolArt: 'tool-uji', icon: 'wheel',
           instr: 'Pilih UJI, lalu coba kedua ramp.', wrong: 'Tebakanmu sudah tersimpan. Sekarang saatnya menguji.' },
         { id: 'antar', label: 'ANTAR', tool: 'antar', toolName: 'ANTAR', toolArt: 'tool-antar', icon: 'box',
-          instr: 'Antar muatan sampai garis biru. Pilih ramp yang tepat!', wrong: 'Ujinya sudah selesai. Sekarang antar muatan.' }
+          instr: 'Antar muatan ke garis biru.', wrong: 'Ujinya sudah selesai. Sekarang antar muatan.' }
       ],
       lines: {
         start: 'Satu ramp rendah, satu tinggi. Mana yang lebih jauh?',

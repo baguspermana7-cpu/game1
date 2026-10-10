@@ -32,6 +32,7 @@
       tg = []
       while (tg.length < 3) tg.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0])
     }
+    var hd = null
     var found = saved.found || [false, false, false]
     var dug = saved.dug || []
     var empties = 0
@@ -208,6 +209,14 @@
         gate.style.pointerEvents = n === 2 ? 'auto' : 'none'
         if (n === 2) { gate.classList.add('glow') } else gate.classList.remove('glow')
         if (n === 1) renderPanel()
+      },
+      demo: function (n) {
+        this.hint(1)
+        var K = w.BlippiKit
+        if (!K) return
+        if (!hd) hd = K.hand(api)
+        var pt = n === 0 ? { x: 150, y: 470 } : (n === 1 ? { x: 220, y: 330 } : { x: GATE.x + 80, y: GATE.y + 120 })
+        hd.move([pt, { x: pt.x, y: pt.y - 16 }, pt], 420)
       },
       onTool: function () {},
       hint: function (lvl) {

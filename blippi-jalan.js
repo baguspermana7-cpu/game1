@@ -55,6 +55,7 @@
     var rs = api.restore
     var saved = api.data() || {}
     var drag = null
+    var hd = null
     if (rs) { placed = [0, 1, 2]; if (rs.step >= 2) dist = LEN.total }
     void saved
 
@@ -248,6 +249,15 @@
         if (n === 2) { box.classList.add('glow') }
       },
       onTool: function () {},
+      demo: function (n) {
+        this.hint(1)
+        var K = w.BlippiKit
+        if (!K) return
+        if (!hd) hd = K.hand(api)
+        if (n === 0) hd.move([{ x: PILE.x - 30, y: PILE.y - 20 }, { x: SLOTS[0].x - 30, y: SLOTS[0].y - 50 }], 900)
+        else if (n === 1) hd.move([{ x: 700, y: 690 }, { x: 700, y: 676 }, { x: 700, y: 690 }], 420)
+        else hd.move([{ x: FLAG.x - 160, y: FLAG.y - 20 }, { x: FLAG.x - 160, y: FLAG.y - 36 }, { x: FLAG.x - 160, y: FLAG.y - 20 }], 420)
+      },
       hint: function (lvl) {
         var s = api.step()
         if (s === 0) {

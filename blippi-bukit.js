@@ -16,6 +16,7 @@
     var tested = saved.tested || { low: false, high: false }
     var rs = api.restore
     var busy = false
+    var hd = null
     var cards = {}
     var flags = {}
 
@@ -124,6 +125,15 @@
         ;['low', 'high'].forEach(function (k) { cards[k].classList.remove('bounce') })
         if (n === 0) { cards.low.classList.add('glow'); cards.high.classList.add('glow'); setTimeout(function () { cards.low.classList.remove('glow'); cards.high.classList.remove('glow') }, 2600) }
         reset()
+      },
+      demo: function (n) {
+        this.hint(1)
+        var K = w.BlippiKit
+        if (!K) return
+        if (!hd) hd = K.hand(api)
+        var c = n === 1 && tested.low ? CARD.high : CARD.low
+        var pt = { x: c.x + 90, y: c.y + 50 }
+        hd.move([pt, { x: pt.x, y: pt.y - 16 }, pt], 420)
       },
       onTool: function () {},
       hint: function (lvl) {
