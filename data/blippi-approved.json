@@ -1,0 +1,145 @@
+{
+ "pulau-kota-roda": {
+  "file": "assets/blippi/pulau-kota-roda.webp",
+  "source": "kekurangan/generated-review/candidates/pulau-kota-roda.webp",
+  "source_sha256": "dcd318073b76fd532920ee4a8e91000cd2b334a62e781cbfd439a186bcc9eac9",
+  "generation_id": "exec-35ab7aa9-8ae9-4101-8500-64c13a8b40f9",
+  "review_notes": "Water Park state pair must be checked for geometry alignment before approval.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   418,
+   370
+  ]
+ },
+ "pulau-taman-air": {
+  "file": "assets/blippi/pulau-taman-air.webp",
+  "source": "kekurangan/generated-review/candidates/pulau-taman-air.webp",
+  "source_sha256": "a6c606b5936faf290ac13f03adff53fd7b22d64bd80714dba10da9d68f2e4174",
+  "generation_id": "exec-c99a2138-fc6a-46df-871d-3c4be612ed24",
+  "review_notes": "Explicit inactive state with dry channels, dry outlets, and stopped wheel.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   700,
+   627
+  ]
+ },
+ "pulau-taman-air-aktif": {
+  "file": "assets/blippi/pulau-taman-air-aktif.webp",
+  "source": "kekurangan/generated-review/candidates/pulau-taman-air-aktif.webp",
+  "source_sha256": "e2dacf2e2bf20f115448914ed765adf8325de08e905d7cf23188da5d5859026c",
+  "generation_id": "exec-32b2a6f0-54a1-4a8b-99e5-b8d45aaa5cae",
+  "review_notes": "Active edit derived from inactive v2; preserve the same geometry and add water only.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   700,
+   624
+  ]
+ },
+ "pulau-eco-park": {
+  "file": "assets/blippi/pulau-eco-park.webp",
+  "source": "kekurangan/generated-review/candidates/pulau-eco-park.webp",
+  "source_sha256": "3340d9d6fc6d33a2c7424e3f53e4d6b3ed82f0a900ab8c142d505ff0bd4052c6",
+  "generation_id": "exec-35ab7aa9-8ae9-4101-8500-64c13a8b40f9",
+  "review_notes": "Water Park state pair must be checked for geometry alignment before approval.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   413,
+   377
+  ]
+ },
+ "pulau-kebun-ceria": {
+  "file": "assets/blippi/pulau-kebun-ceria.webp",
+  "source": "kekurangan/generated-review/candidates/pulau-kebun-ceria.webp",
+  "source_sha256": "0807622bc8516297ac2e1c8e999502ad998d36c203112731ac627bc14072193e",
+  "generation_id": "exec-35ab7aa9-8ae9-4101-8500-64c13a8b40f9",
+  "review_notes": "Water Park state pair must be checked for geometry alignment before approval.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   413,
+   377
+  ]
+ },
+ "pulau-pelabuhan": {
+  "file": "assets/blippi/pulau-pelabuhan.webp",
+  "source": "kekurangan/generated-review/candidates/pulau-pelabuhan.webp",
+  "source_sha256": "ef674b41b873173e2328c2e1db80dbcf0afd3bb12658b7bb4fbd131c8243f803",
+  "generation_id": "exec-35ab7aa9-8ae9-4101-8500-64c13a8b40f9",
+  "review_notes": "Water Park state pair must be checked for geometry alignment before approval.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   428,
+   389
+  ]
+ },
+ "pulau-wonder-lab": {
+  "file": "assets/blippi/pulau-wonder-lab.webp",
+  "source": "kekurangan/generated-review/candidates/pulau-wonder-lab.webp",
+  "source_sha256": "575da6d7409c3e023720cc929c9433b3b7f1bc82680b3d337d30e516eb6d3170",
+  "generation_id": "exec-35ab7aa9-8ae9-4101-8500-64c13a8b40f9",
+  "review_notes": "Water Park state pair must be checked for geometry alignment before approval.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   414,
+   370
+  ]
+ },
+ "prop-kincir-rumah": {
+  "file": "assets/blippi/prop-kincir-rumah.webp",
+  "source": "kekurangan/generated-review/candidates/prop-kincir-rumah.webp",
+  "source_sha256": "96958d81420eb036e8319da50cbab2f06ea851e1c20dc54c521ff86ef638f4ee",
+  "generation_id": "exec-666db6dc-c267-46c3-aa34-1d290190affe",
+  "review_notes": "Generated substitutes; compare scale, anchor point, and mission interaction before approval.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   615,
+   495
+  ]
+ },
+ "modul-semprot": {
+  "file": "assets/blippi/modul-semprot.webp",
+  "source": "kekurangan/generated-review/candidates/modul-semprot.webp",
+  "source_sha256": "2075610c4d61f6cf83e6719be83d92f04f9f4e636a20e57381ec26647d3a135c",
+  "generation_id": "exec-ac3507f9-9852-4a1e-b362-7495d6ce3415",
+  "review_notes": "Dry idle module. Layer water-spray VFX separately at runtime.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   420,
+   294
+  ]
+ },
+ "modul-bucket-sempit": {
+  "file": "assets/blippi/modul-bucket-sempit.webp",
+  "source": "kekurangan/generated-review/candidates/modul-bucket-sempit.webp",
+  "source_sha256": "6d0e8a59285a94508052c5beec61dae80d135d1044ff023be5fb7f3217845da5",
+  "generation_id": "exec-666db6dc-c267-46c3-aa34-1d290190affe",
+  "review_notes": "Generated substitutes; compare scale, anchor point, and mission interaction before approval.",
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   313,
+   408
+  ]
+ },
+ "blippi-potret": {
+  "file": "assets/blippi/blippi-potret.webp",
+  "source": "sudah organized/assets/colorful-preschool-mission-vehicle-sprite-sheet/blippi-presenting.webp",
+  "source_sha256": "5b6b8ee19b0babed93b434a30dca6a8969b0be44b2322cdf88349b0d8c141bfc",
+  "generation_id": null,
+  "review_notes": null,
+  "status": "generated-review",
+  "approved": "owner-delegated, 2026-10-10",
+  "size": [
+   175,
+   288
+  ]
+ }
+}

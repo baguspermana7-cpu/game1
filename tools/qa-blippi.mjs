@@ -7,6 +7,7 @@ process.on('uncaughtException', e => { console.log(fails.map(f => 'FAIL ' + f).j
 const ok = (c, m) => { checks++; if (!c) fails.push(m); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const safeClick = async (p, sel) => { for (let i = 0; i < 4; i++) { try { await p.waitForSelector(sel, { timeout: 6000 }); await p.click(sel); return true; } catch (e) { await sleep(200); } } return false; };
+const aimAt = q => [Math.max(8, Math.min(q.cw - 8, q.aim[0])), Math.max(8, Math.min(q.ch - 8, q.aim[1]))];
 const waitFor = async (p, fn, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await p.evaluate(fn)) return true; await sleep(150); } return false; };
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] });
 const errors = [];
@@ -458,19 +459,25 @@ for (const [w, h] of [[1280, 800], [1024, 768], [844, 390], [390, 844]]) {
   ok(await rp.$('[data-count]') !== null, 'race: no 3-2-1');
   for (let i = 0; i < 40 && (await rp.evaluate("(BlippiRace.qa()||{}).state")) !== 'race'; i++) await sleep(150);
   ok(await rp.evaluate("BlippiRace.qa().state") === 'race', 'race: did not start after the countdown');
-  const samples = []; let offTrack = 0, bumpsSeen = 0;
+  const samples = []; let offTrack = 0, bumpsSeen = 0, camBad = 0, visBad = 0, vhMin = 9, vhMax = 0;
   for (let i = 0; i < 400; i++) {
     q = await rp.evaluate("BlippiRace.qa()");
     if (!q || q.finished) break;
     samples.push([q.clock % 6000, q.blend, q.view]);
+    camBad += (q.camL < -0.5 || q.camT < -0.5 || q.camR > q.W + 0.5 || q.camB > q.H + 0.5) ? 1 : 0;
+    visBad += (q.vx < 0 || q.vy < 0 || q.vx > q.cw || q.vy > q.ch) ? 1 : 0;
+    vhMin = Math.min(vhMin, q.vh); vhMax = Math.max(vhMax, q.vh);
     if (q.off) offTrack++;
-    await rp.mouse.move(q.aim[0], q.aim[1]); if (i === 0) await rp.mouse.down();
+    { const a2 = aimAt(q); await rp.mouse.move(a2[0], a2[1]); } if (i === 0) await rp.mouse.down();
     await sleep(60);
   }
   await rp.mouse.up();
   const stdBad = samples.filter(s => s[0] > 200 && s[0] < 1700 && s[1] > 0.02).length;
   const peekBad = samples.filter(s => s[0] > 1990 && s[0] < 5900 && s[1] < 0.98).length;
   ok(samples.length > 120 && samples.some(s => s[0] < 1700) && samples.some(s => s[0] > 2200 && s[0] < 5900), `race: sampled too little of the cycle (${samples.length})`);
+  ok(camBad === 0, `race: camera left the plate in ${camBad} samples`);
+  ok(visBad === 0, `race: vehicle left the screen in ${visBad} samples`);
+  ok(vhMin >= 0.09 && vhMax <= 0.17, `race: vehicle height ${vhMin.toFixed(3)}-${vhMax.toFixed(3)} of the viewport (want 0.09-0.17)`);
   ok(stdBad === 0, `race: peek visible during the first 30% (${stdBad} samples)`);
   ok(peekBad === 0, `race: peek missing during the last 70% (${peekBad} samples)`);
   ok(samples.filter(s => s[1] > 0.02 && s[1] < 0.98).length < samples.length * 0.12, 'race: crossfade is not ~120 ms');
@@ -518,7 +525,7 @@ for (const [vw, vh, arena, veh, ori] of [[390, 844, 'pelabuhan', 'tugboat', 'por
   for (let i = 0; i < 300; i++) {
     const q = await rp.evaluate("BlippiRace.qa()");
     if (!q || q.finished) break;
-    await rp.mouse.move(q.aim[0], q.aim[1]); if (i === 0) await rp.mouse.down();
+    { const a2 = aimAt(q); await rp.mouse.move(a2[0], a2[1]); } if (i === 0) await rp.mouse.down();
     await sleep(60);
   }
   await rp.mouse.up();
@@ -535,10 +542,13 @@ for (const [vw, vh, arena, veh, ori] of [[390, 844, 'pelabuhan', 'tugboat', 'por
   for (let i = 0; i < 40 && (await rp.evaluate("document.querySelector('[data-act=mulai-balap]').disabled")); i++) await sleep(200);
   await rp.click('[data-act=mulai-balap]');
   for (let i = 0; i < 40 && (await rp.evaluate("(BlippiRace.qa()||{}).state")) !== 'race'; i++) await sleep(150);
-  const tgt = await rp.evaluate(() => { const q = BlippiRace.qa(), o = BlippiRace.R['kota-roda'][q.ori].obstacles[0], cx = o.reduce((a, p) => a + p[0], 0) / o.length, cy = o.reduce((a, p) => a + p[1], 0) / o.length; return [cx * q.k + q.ox, cy * q.k + q.oy]; });
-  await rp.mouse.move(tgt[0], tgt[1]); await rp.mouse.down();
+  await rp.mouse.move(640, 400); await rp.mouse.down();
   let bumped = false, minSpeed = 999;
-  for (let i = 0; i < 160 && !bumped; i++) { const q = await rp.evaluate("BlippiRace.qa()"); bumped = q.bumps > 0; minSpeed = Math.min(minSpeed, q.speed); await sleep(60); }
+  for (let i = 0; i < 240 && !bumped; i++) {
+    const q = await rp.evaluate("BlippiRace.qa()"); bumped = q.bumps > 0; minSpeed = Math.min(minSpeed, q.speed);
+    const t = await rp.evaluate(() => { const q = BlippiRace.qa(), o = BlippiRace.R['kota-roda'][q.ori].obstacles[0], cx = o.reduce((a, p) => a + p[0], 0) / o.length, cy = o.reduce((a, p) => a + p[1], 0) / o.length; const dx = cx * q.k + q.ox - q.vx, dy = cy * q.k + q.oy - q.vy, l = Math.hypot(dx, dy) || 1; return [q.vx + dx / l * 150, q.vy + dy / l * 150]; });
+    await rp.mouse.move(Math.max(8, Math.min(1272, t[0])), Math.max(8, Math.min(792, t[1]))); await sleep(60);
+  }
   await rp.mouse.up();
   ok(bumped, 'race: steering into an obstacle polygon never bumped');
   ok(await rp.evaluate("BlippiRace.qa().state") === 'race' && minSpeed > 20, 'race: a bump must only slow the vehicle (never stop/fail)');
@@ -578,7 +588,7 @@ for (const [vw, vh, arena, veh, ori] of [[390, 844, 'pelabuhan', 'tugboat', 'por
   for (let i = 0; i < 40 && (await pp.evaluate("document.querySelector('[data-act=mulai-balap]').disabled")); i++) await sleep(200);
   await pp.click('[data-act=mulai-balap]');
   for (let i = 0; i < 40 && (await pp.evaluate("(BlippiRace.qa()||{}).state")) !== 'race'; i++) await sleep(150);
-  for (let i = 0; i < 60; i++) { const q = await pp.evaluate("BlippiRace.qa()"); await pp.mouse.move(q.aim[0], q.aim[1]); if (!i) await pp.mouse.down(); await sleep(60); }
+  for (let i = 0; i < 60; i++) { const q = await pp.evaluate("BlippiRace.qa()"); { const a2 = aimAt(q); await pp.mouse.move(a2[0], a2[1]); } if (!i) await pp.mouse.down(); await sleep(60); }
   const wk = await pp.evaluate("BlippiRace.qa().workP90");
   console.log(`perf race: main-thread work p90 ${wk.toFixed(1)} ms/frame`);
   ok(wk <= 5, `race perf: own work p90 ${wk.toFixed(1)} ms > 5 ms budget (= 20 ms at 4x)`);

@@ -21,6 +21,7 @@
     'bg-misi-kincir': true,
     'bg-peta': true,
     'blippi-menunjuk': true,
+    'blippi-potret': true,
     'blippi-profil': true,
     'hub-garasi': true,
     'ikon-wall-cakar': true,
@@ -31,7 +32,9 @@
     'modul-ban-berpola': true,
     'modul-ban-jalan': true,
     'modul-bucket-lebar': true,
+    'modul-bucket-sempit': true,
     'modul-pompa': true,
+    'modul-semprot': true,
     'nav-bengkel': true,
     'nav-bermain': true,
     'nav-kendaraan': true,
@@ -41,10 +44,18 @@
     'prop-jalur-taman': true,
     'prop-katup': true,
     'prop-kincir-roda': true,
+    'prop-kincir-rumah': true,
     'prop-paket': true,
     'prop-pipa': true,
     'prop-pompa-truk': true,
     'prop-selang-ujung': true,
+    'pulau-eco-park': true,
+    'pulau-kebun-ceria': true,
+    'pulau-kota-roda': true,
+    'pulau-pelabuhan': true,
+    'pulau-taman-air': true,
+    'pulau-taman-air-aktif': true,
+    'pulau-wonder-lab': true,
     'stiker-buggy': true,
     'stiker-kincir': true,
     'thumb-buggy': true,
@@ -167,10 +178,10 @@
     tool: '<rect x="14" y="40" width="72" height="20" rx="10" transform="rotate(-30 50 50)"/><circle cx="26" cy="72" r="12"/>'
   }
 
+  // PROVENANCE: pulau-*, prop-kincir-rumah, modul-semprot, modul-bucket-sempit, blippi-potret are generated-review art, owner-approved (delegated) 2026-10-10,
+  // see data/blippi-approved.json. hub-meja-peta / hub-papan stay UNSHIPPED (bg-hub already paints them).
   // slots whose picture the shipped real background already paints: they stay as invisible hotspots (never doubled)
-  var PAINTED = { 'hub-garasi': 'bg-hub', 'hub-meja-peta': 'bg-hub', 'hub-papan': 'bg-hub',
-    'pulau-kota-roda': 'bg-peta', 'pulau-taman-air': 'bg-peta', 'pulau-taman-air-aktif': 'bg-peta', 'pulau-eco-park': 'bg-peta',
-    'pulau-kebun-ceria': 'bg-peta', 'pulau-pelabuhan': 'bg-peta', 'pulau-wonder-lab': 'bg-peta' }
+  var PAINTED = { 'hub-garasi': 'bg-hub', 'hub-meja-peta': 'bg-hub', 'hub-papan': 'bg-hub' }
   function painted (key) { return !!(PAINTED[key] && SHIPPED[PAINTED[key]]) }
 
   function src (key) { return SHIPPED[key] ? BASE + key + '.webp' : null }

@@ -252,6 +252,7 @@
     if (run.ctl.win) run.ctl.win()
     B.sfx('win')
     var first = B.grant(m)
+    if (first) B.fresh.map = m.world
     B.commit(function (s) { delete s.progress[m.id] })
     run.api.later(function () {
       var p = run.nodes.payoff
@@ -264,6 +265,11 @@
       var line = B.txt(box, '', 40, 100, 680, 70, m.lines.win)
       line.style.cssText += ';font:900 30px/1.2 Nunito,sans-serif;color:#13318A;text-align:center'
       B.art(box, m.reward.sticker, 270, 180, 220, 220, 'pp')
+      var cel = B.art(p, 'blippi-menunjuk', 40, 270, 300, 580, 'idle-blippi')
+      cel.style.zIndex = '2'
+      if (cel.animate && !(w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches)) cel.animate([{ transform: 'translateY(40px) scale(.9)', opacity: 0 }, { transform: 'translateY(-14px) scale(1.04)', opacity: 1, offset: .6 }, { transform: 'none', opacity: 1 }], { duration: 620, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'backwards' })
+      B.sfx('win')
+      if (w.BlippiFX) { w.BlippiFX.burst(p, 'spark', 220, 320, 260); w.BlippiFX.burst(p, 'confetti', 1450, 330, 300) }
       var l2 = B.txt(box, '', 40, 405, 680, 50, first ? ('Kamu dapat ' + m.reward.stickerName + (m.reward.vehicle ? ' dan ' + B.titleCase(B.vehicleById(m.reward.vehicle).name) + ' jadi milikmu!' : '!')) : 'Kamu sudah punya stikernya. Main lagi kapan saja!')
       l2.style.cssText += ';font:800 24px/1.2 Nunito,sans-serif;color:#C4500A;text-align:center'
       var nb = B.btn(box, 'obtn', 230, 462, 300, 80, 'Lanjut', function () { B.go('map', { world: m.world }) })
@@ -302,8 +308,9 @@
     var pumpRaf = 0
     var rot = 0
 
-    api.art(sc, 'prop-kincir-rumah', 960, 180, 690, 500)
-    var wheel = api.art(sc, 'prop-kincir-roda', 1085, 255, 400, 400, 'wheel')
+    api.art(sc, 'prop-kincir-rumah', 995, 175, 620, 500, 'house')
+    // the wheel is centred on the house's axle tip (house art 615x495: axle at ~(455,255)) and rotates about its own centre
+    var wheel = api.art(sc, 'prop-kincir-roda', 1285, 295, 320, 320, 'wheel')
     wheel.setAttribute('data-wheel', 'off')
     api.art(sc, 'prop-pipa', 962, 330, 150, 300)
     var truck = api.art(sc, 'veh-truk-air-sisi', 10, 190, 760, 495)

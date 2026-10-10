@@ -114,6 +114,7 @@
 
   /* ---------- state + save (per avatar) ---------- */
   function fresh () { return { v: 1, done: {}, rewards: {}, world: {}, progress: {}, vehicle: 'buggy', sound: true, trip: { lv: {}, rw: {} }, race: { best: {}, ghost: {}, runs: 0 } } }
+  var freshFlags = { map: null }
   var state = load()
   function load () {
     var base = fresh()
@@ -347,10 +348,12 @@
     var icons = ['daun', 'cakar', 'planet', 'dino', 'gerigi']
     var pos = [[776, 273], [843, 273], [910, 273], [801, 334], [881, 334]]
     icons.forEach(function (k, i) { art(el, 'ikon-wall-' + k, pos[i][0], pos[i][1], 60, 60, 'wallic') })
-    var bug = art(el, 'veh-buggy', 594, 405, 476, 340, 'hot')
+    at(el, 'shd', 610, 690, 450, 70)
+    var bug = art(el, 'veh-buggy', 594, 405, 476, 340, 'hot idle-bug')
     bug.setAttribute('data-hot', 'buggy')
     bug.addEventListener('click', function () { sfx('honk'); bug.classList.remove('bounce'); void bug.offsetWidth; bug.classList.add('bounce') })
-    art(el, 'blippi-menunjuk', 5, 255, 400, 650, '')
+    at(el, 'shd', 70, 855, 260, 44)
+    art(el, 'blippi-menunjuk', 5, 255, 400, 650, 'idle-blippi')
     var bub = bubble(el, D.hubLines.hub, 228, 308, 195, 72)
     bub.setAttribute('data-say', 'hub')
     topLeft(el, 'hub')
@@ -392,10 +395,22 @@
       var done = wd.mission && missionDone(wd.mission)
       var key = (done && wd.artDone) ? wd.artDone : wd.art
       var b = wd.box
-      var isl = art(el, key, b[0], b[1], b[2], b[3], 'isl')
+      // the picture is drawn larger than the hotspot box and centred on it, so it sits over the island the background already paints
+      var ih = Math.round(b[3] * 1.5)
+      var iw = Math.round(ih * 1.1)
+      var cx = b[0] + b[2] / 2
+      var cy = b[1] + b[3] / 2 + b[3] * 0.06
+      var isl = art(el, key, Math.round(cx - iw / 2), Math.round(cy - ih / 2), iw, ih, 'isl')
       isl.setAttribute('data-world', wd.id)
       isl.addEventListener('click', function () { sfx('tap'); go('map', { world: wd.id }, true) })
-      if (done && wd.artDone) at(isl, 'mini-wheel', 80, 40, 86, 86).innerHTML = wheelSvg()
+      if (done && wd.artDone) {
+        // taman-air: the stopped island is the base, the active one fades in over it (soft crossfade right after the mission is completed)
+        var base = A.frame(wd.art)
+        base.style.position = 'absolute'
+        isl.insertBefore(base, isl.firstChild)
+        if (freshFlags.map === wd.id) { freshFlags.map = null; var top = isl.lastChild; if (top.animate && !(w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches)) top.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1100, delay: 350, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'backwards' }) }
+      }
+      if (done && wd.artDone) at(isl, 'mini-wheel', iw * 0.18, ih * 0.25, 86, 86).innerHTML = wheelSvg()
     })
     D.worlds.forEach(function (wd) {
       var done = wd.mission && missionDone(wd.mission)
@@ -560,7 +575,7 @@
   w.Blippi = {
     D: D, A: A, stage: stage, W: W, H: H,
     state: function () { return state }, commit: commit, grant: grant, reloadState: reloadState, resetAll: resetAll, save: save,
-    missionDone: missionDone, recommended: recommended, vehicleById: vehicleById, fits: fits,
+    missionDone: missionDone, fresh: freshFlags, recommended: recommended, vehicleById: vehicleById, fits: fits,
     at: at, art: art, bgslot: bgslot, btn: btn, txt: txt, circle: circle, ICON: ICON, nav: nav, topLeft: topLeft, topRight: topRight, logo: logo,
     bubble: bubble, say: say, modal: modal, closeModal: closeModal, sfx: sfx, toRef: toRef, wheelSvg: wheelSvg, titleCase: titleCase,
     register: register, go: go, back: back, home: home, startMission: startMission, current: function () { return cur },

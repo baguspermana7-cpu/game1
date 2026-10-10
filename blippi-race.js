@@ -136,7 +136,7 @@
       o: o, g: g, ori: ori, veh: veh, cv: cv, c: cv.getContext('2d'), mode: o.mode, laps: laps, W: ori === 'portrait' ? 941 : 1672, H: ori === 'portrait' ? 1672 : 941,
       state: 'count', x: g.start.x, y: g.start.y, hd: g.start.dir * Math.PI / 180, speed: 0, seg: 0, s: 0, sPrev: 0, lap: 0, lapT: 0, laptimes: [], t: 0, clock: 0,
       slowT: 0, bumpCool: 0, view: 'front', mirror: false, blend: 0, off: false, wrong: 0, fx: [], rec: [], recT: 0, ghost: null, ghostT: 0, finished: false,
-      in: { down: false, px: 0, py: 0, kx: 0 }, k: 1, ox: 0, oy: 0, cw: 0, ch: 0, work: [], bumps: 0, input: false
+      in: { down: false, px: 0, py: 0, kx: 0 }, k: 1, ox: 0, oy: 0, zc: 1, camX: 0, camY: 0, cvx: 0, cvy: 0, roll: 0, pt: [], ptN: 0, ptT: 0, boostT: 0, mini: null, vh: 0, cw: 0, ch: 0, work: [], bumps: 0, input: false
     }
     var vv = viewFor(R.hd)
     R.view = vv.view
@@ -173,12 +173,45 @@
     R.k = Math.min(cw / R.W, ch / R.H)
     R.ox = (cw - R.W * R.k) / 2
     R.oy = (ch - R.H * R.k) / 2
+    R.zc = R.k * 2.1 // follow camera: the plate is drawn ~2x larger than the fit-to-screen size
+    R.mini = null
+    if (!R.camInit) { R.camInit = true; R.camX = R.x; R.camY = R.y; camTarget(R, 1); R.camX = R.tx; R.camY = R.ty }
   }
   w.addEventListener('resize', function () {
     if (!R) return
     if (oriNow() !== R.ori) { if (UI && UI.orientationChanged) UI.orientationChanged(); return }
     resize()
   })
+
+  // camera: look-ahead along the heading, vehicle held in the lower-middle third, clamped to the plate, critically damped (SmoothDamp)
+  function camTarget (r, snap) {
+    var hw = r.cw / (2 * r.zc)
+    var hh = r.ch / (2 * r.zc)
+    var look = 110
+    var tx = r.x + Math.cos(r.hd) * look
+    var ty = r.y + Math.sin(r.hd) * look - r.ch * 0.1 / r.zc
+    r.tx = clamp(tx, hw, r.W - hw)
+    r.ty = clamp(ty, hh, r.H - hh)
+    void snap
+  }
+  function camStep (r, dt) {
+    camTarget(r)
+    var om = 5.5 // rad/s, critical damping
+    var x = om * dt
+    var e = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x)
+    var dx = r.camX - r.tx
+    var dy = r.camY - r.ty
+    var tx = (r.cvx + om * dx) * dt
+    var ty = (r.cvy + om * dy) * dt
+    r.cvx = (r.cvx - om * tx) * e
+    r.cvy = (r.cvy - om * ty) * e
+    r.camX = r.tx + (dx + tx) * e
+    r.camY = r.ty + (dy + ty) * e
+    var hw = r.cw / (2 * r.zc)
+    var hh = r.ch / (2 * r.zc)
+    r.camX = clamp(r.camX, hw, r.W - hw)
+    r.camY = clamp(r.camY, hh, r.H - hh)
+  }
 
   var last = 0
   function frame (ts) {
@@ -189,6 +222,7 @@
     var w0 = w.performance.now()
     if (R.state === 'race' || R.state === 'settle') step(dt)
     R.t += dt
+    camStep(R, dt)
     draw(dt)
     if (UI && UI.tick) UI.tick(R)
     R.work.push(w.performance.now() - w0)
@@ -234,7 +268,7 @@
       var d3 = Math.atan2(Math.sin(toR - r.hd), Math.cos(toR - r.hd))
       r.hd += clamp(d3, -1.6 * dt, 1.6 * dt)
     }
-    var target = SPEED * (r.off ? 0.55 : 1) * (r.slowT > 0 ? 0.45 : 1)
+    var target = SPEED * (r.off ? 0.55 : 1) * (r.slowT > 0 ? 0.45 : 1) * (r.boostT > 0 ? 1.35 : 1)
     r.speed += (target - r.speed) * Math.min(1, dt * 4)
     r.x += Math.cos(r.hd) * r.speed * dt
     r.y += Math.sin(r.hd) * r.speed * dt
@@ -261,6 +295,14 @@
     for (i = 0; i < g.obs.length; i++) {
       if (r.bumpCool <= 0 && inPoly(g.obs[i], r.x, r.y)) { r.bumpCool = 1.4; r.slowT = 0.9; r.bumps++; B().sfx('bump'); spawnFx('dust', r.x, r.y, 150); if (UI && UI.say) UI.say('Oops, pelan-pelan ya!') }
     }
+    // tilt into turns (damped), speed-class particles
+    var turn = (r.hd - (r.hdPrev == null ? r.hd : r.hdPrev))
+    turn = Math.atan2(Math.sin(turn), Math.cos(turn)) / Math.max(dt, 0.001)
+    r.hdPrev = r.hd
+    r.roll += (clamp(turn * 0.07, -0.22, 0.22) - r.roll) * Math.min(1, dt * 8)
+    r.boostT = Math.max(0, r.boostT - dt)
+    r.ptT -= dt
+    if (r.ptT <= 0 && r.speed > 40) { r.ptT = r.off ? 0.03 : 0.05; emit(r) }
     // laps
     var lapNow = Math.floor(r.s / g.L)
     if (lapNow > r.lap && r.state === 'race') {
@@ -268,7 +310,10 @@
       r.laptimes.push(r.lapT)
       r.lapT = 0
       spawnFx('spark', r.x, r.y, 170)
-      B().sfx('collect')
+      r.boostT = 1.4
+      r.slowT = 0
+      B().sfx('boost')
+      spawnFx('speed', r.x, r.y, 260)
       if (r.mode !== 'bebas' && r.s >= r.laps * g.L - 1) { finish(); return }
       if (UI && UI.say) UI.say('Putaran ' + (r.lap + 1) + '! Terus!')
     }
@@ -298,6 +343,7 @@
   function finish () {
     if (!R || R.finished) return
     R.finished = true
+    spawnFx('gold-star', R.x, R.y - 40, 360); spawnFx('confetti', R.x - 120, R.y, 340); spawnFx('confetti', R.x + 120, R.y, 340); B().sfx('win')
     R.state = 'settle'
     R.input = false
     R.in.down = false
@@ -305,6 +351,63 @@
     if (UI && UI.finish) UI.finish(R)
   }
 
+  // pooled particles (no per-frame allocation): road = dust, aircraft = contrail, watercraft = wake foam
+  function emit (r) {
+    var cat = r.veh.category
+    var i = r.ptN++ % 48
+    var p = r.pt[i] || (r.pt[i] = {})
+    var back = r.hd + Math.PI
+    p.x = r.x + Math.cos(back) * 34 + (Math.random() - 0.5) * 12
+    p.y = r.y + Math.sin(back) * 34 + 8 + (Math.random() - 0.5) * 12
+    p.t = 0
+    p.d = cat === 'aircraft' ? 0.9 : 0.6
+    p.r = cat === 'aircraft' ? 7 : 10
+    p.g = cat === 'aircraft' ? 22 : (cat === 'watercraft' ? 18 : 14)
+    p.a = cat === 'road-service' ? (r.off ? 0.55 : 0.28) : 0.5
+    p.c = cat === 'road-service' ? '#EFE3C8' : '#FFFFFF'
+  }
+  function drawParts (c) {
+    var i
+    for (i = 0; i < R.pt.length; i++) {
+      var p = R.pt[i]
+      if (!p || p.t >= p.d) continue
+      p.t += 0.0167
+      var u = p.t / p.d
+      c.globalAlpha = p.a * (1 - u)
+      c.fillStyle = p.c
+      c.beginPath()
+      c.arc(p.x, p.y - u * p.g * 0.3, p.r + u * p.g, 0, 6.3)
+      c.fill()
+    }
+    c.globalAlpha = 1
+  }
+  function drawMini (c) {
+    var r = R
+    var mw = Math.round(Math.min(r.cw, r.ch) * 0.26)
+    var mh = Math.round(mw * r.H / r.W)
+    var mk = mw / r.W
+    var mx = r.cw - mw - 12
+    var my = r.ch - mh - 12
+    c.setTransform(r.dpr, 0, 0, r.dpr, 0, 0)
+    c.fillStyle = 'rgba(255,246,226,.88)'
+    c.strokeStyle = '#fff'
+    c.lineWidth = 3
+    c.beginPath(); c.roundRect ? c.roundRect(mx - 4, my - 4, mw + 8, mh + 8, 12) : c.rect(mx - 4, my - 4, mw + 8, mh + 8); c.fill(); c.stroke()
+    c.strokeStyle = '#8FA0BE'
+    c.lineWidth = Math.max(3, r.g.tw * mk)
+    c.lineJoin = 'round'
+    c.beginPath()
+    var q
+    for (q = 0; q < r.g.n; q++) { var pp = r.g.pts[q]; if (q) c.lineTo(mx + pp[0] * mk, my + pp[1] * mk); else c.moveTo(mx + pp[0] * mk, my + pp[1] * mk) }
+    c.closePath(); c.stroke()
+    c.strokeStyle = '#13318A'; c.lineWidth = 1.5; c.stroke()
+    var hw = r.cw / (2 * r.zc), hh = r.ch / (2 * r.zc)
+    c.strokeStyle = 'rgba(244,118,26,.9)'; c.lineWidth = 2
+    c.strokeRect(mx + (r.camX - hw) * mk, my + (r.camY - hh) * mk, hw * 2 * mk, hh * 2 * mk)
+    c.fillStyle = '#F4761A'; c.strokeStyle = '#fff'; c.lineWidth = 2
+    c.beginPath(); c.arc(mx + r.x * mk, my + r.y * mk, 6, 0, 6.3); c.fill(); c.stroke()
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(mx + r.g.start.x * mk, my + r.g.start.y * mk, 3, 0, 6.3); c.fill()
+  }
   function spawnFx (name, x, y, size) {
     if (!R || !V[name] || R.fx.length > 8) return
     R.fx.push({ k: V[name].file, x: x, y: y, s: size, t: 0, d: 0.7, b: V[name].blend })
@@ -333,20 +436,29 @@
   function draw (dt) {
     var r = R
     var c = r.c
-    var k = r.k * r.dpr
+    var k = r.zc * r.dpr
     c.setTransform(r.dpr, 0, 0, r.dpr, 0, 0)
     c.fillStyle = '#173B66'
     c.fillRect(0, 0, r.cw, r.ch)
-    c.setTransform(k, 0, 0, k, r.ox * r.dpr, r.oy * r.dpr)
+    var camL = r.camX - r.cw / (2 * r.zc)
+    var camT = r.camY - r.ch / (2 * r.zc)
+    c.setTransform(k, 0, 0, k, -camL * k, -camT * k)
     var plate = cache[aurl(r.o.arena, r.ori)]
     if (plate) c.drawImage(plate, 0, 0, r.W, r.H)
-    var sc = 0.55
+    var rec0 = r.veh
+    var sc = (r.ch * 0.13) / (r.zc * rec0.box[r.view][1]) // vehicle ~13% of the viewport height, whatever the zoom
+    r.vh = rec0.box[r.view][1] * sc * r.zc / r.ch
     // shadow
     c.fillStyle = 'rgba(20,30,60,.25)'
-    c.beginPath(); c.ellipse(r.x, r.y + 8, 52, 20, 0, 0, 6.3); c.fill()
+    c.beginPath(); c.ellipse(r.x, r.y + 8, rec0.box[r.view][0] * sc * 0.4, rec0.box[r.view][1] * sc * 0.14, 0, 0, 6.3); c.fill()
+    drawParts(c)
     if (r.ghostPose) drawVeh(c, r.o.vehicle, r.ghostPose.view, r.ghostPose.mirror, 0, r.ghostPose.x, r.ghostPose.y, sc, 0.42)
     var bob = reduced() ? 0 : (r.state === 'race' ? Math.sin(r.t * 14) * 1.2 : 0)
-    drawVeh(c, r.o.vehicle, r.view, r.mirror, r.blend, r.x, r.y + bob, sc, 1)
+    c.save()
+    c.translate(r.x, r.y + bob)
+    c.rotate(r.roll)
+    drawVeh(c, r.o.vehicle, r.view, r.mirror, r.blend, 0, 0, sc, 1)
+    c.restore()
     // occluders: re-draw the plate over the vehicle where the road passes behind scenery
     if (plate && r.g.occ && r.g.occ.length) {
       var q
@@ -377,12 +489,13 @@
       c.drawImage(im, f.x - wd / 2, f.y - wd * im.height / im.width / 2, wd, wd * im.height / im.width)
       c.restore()
     }
+    drawMini(c)
   }
 
   /* ---------- input ---------- */
   function toPlate (e) {
     var rc = R.cv.getBoundingClientRect()
-    return { x: (e.clientX - rc.left - R.ox) / R.k, y: (e.clientY - rc.top - R.oy) / R.k }
+    return { x: (e.clientX - rc.left) / R.zc + R.camX - R.cw / (2 * R.zc), y: (e.clientY - rc.top) / R.zc + R.camY - R.ch / (2 * R.zc) }
   }
   function bind (cv) {
     cv.style.touchAction = 'none'
@@ -441,7 +554,7 @@
       var ahead = pointAt(R.g, R.s + 170)
       return { state: R.state, mode: R.mode, ori: R.ori, view: R.view, mirror: R.mirror, blend: R.blend, clock: R.clock, phase: (R.clock % CYCLE) < STD_MS ? 'standard' : 'peek',
         lap: R.lap, laps: R.laps, s: R.s, L: R.g.L, d: near.d, off: R.off, x: R.x, y: R.y, hd: R.hd, speed: R.speed, bumps: R.bumps, wrong: R.wrong, finished: R.finished,
-        k: R.k, ox: R.ox, oy: R.oy, aim: [ahead[0] * R.k + R.ox, ahead[1] * R.k + R.oy], workP90: (function () { var a = R.work.slice().sort(function (p, q) { return p - q }); return a.length > 10 ? a[Math.floor(a.length * 0.9)] : 0 })(),
+        k: R.zc, ox: -(R.camX - R.cw / (2 * R.zc)) * R.zc, oy: -(R.camY - R.ch / (2 * R.zc)) * R.zc, aim: [(ahead[0] - R.camX) * R.zc + R.cw / 2, (ahead[1] - R.camY) * R.zc + R.ch / 2], vx: (R.x - R.camX) * R.zc + R.cw / 2, vy: (R.y - R.camY) * R.zc + R.ch / 2, cw: R.cw, ch: R.ch, camL: R.camX - R.cw / (2 * R.zc), camT: R.camY - R.ch / (2 * R.zc), camR: R.camX + R.cw / (2 * R.zc), camB: R.camY + R.ch / (2 * R.zc), W: R.W, H: R.H, vh: R.vh, workP90: (function () { var a = R.work.slice().sort(function (p, q) { return p - q }); return a.length > 10 ? a[Math.floor(a.length * 0.9)] : 0 })(),
         ghost: !!R.ghost, laptimes: R.laptimes.slice(), fx: R.fx.length }
     }
   }

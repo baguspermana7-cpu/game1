@@ -20,7 +20,8 @@ DEST = os.path.join(ROOT, 'assets', 'blippi')
 STATE = os.path.join(ROOT, 'tools', 'sync-codex-art.state.json')
 ARTJS = os.path.join(ROOT, 'data', 'blippi-art.js')
 DENY = {'prop-papan', 'tool-papan'}      # resolved crops are a flange plate / cardboard stack, not the bridge plank
-APPROVED = set()                          # candidate-ready slots the owner has approved (e.g. 'hub-papan')
+APPROVED = set()
+GENERATED_APPROVED = set(json.load(open(os.path.join(ROOT, 'data', 'blippi-approved.json'))).keys())   # shipped by tools/ship-approved.py (never overwritten here)                          # candidate-ready slots the owner has approved (e.g. 'hub-papan')
 SLIVER = 0.03
 
 
@@ -111,6 +112,7 @@ def main():
                         if r:
                             notes.append('stripped %d sliver px from %s' % (r, os.path.basename(rel)))
         ship.add(key)
+    ship |= GENERATED_APPROVED
     added, dropped = sorted(ship - old), sorted(old - ship)
     print('ready+approved: %d | NEW slots: %s | dropped: %s' % (len(ship), added, dropped))
     print('files %s: %s' % ('copied' if apply else 'would copy', newfiles))
