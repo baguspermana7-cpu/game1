@@ -18,7 +18,7 @@
   }
 
   function assets (lvl, skin) {
-    var a = ['lib:game/star', 'lib:game/lifebuoy', 'lib:game/gem-blue', 'lib:game/barrel', 'lib:tk-world/iceberg-2', 'fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:droplets', 'fx:ripple', 'fx:bubbles']
+    var a = ['lib:nature/cloud', 'fx:splash', 'fx:ripple', 'fx:bubbles', 'lib:game/star', 'lib:game/lifebuoy', 'lib:game/gem-blue', 'lib:game/barrel', 'lib:tk-world/iceberg-2', 'fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:droplets', 'fx:ripple', 'fx:bubbles']
     if (skin === 'water') {
       a.push(lvl.veh)
       lvl.theme.deco.forEach(function (d) { a.push('lib:tk-world/' + d) })
@@ -39,6 +39,10 @@
     var tilt = 0
     var wobble = 0
     var wake = []
+    var spin = []
+    var trail = []
+    var waves3 = null
+    var skyLine = 0
     var wakeT = 0
     var collectibles = 0
     var gateZ = lvl.gates.map(function (f) { return f * run.len })
@@ -106,6 +110,12 @@
             c.stroke()
           }
         })
+        waves3 = tileCanvas(340, function (c, s2) {
+          c.strokeStyle = 'rgba(255,255,255,.28)'
+          c.lineWidth = 5
+          var i
+          for (i = 0; i < 5; i++) { var x = (i * 97) % s2; var y = (i * 131) % s2; c.beginPath(); c.moveTo(x, y); c.bezierCurveTo(x + 30, y - 22, x + 70, y + 22, x + 110, y); c.stroke() }
+        })
         waves2 = tileCanvas(180, function (c, s) {
           c.strokeStyle = 'rgba(255,255,255,.4)'
           c.lineWidth = 2
@@ -172,9 +182,10 @@
       tilt = Math.max(-0.4, Math.min(0.4, tilt))
       wobble = Math.max(0, wobble - dt)
       wakeT -= dt
-      if (wakeT <= 0) { wakeT = 0.035; wake.push({ x: px * run.W, y: G.py + G.ps * 0.25, t: 0 }); if (wake.length > 26) wake.shift() }
+      if (wakeT <= 0) { wakeT = 0.04; if (!water) { trail.push({ x: px * run.W, y: G.py + G.ps * 0.5, t: 0 }); if (trail.length > 22) trail.shift() } wake.push({ x: px * run.W, y: G.py + G.ps * 0.7, t: 0 }); if (wake.length > 30) wake.shift() }
       var i
       for (i = 0; i < wake.length; i++) wake[i].t += dt
+      for (i = 0; i < trail.length; i++) trail[i].t += dt
       var W = run.W
       for (i = 0; i < ents.length; i++) {
         var e = ents[i]
@@ -188,7 +199,7 @@
         var dx = ex - px * W
         var dy = ey - G.py
         var small = e.type === 'star' || e.type === 'big'
-        var rr = small ? G.ps * 0.42 : G.ps * (0.3 + 0.28 * (e.sc || 1))
+        var rr = small ? G.ps * 0.5 : G.ps * (0.3 + 0.28 * (e.sc || 1))
         if (Math.abs(dx) < rr && Math.abs(dy) < rr) {
           if (small) { e.st = 2; run.collect(ex, ey, e.type === 'big') } else if (run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(ex, ey) }
         }
@@ -236,22 +247,40 @@
       }
     }
 
+    function band (c, key, tile, size, speed, dxk, extra) {
+      var oy = (Z * G.pyu * speed + (extra || 0)) % size
+      c.save()
+      c.translate((((0.5 - px) * dxk) % size) + run.t * (extra ? 0 : speed * 4), oy)
+      c.fillStyle = pt(c, key, tile)
+      c.fillRect(-size * 2, -size * 2, run.W + size * 4, run.H + size * 4)
+      c.restore()
+    }
     function drawBgWater (c) {
       var W = run.W
       var H = run.H
+      // 1 deep-to-shallow: far (top) is the bright shallow horizon, near (bottom) the deep water
       run.grad(c, 0, H, th.water[0], th.water[1])
-      var oy = (Z * G.pyu * 0.9) % 256
-      c.save()
-      c.translate(((0.5 - px) * 30) % 256, oy)
-      c.fillStyle = pt(c, 'w1', waves)
-      c.fillRect(-256, -256, W + 512, H + 512)
-      c.restore()
-      oy = (Z * G.pyu * 1.25) % 180
-      c.save()
-      c.translate(((0.5 - px) * 60) % 180 + run.t * 6, oy)
-      c.fillStyle = pt(c, 'w2', waves2)
-      c.fillRect(-180, -180, W + 360, H + 360)
-      c.restore()
+      // 2 warm sky reflection (sunset level): a glow that fades down the screen over BLUE water
+      if (th.glow) {
+        var gg = c.createLinearGradient(0, 0, 0, H * 0.75)
+        gg.addColorStop(0, th.glow); gg.addColorStop(1, 'rgba(255,150,80,0)')
+        c.fillStyle = gg
+        c.fillRect(0, 0, W, H * 0.75)
+        var sg = c.createRadialGradient(W * 0.5, H * 0.04, 4, W * 0.5, H * 0.04, W * 0.4)
+        sg.addColorStop(0, 'rgba(255,230,170,.55)'); sg.addColorStop(1, 'rgba(255,230,170,0)')
+        c.fillStyle = sg
+        c.fillRect(0, 0, W, H * 0.5)
+      }
+      // 3 three wave bands at three speeds (slow broad swell, mid ripples, fast glints)
+      band(c, 'w3', waves3, 340, 0.55, 18)
+      band(c, 'w1', waves, 256, 0.9, 30)
+      band(c, 'w2', waves2, 180, 1.35, 60, 0)
+      // 4 slow cloud shadows / drifting clouds at the horizon edge
+      var ci
+      for (ci = 0; ci < 3; ci++) {
+        var cyy = ((ci * 0.41 + Z * G.pyu * 0.0006 * (ci + 1) + 0.1) % 1.3) * (H + 200) - 100
+        run.spr(c, 'lib:nature/cloud', ((ci * 0.37 + 0.2) % 1) * W - (px - 0.5) * 18, cyy, 260 + ci * 60, 150 + ci * 30, { alpha: 0.2 })
+      }
       var i
       for (i = 0; i < deco.length; i++) {
         var d = deco[i]
@@ -284,6 +313,7 @@
         var span = H + 20
         var shiftY = (Z * G.pyu * sp + run.t * (6 + li * 6)) % span
         var shiftX = (0.5 - px) * (14 + li * 18)
+        c.globalAlpha = run.reduced() ? 0.85 : 0.65 + 0.35 * Math.sin(run.t * (1.3 + li * 0.9) + li)
         c.fillStyle = '#FFFFFF'
         var pw = new Path2D()
         var pg = new Path2D()
@@ -297,6 +327,7 @@
         c.fill(pw)
         c.fillStyle = '#FFE9A8'
         c.fill(pg)
+        c.globalAlpha = 1
       }
       var i
       for (i = 0; i < planets.length; i++) {
@@ -311,8 +342,15 @@
         g.addColorStop(1, p.col)
         c.fillStyle = g
         c.beginPath(); c.arc(xx, yy, rad, 0, 6.3); c.fill()
-        c.fillStyle = 'rgba(80,60,140,.16)'
-        c.beginPath(); c.arc(xx + rad * 0.25, yy + rad * 0.2, rad * 0.8, -0.6, 2.8); c.fill()
+        // slow rotation: soft surface bands slide across the disc, clipped to it
+        c.save()
+        c.beginPath(); c.arc(xx, yy, rad, 0, 6.3); c.clip()
+        c.fillStyle = 'rgba(255,255,255,.22)'
+        var bi
+        for (bi = 0; bi < 3; bi++) { var bx = ((run.t * (run.reduced() ? 0 : 6) + bi * rad * 0.9 + p.ph * 90) % (rad * 2.7)) - rad * 1.35; c.fillRect(xx + bx, yy - rad, rad * 0.28, rad * 2) }
+        c.fillStyle = 'rgba(80,60,140,.2)'
+        c.beginPath(); c.arc(xx + rad * 0.3, yy + rad * 0.25, rad * 0.95, -0.6, 2.8); c.fill()
+        c.restore()
         if (p.ring) { c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = Math.max(3, rad * 0.14); c.beginPath(); c.ellipse(xx, yy, rad * 1.7, rad * 0.45, -0.4, 0, 6.3); c.stroke() }
       }
     }
@@ -324,22 +362,42 @@
       var alpha = run.hitT > 0 && !run.reduced() ? (Math.floor(run.t * 12) % 2 ? 0.45 : 1) : 1
       var wob = wobble > 0 ? Math.sin(run.t * 30) * 0.12 * wobble : 0
       if (water) {
-        // foam wake: white dots that spread and fade behind the hull
+        // layered wake: wide soft foam ribbon + bright inner V, both fading and spreading with age
         var i
         c.fillStyle = th.foam
         for (i = 0; i < wake.length; i++) {
           var wk = wake[i]
-          var a = Math.max(0, 1 - wk.t * 1.1)
-          c.globalAlpha = a * 0.7
-          c.beginPath(); c.arc(wk.x + Math.sin(i + wk.t * 3) * wk.t * 14, wk.y + wk.t * G.pyu * run.rate, 4 + wk.t * 10, 0, 6.3); c.fill()
+          var a = Math.max(0, 1 - wk.t * 0.9)
+          var yy = wk.y + wk.t * G.pyu * run.rate
+          var sp = wk.t * 26
+          c.globalAlpha = a * 0.45
+          c.beginPath(); c.arc(wk.x - sp, yy, 5 + wk.t * 9, 0, 6.3); c.arc(wk.x + sp, yy, 5 + wk.t * 9, 0, 6.3); c.fill()
+          c.globalAlpha = a * 0.75
+          c.beginPath(); c.arc(wk.x + Math.sin(i + wk.t * 3) * 4, yy, 4 + wk.t * 6, 0, 6.3); c.fill()
         }
         c.globalAlpha = 1
-        c.save(); c.translate(x, y); c.rotate(tilt * 0.4 + wob); c.globalAlpha = alpha
-        run.spr(c, lvl.veh, 0, 0, ps * 0.7, ps * 1.2, {})
+        var bob = run.reduced() ? 0 : Math.sin(run.t * 2.6) * 3
+        var roll = run.reduced() ? 0 : Math.sin(run.t * 1.9) * 0.05
+        c.fillStyle = 'rgba(10,50,90,.1)'
+        c.beginPath(); c.ellipse(x + 5, y + 8 + bob, ps * 0.4, ps * 0.8, 0, 0, 6.3); c.fill()
+        c.save(); c.translate(x, y + bob); c.rotate(tilt * 0.5 + wob + roll); c.globalAlpha = alpha
+        run.spr(c, lvl.veh, 0, 0, ps * 1.0, ps * 1.75, {})
         c.restore()
+        // bow splash
+        c.fillStyle = th.foam
+        c.globalAlpha = 0.8
+        c.beginPath(); c.ellipse(x, y - ps * 0.82 + bob, ps * 0.2 + Math.sin(run.t * 9) * 2, ps * 0.07, 0, 0, 6.3); c.fill()
+        c.globalAlpha = 1
       } else {
+        var ti
+        for (ti = 0; ti < trail.length; ti++) {
+          var tr = trail[ti]
+          var ta = Math.max(0, 1 - tr.t * 1.4)
+          c.fillStyle = ti % 2 ? 'rgba(255,214,150,' + (ta * 0.55) + ')' : 'rgba(255,255,255,' + (ta * 0.4) + ')'
+          c.beginPath(); c.arc(tr.x + Math.sin(ti) * 3, tr.y + tr.t * G.pyu * 1.2, 3 + tr.t * 11, 0, 6.3); c.fill()
+        }
         c.save(); c.translate(x, y); c.rotate(tilt * 0.35 + wob); c.globalAlpha = alpha
-        var fl = (run.boostT > 0 ? 1.6 : 1) * (0.85 + Math.sin(run.t * 40) * 0.15)
+        var fl = (run.boostT > 0 ? 1.6 : 1) * (run.progress < 0.075 ? 1.7 : 1) * (0.85 + Math.sin(run.t * 40) * 0.15)
         var fg = c.createLinearGradient(0, ps * 0.2, 0, ps * (0.5 + 0.35 * fl))
         fg.addColorStop(0, 'rgba(255,240,170,.95)'); fg.addColorStop(0.5, 'rgba(255,170,90,.8)'); fg.addColorStop(1, 'rgba(255,170,90,0)')
         c.fillStyle = fg
@@ -375,6 +433,7 @@
       }
       var gl = gateZ.concat([run.len])
       for (i = 0; i < gl.length; i++) drawGate(c, gl[i], i === gl.length - 1)
+      if (!water) drawIntroOutro(c)
       drawPlayer(c)
       if (run.boostT > 0 && !run.reduced()) {
         c.strokeStyle = 'rgba(255,255,255,.35)'
@@ -383,13 +442,46 @@
         for (li = 0; li < 10; li++) { var lx = ((li * 0.137 + 0.05) % 1) * W; var ly = ((run.t * 2 + li * 0.31) % 1) * H; c.beginPath(); c.moveTo(lx, ly); c.lineTo(lx, ly + 70); c.stroke() }
       }
     }
+    // launch pad slides away under the rocket in the first 7 percent; a big destination planet rises and the rocket circles into orbit at the end
+    function drawIntroOutro (c) {
+      var W = run.W
+      var H = run.H
+      var p = run.progress
+      if (p < 0.075) {
+        var k = p / 0.075
+        var gy = G.py + G.ps * 0.62 + k * H * 0.5
+        c.fillStyle = '#B9C4DD'
+        c.fillRect(0, gy, W, H)
+        c.fillStyle = '#8FA0C8'
+        c.fillRect(0, gy, W, 8)
+        c.fillStyle = '#FFD25E'
+        c.fillRect(W * 0.5 - G.ps * 0.9, gy - 6, G.ps * 1.8, 8)
+        c.strokeStyle = '#C5CFE6'
+        c.lineWidth = 6
+        c.beginPath(); c.moveTo(W * 0.5 - G.ps * 0.8, gy); c.lineTo(W * 0.5 - G.ps * 0.8, gy - G.ps * 1.6); c.moveTo(W * 0.5 + G.ps * 0.8, gy); c.lineTo(W * 0.5 + G.ps * 0.8, gy - G.ps * 1.6); c.stroke()
+        if (!run.reduced() && k < 0.8) { c.fillStyle = 'rgba(255,255,255,.55)'; var q; for (q = 0; q < 6; q++) { c.beginPath(); c.arc(W * 0.5 + Math.sin(q * 2 + run.t * 5) * G.ps * (0.5 + q * 0.12), gy - 8 - q * 6, 14 + q * 3, 0, 6.3); c.fill() } }
+      }
+      if (p > 0.9) {
+        var o = Math.min(1, (p - 0.9) / 0.1)
+        o = o * o * (3 - 2 * o)
+        var rad = H * 0.3
+        var cy = -rad + o * (rad * 1.45)
+        var g = c.createRadialGradient(W * 0.5 - rad * 0.3, cy - rad * 0.3, rad * 0.1, W * 0.5, cy, rad)
+        g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.3, '#FFD9A8'); g.addColorStop(1, '#F2A6C2')
+        c.fillStyle = g
+        c.beginPath(); c.arc(W * 0.5, cy, rad, 0, 6.3); c.fill()
+        c.strokeStyle = 'rgba(255,255,255,.7)'
+        c.lineWidth = rad * 0.1
+        c.beginPath(); c.ellipse(W * 0.5, cy, rad * 1.6, rad * 0.4, -0.3, 0, 6.3); c.stroke()
+      }
+    }
     function drawObs (c, e, x, y, sz, alpha, rot) {
       if (!water) {
-        c.save(); c.globalAlpha = alpha; c.translate(x, y); c.rotate(rot + e.ph); c.drawImage(rock, -sz / 2, -sz / 2, sz, sz); c.restore()
+        c.save(); c.globalAlpha = alpha; c.translate(x, y); c.rotate(rot + e.ph + run.t * (0.5 + (e.ph % 1)) * (e.ph > 3 ? -1 : 1)); c.drawImage(rock, -sz / 2, -sz / 2, sz, sz); c.restore()
       } else run.spr(c, eSprite(e), x, y, sz, sz, { alpha: alpha, rot: rot })
     }
 
-    return { update: update, draw: draw, resize: geo, get lane () { return null } }
+    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null } }
   }
   T.engine('water', { assets: function (l) { return assets(l, 'water') }, make: function (run) { return make(run, 'water') } })
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })

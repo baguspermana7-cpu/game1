@@ -107,6 +107,9 @@
     else if (kind === 'honk') { tone(310, 300, 0.22, 0.09, 'square') }
     else if (kind === 'win') { tone(523, 659, 0.15, 0.08); setTimeout(function () { tone(659, 784, 0.15, 0.08) }, 150); setTimeout(function () { tone(784, 1047, 0.3, 0.08) }, 300) }
     else if (kind === 'water') tone(220, 440, 0.25, 0.03, 'sawtooth')
+    else if (kind === 'collect') { tone(880, 1320, 0.09, 0.05); setTimeout(function () { tone(1320, 1760, 0.1, 0.045) }, 70) }
+    else if (kind === 'bump') { tone(240, 120, 0.22, 0.07, 'triangle'); setTimeout(function () { tone(180, 150, 0.12, 0.04, 'sine') }, 90) }
+    else if (kind === 'boost') { tone(300, 900, 0.35, 0.05, 'sawtooth'); setTimeout(function () { tone(600, 1400, 0.25, 0.04, 'triangle') }, 120) }
   }
 
   /* ---------- state + save (per avatar) ---------- */

@@ -231,6 +231,7 @@
       }
       // 2. sun / moon
       run.spr(c, th.night ? 'lib:nature/moon-stars' : 'lib:nature/sun', W * 0.78, H * 0.2 + camY * 0.25 - Z * 0.4 % 3, Math.min(W, H) * 0.2, Math.min(W, H) * 0.2, { alpha: th.night ? 0.95 : 0.9 })
+      if (!th.night && T.img('fx:rays') && !run.reduced()) run.spr(c, 'fx:rays', W * 0.78, H * 0.2 + camY * 0.25, Math.min(W, H) * 0.7, Math.min(W, H) * 0.7, { alpha: 0.3, rot: run.t * 0.05 })
       // rainbow in the candy level
       if (lvl.id === 'udara-2') run.spr(c, 'lib:nature/rainbow', W * 0.55 - (Z * G.pxu * 0.02) % (W * 0.2), wlv - H * 0.14, W * 0.7, H * 0.4, { alpha: 0.85, anchor: 'bottom' })
       // 3. horizon silhouette + island sprites ride the water line
@@ -260,8 +261,16 @@
         var sz = (60 + cl.layer * 55) * cl.s
         run.spr(c, 'lib:nature/cloud', cx, cy, sz * 1.3, sz, { alpha: 0.5 + cl.layer * 0.15 })
       }
-      // 5. water
+      // 5. water (the real one falls away on take-off; a distant strip of sea with islands stays below the clouds)
       drawSea(c, wlv)
+      if (wlv > H * 0.93) {
+        var fy = H * 0.93
+        drawSea(c, fy)
+        c.globalAlpha = 0.9
+        run.spr(c, 'lib:tk-world/palm-island', ((W * 1.2 - (Z * G.pxu * 0.1) % (W * 1.5)) + W * 1.5) % (W * 1.5) - 60, fy + 6, G.ps * 0.5, G.ps * 0.5, { anchor: 'bottom' })
+        run.spr(c, 'lib:tk-world/lighthouse-island', ((W * 0.5 - (Z * G.pxu * 0.07) % (W * 1.8)) + W * 1.8) % (W * 1.8) - 60, fy + 8, G.ps * 0.6, G.ps * 0.6, { anchor: 'bottom' })
+        c.globalAlpha = 1
+      }
       // entities and gates
       var gl = gateZ.concat([run.len])
       for (i = 0; i < ents.length; i++) {
@@ -288,6 +297,24 @@
         if (gx > -80 && gx < W + 80) portal(c, gx, 'SOAL!', i === gl.length - 1)
       }
       drawPlane(c)
+      // 7. birds (three flocks at different depths) and foreground clouds that pass IN FRONT of the plane
+      c.lineCap = 'round'
+      var bf
+      for (bf = 0; bf < 9; bf++) {
+        var dep = 0.4 + (bf % 3) * 0.3
+        var bx = (((bf * 0.173 + 0.1) * (W + 200) - Z * G.pxu * 0.35 * dep - run.t * 14 * dep) % (W + 200) + (W + 200)) % (W + 200) - 100
+        var by = H * (0.12 + (bf * 0.071) % 0.4) + Math.sin(run.t * 0.8 + bf) * 10 + camY * 0.3
+        var fl = run.reduced() ? 0.3 : Math.sin(run.t * 7 + bf) * 0.5
+        var bs = 9 * dep + 3
+        c.strokeStyle = th.night ? 'rgba(255,255,255,.55)' : 'rgba(40,70,120,.55)'
+        c.lineWidth = 2 * dep + 1
+        c.beginPath(); c.moveTo(bx - bs, by - bs * (0.4 + fl)); c.quadraticCurveTo(bx - bs * 0.4, by + bs * 0.2, bx, by); c.quadraticCurveTo(bx + bs * 0.4, by + bs * 0.2, bx + bs, by - bs * (0.4 + fl)); c.stroke()
+      }
+      var fc
+      for (fc = 0; fc < 3; fc++) {
+        var fxp = (((fc * 0.43 + 0.1) * (W + 500) - Z * G.pxu * 0.9 - run.t * 20) % (W + 500) + (W + 500)) % (W + 500) - 250
+        run.spr(c, 'lib:nature/cloud', fxp, H * (0.2 + fc * 0.28) + camY * 0.9, 340 + fc * 70, 220 + fc * 40, { alpha: 0.4 })
+      }
       // 8. foreground wisps
       c.globalAlpha = 0.35
       c.fillStyle = '#FFFFFF'
@@ -300,7 +327,7 @@
     }
     function eKey (t) { return t === 'balloon' ? 'lib:game/hot-air-balloon' : t === 'eagle' ? 'lib:animals/eagle' : t === 'parrot' ? 'lib:animals/parrot' : 'lib:tk-world/storm-cloud' }
 
-    return { update: update, draw: draw, resize: geo, get lane () { return null }, get lift () { return lift } }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'sun-rays', 'horizon', 'clouds-far', 'clouds-mid', 'clouds-near', 'sea', 'birds', 'clouds-front', 'plane'], get lane () { return null }, get lift () { return lift } }
   }
   T.engine('air', { assets: assets, make: make })
 })(window)

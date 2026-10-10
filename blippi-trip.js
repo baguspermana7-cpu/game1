@@ -14,7 +14,7 @@
   var raf = 0
   var UI = null // set by blippi-trip-ui.js
   var seenQ = []
-  var FXK = ['fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:check-burst', 'fx:droplets', 'fx:ripple']
+  var FXK = ['fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:check-burst', 'fx:droplets', 'fx:ripple', 'fx:splash', 'fx:bubbles', 'fx:rays', 'fx:cloud']
 
   function B () { return w.Blippi }
   function url (key) {
@@ -392,8 +392,9 @@
   function collect (x, y, big) {
     if (!run) return
     run.stars += big ? 2 : 1
-    B().sfx('tap')
+    B().sfx('collect')
     fx('spark', x, y, 120)
+    if (run.lvl.cat === 'air') fx('droplets', x, y + 10, 130)
     if (run.stars % 4 === 0) say(LINES_STAR[(run.stars / 4) % LINES_STAR.length | 0])
   }
   function bump (x, y) {
@@ -401,15 +402,15 @@
     run.bumps++
     run.slowT = 1.1
     run.hitT = 0.9
-    B().sfx('bad')
-    fx('dust', x, y, 130)
+    B().sfx('bump')
+    if (run.lvl.cat === 'air') { fx('splash', x, y, 190); fx('ripple', x, y + 30, 200) } else fx('dust', x, y, 130)
     say(LINES_BUMP[run.bumps % LINES_BUMP.length])
   }
   function boost (x, y) {
     if (!run) return
     run.boostT = 2.4
     run.slowT = 0
-    B().sfx('ok')
+    B().sfx('boost')
     fx('speed', x, y, 160)
     say('Wuuush! Cepat sekali!')
   }
@@ -533,7 +534,7 @@
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90() } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [] } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }

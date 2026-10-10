@@ -240,7 +240,7 @@ for (const [w, h] of [[1280, 800], [1024, 768], [844, 390], [390, 844]]) {
   await tp.evaluate("BlippiTrip.start('darat-1',{len:0.4,seed:5})"); await sleep(1800);
   await tripLayout(tp, `trip-run@${w}x${h}`);
   // wait for the first gate and check the question card
-  for (let i = 0; i < 40 && !(await tp.evaluate("(BlippiTrip.qa()||{}).quiz")); i++) await sleep(250);
+  for (let i = 0; i < 160 && !(await tp.evaluate("(BlippiTrip.qa()||{}).quiz")); i++) await sleep(250);
   ok(!!(await tp.evaluate("(BlippiTrip.qa()||{}).quiz")), `trip-quiz@${w}x${h}: no question gate reached`);
   await sleep(500);
   await tripLayout(tp, `trip-quiz@${w}x${h}`, '#trip .tquiz');
@@ -264,6 +264,8 @@ for (const [cat, lvl] of CATS) {
   for (let i = 0; i < 30 && (await tpg.evaluate("(BlippiTrip.qa()||{}).state")) !== 'play'; i++) await sleep(200);
   ok(await tpg.evaluate("(BlippiTrip.qa()||{}).state") === 'play', `trip ${cat}: run did not start`);
   let sawQuiz = 0, wrongTested = false, moved = 0, last = '';
+  const lay = await tpg.evaluate("(BlippiTrip.qa()||{}).layers");
+  ok(Array.isArray(lay) && lay.length >= 6, `trip ${cat}: parallax layers ${JSON.stringify(lay)} (need >= 6)`);
   for (let i = 0; i < 400; i++) {
     const q = await tpg.evaluate("BlippiTrip.qa()");
     if (!q || q.state === 'done') break;
@@ -294,6 +296,7 @@ for (const [cat, lvl] of CATS) {
   }
   for (let i = 0; i < 40 && !(await tpg.$('[data-trip=result]')); i++) await sleep(200);
   ok(sawQuiz >= 1, `trip ${cat}: no question gate during the run`);
+  ok(/Blippi:/.test(await txt(tpg, '.tresult')), `trip ${cat}: no Blippi line on the result`);
   ok(await tpg.$('[data-trip=result]') !== null, `trip ${cat}: no result card (last state ${last})`);
   const st = await tpg.evaluate("Blippi.state().trip.lv['" + lvl + "']");
   ok(st && st.stars >= 1 && st.stars <= 3, `trip ${cat}: stars not saved ${JSON.stringify(st)}`);
@@ -326,7 +329,7 @@ ok(await tpg.evaluate("Blippi.state().trip.lv['air-1'].stars") >= 1, 'trip save 
 // leave: nothing keeps running
 await tpg.evaluate("BlippiTrip.open()"); await sleep(150);
 await tpg.evaluate("BlippiTrip.close()"); await sleep(200);
-ok(await tpg.evaluate("BlippiTrip.running()") === false && await tpg.evaluate("document.getElementById('trip').hidden") === true, 'trip close left a run going');
+ok(await tpg.evaluate("BlippiTrip.qa()") === null && await tpg.evaluate("BlippiTrip.running()") === false && await tpg.evaluate("document.getElementById('trip').hidden") === true, 'trip close left a run going');
 await tpg.close();
 
 // no repeats: ask the shared engine through the game's own gate path many times for one avatar

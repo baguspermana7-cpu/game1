@@ -333,6 +333,10 @@
   function result (run, stars, first, improved) {
     var p = panel('tresult', 'Hore! Sampai di tujuan!')
     p.sc.setAttribute('data-trip', 'result')
+    var bl = el('div', 'tqhd', p.card)
+    var bp = el('span', 'tprof small', bl)
+    imgEl('g:blippi-profil', '', bp)
+    el('b', '', bl, stars === 3 ? 'Blippi: Luar biasa! Kamu jagoan!' : stars === 2 ? 'Blippi: Bagus sekali! Sedikit lagi!' : 'Blippi: Hebat sudah sampai! Ayo coba lagi!')
     starsRow(p.card, stars, 'big')
     var okN = run.qlog.filter(function (x) { return x.ok }).length
     el('p', 'tqtext', p.card, 'Bintang terkumpul: ' + run.stars + '. Soal benar: ' + okN + ' dari ' + run.gates.length + '.')

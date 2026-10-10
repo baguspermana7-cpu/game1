@@ -314,7 +314,7 @@
       if (run.boostT > 0 && !run.reduced()) run.spr(c, 'fx:speed', px, G.ny - sz * 0.1, sz * 1.1, sz * 0.8, { alpha: 0.5 })
     }
 
-    return { update: update, draw: draw, resize: geo, get lane () { return lane }, ents: ents }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, ents: ents }
   }
   T.engine('land', { assets: assets, make: make })
 })(window)
