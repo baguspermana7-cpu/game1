@@ -446,6 +446,45 @@
   }
   STICKERS.push({ id: 'W05-M01', name: 'Stiker Feri', art: 'stiker-ferry' })
 
+  /* ---------- W04 Kebun Ceria (added by the W04 build; each mission appends its own block here) ---------- */
+  WORLDS.forEach(function (wd) { if (wd.id === 'kebun-ceria') { wd.mission = 'W04-M01'; wd.missions = ['W04-M01'] } })
+  VEHICLES.push({ id: 'farm-tractor', name: 'TRAKTOR', art: 'veh-farm-tractor', thumb: 'veh-farm-tractor', tags: ['haul', 'till'],
+    say: 'Ayo olah kebunnya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
+  MISSIONS['W04-M01'] = {
+    id: 'W04-M01', world: 'kebun-ceria', title: 'Baris Kebun Pertamaku', sub: 'Kebun Ceria', thumb: 'veh-farm-tractor',
+    needs: ['haul'], vehicle: 'farm-tractor', bg: 'bg-w04-m01-baris-kebun',
+    reward: { key: 'reward:W04-M01', sticker: 'stiker-kebun', stickerName: 'Stiker Kebun', vehicle: 'farm-tractor' },
+    worldDelta: 'kebun-ceria:kebun-awal',
+    steps: [
+      { id: 'gembur', label: 'GEMBUR', tool: 'gembur', toolName: 'GEMBUR', toolArt: 'veh-farm-tractor', icon: 'wheel',
+        instr: 'Tahan traktor, gemburkan tanah.', wrong: 'Gemburkan tanahnya dulu dengan traktor.' },
+      { id: 'muat', label: 'MUAT', tool: 'muat', toolName: 'MUAT', toolArt: 'w4-trailer', icon: 'box',
+        instr: 'Seret bibit ke gerobak.', wrong: 'Tanah sudah gembur. Sekarang muat bibitnya ke gerobak.' },
+      { id: 'tanam', label: 'TANAM', tool: 'tanam', toolName: 'TANAM', toolArt: 'w4-wortel', icon: 'hand',
+        instr: 'Seret bibit ke tempat berkilau.', wrong: 'Bibit sudah di kebun. Sekarang tanam di tempat berkilau.' }
+    ],
+    lines: {
+      start: 'Tanahnya keras. Ayo gemburkan dengan traktor!',
+      tillMore: 'Tahan terus, traktornya melaju.',
+      tilled: 'Tanahnya sudah gembur!',
+      dragSeed: 'Seret bibitnya ke gerobak.',
+      toTrailer: 'Taruh bibitnya di dalam gerobak.',
+      loadMore: 'Bagus! Muat bibit yang lain.',
+      loaded: 'Gerobak sudah penuh bibit!',
+      unload: 'Gerobak menurunkan bibit di kebun.',
+      dragPlant: 'Seret bibit ke tempat yang berkilau.',
+      toGhost: 'Taruh bibitnya di tempat berkilau.',
+      wrongKind: 'Di sini giliran %n. Lihat bayangannya.',
+      plantMore: 'Hore! Tanam yang lain.',
+      next2: 'Pola berlanjut! Tanam dua lagi.',
+      tapTractor: 'Tahan traktornya supaya melaju.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Kebun pertamamu sudah ditanam!'
+    },
+    hints: ['Yang berkilau itu tujuannya.', 'Bibit dan tempatnya sama gambarnya.', 'Lihat tanganku. Ikuti caraku!']
+  }
+  STICKERS.push({ id: 'W04-M01', name: 'Stiker Kebun', art: 'stiker-kebun' })
+
   var HUB_LINES = {
     hub: 'Mau menjelajah?',
     map: 'Pilih pulau, lalu ketuk JELAJAHI.',
