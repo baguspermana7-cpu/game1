@@ -481,26 +481,35 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   const mp = await fresh(1280, 800);
   const dragTo = async (from, to, steps = 8) => { const a = await center(mp, from); const t = typeof to === 'string' ? await center(mp, to) : to; await mp.mouse.move(a.x, a.y); await mp.mouse.down(); await mp.mouse.move(a.x + 25, a.y - 25, { steps: 3 }); await mp.mouse.move(t.x, t.y, { steps }); await mp.mouse.up(); };
   const stepNow = () => mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')");
-  await mp.evaluate("Blippi.go('mission',{mission:'W01-M04',vehicle:'truk-air'})"); await sleep(600);
-  ok(await waitFor(mp, "[...document.querySelectorAll('#m-scene .ghost')].some(g => g.style.opacity === '1') && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'M04: no glowing target + demo hand within 4 s of the start');
+  const answerAsks = async () => { await waitFor(mp, "!!document.querySelector('[data-ask]')", 8000); for (let k = 0; k < 8 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); } };
+  // the crane's hook: drag it onto a piece (lifts it), then carry to a point and let go
+  const lift = async (piece, to) => { await dragTo('[data-hook]', piece === 'box' ? '[data-box]' : `[data-piece=${piece}]`, 10); await sleep(700); const t = typeof to === 'string' ? await center(mp, to) : to; await dragTo('[data-hook]', { x: t.x, y: t.y - 40 }, 10); await sleep(700); };
+  await mp.evaluate("Blippi.go('mission',{mission:'W01-M04',vehicle:'mobile-crane'})"); await sleep(600);
+  ok(await waitFor(mp, "document.querySelectorAll('#m-scene .ghostpiece').length > 0 && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'M04: no ghost target + glow within 4 s of the start');
+  ok(await mp.evaluate("!!document.querySelector('[data-crane] [data-art=veh-mobile-crane]') && !!document.querySelector('[data-crane] [data-driver]') && !!document.querySelector('[data-hook] [data-art=prop-kait]')"), 'M04: mobile crane + Blippi in the cab + hook not on screen');
+  ok(await mp.evaluate("![...document.querySelectorAll('#m-scene *')].some(e => /dashed/.test(e.style.border || e.style.cssText))"), 'M04: an orange dashed ring is on screen');
   let tc = await center(mp, '[data-truck]'); await mp.mouse.click(tc.x, tc.y); await sleep(1100);
   ok(/belum jadi/.test(await txt(mp, '[data-instr]')), 'M04: truck did not stop at the bank before the bridge existed');
-  await dragTo('[data-piece=short]', '[data-socket=span]'); await sleep(700);
+  await lift('short', '[data-socket=span]');
   ok(/Pendek belum sampai/.test(await txt(mp, '[data-instr]')) && await stepNow() === '0', 'M04: a short beam without a post gave no kind reason / advanced');
-  await dragTo('[data-piece=long]', { x: 60, y: 60 }); await sleep(500);
+  await lift('long', { x: 200, y: 200 });
   ok(await mp.$$eval('[data-built]', e => e.length) === 0, 'M04: a missed drop placed a piece');
-  await dragTo('[data-piece=post]', '[data-socket=post]'); await sleep(600);
+  await lift('post', '[data-socket=post]'); await sleep(300);
   const sp = await mp.evaluate("(() => { const r = document.querySelector('[data-socket=span]').getBoundingClientRect(); return { x: r.x, y: r.y + r.height / 2, w: r.width }; })()");
-  await dragTo('[data-piece=short]', { x: sp.x + sp.w * 0.25, y: sp.y }); await sleep(600);
-  await dragTo('[data-piece=short]', { x: sp.x + sp.w * 0.75, y: sp.y }); await sleep(600);
+  await lift('short', { x: sp.x + sp.w * 0.25, y: sp.y + 40 });
+  await lift('short', { x: sp.x + sp.w * 0.75, y: sp.y + 40 });
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 6000), 'M04: no vehicle question after the bridge was built'); await answerAsks();
   await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
   ok(await stepNow() === '1', 'M04: post + two short beams did not complete the bridge');
   tc = await center(mp, '[data-truck]'); await mp.mouse.move(tc.x, tc.y); await mp.mouse.down();
-  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 16000); await mp.mouse.up();
-  ok(await stepNow() === '2', 'M04: holding the truck did not drive it across');
+  await waitFor(mp, "!!document.querySelector('[data-ask]')", 20000); await mp.mouse.up();
+  ok(await mp.$('[data-ask]') !== null, 'M04: holding the truck did not drive it across (no maths question at the far bank)'); await answerAsks();
+  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 5000);
+  ok(await stepNow() === '2', 'M04: crossing did not advance');
   const pc = await center(mp, '[data-box]'); await mp.mouse.click(pc.x, pc.y); await sleep(300);
-  ok(await stepNow() === '2', 'M04: a parcel tap delivered (must be a drag)');
-  await dragTo('[data-box]', '[data-dropzone]');
+  ok(await stepNow() === '2', 'M04: a parcel tap delivered (must be hooked)');
+  await lift('box', '[data-dropzone]');
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 6000), 'M04: no maths question after the parcel'); await answerAsks();
   await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
   ok(await mp.$('[data-payoff=first]') !== null, 'M04: no payoff'); ok(await mp.evaluate("!!Blippi.state().rewards['reward:W01-M04']"), 'M04: reward missing');
   // M05
@@ -620,7 +629,7 @@ for (const [id, veh] of [['W01-M01', 'buggy'], ['W01-M02', 'excavator'], ['W01-M
   await rp.close();
 }
 // ---------- pause/resume/reload state of every mission ----------
-for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'dump-truck', { loaded: 4, tested: { low: true, high: false } }], ['W01-M04', 'truk-air', { placed: ['span'] }], ['W01-M05', 'excavator', { sand: 2, done: ['gerbang', 'mainan'], seq: [] }], ['W02-M02', 'truk-air', { connected: true }], ['W02-M03', 'tow-truck', { hooked: true }], ['W02-M04', 'truk-air', { closed: 'L', guess: 'R' }], ['W02-M05', 'truk-air', {}], ['W02-M01', 'truk-air', { connected: true }]]) {
+for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'dump-truck', { loaded: 4, tested: { low: true, high: false } }], ['W01-M04', 'mobile-crane', { placed: ['span'] }], ['W01-M05', 'excavator', { sand: 2, done: ['gerbang', 'mainan'], seq: [] }], ['W02-M02', 'truk-air', { connected: true }], ['W02-M03', 'tow-truck', { hooked: true }], ['W02-M04', 'truk-air', { closed: 'L', guess: 'R' }], ['W02-M05', 'truk-air', {}], ['W02-M01', 'truk-air', { connected: true }]]) {
 
   const rp = await fresh(1280, 800);
   await rp.evaluate(([i, d]) => { Blippi.commit(s => { s.progress[i] = { step: 1, data: d }; }); }, [id, data]);

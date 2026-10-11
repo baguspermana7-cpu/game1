@@ -120,15 +120,19 @@ if (WHICH === 'ALL' || WHICH === 'M03') {
   await grid(F, path.join(OUT, `mission-m03-${VW}x${VH}.png`)); await p.close();
 }
 if (WHICH === 'ALL' || WHICH === 'M04') {
-  const p = await open('W01-M04', 'truk-air'); const F = [];
+  const p = await open('W01-M04', 'mobile-crane'); const F = [];
+  const askAll = async () => { await p.waitForSelector('[data-ask]', { timeout: 20000 }); await sleep(400); F.push(await shot(p)); for (let k = 0; k < 8 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); } };
+  const lift = async (sel, to, snap) => { await dg(p, '[data-hook]', sel, 10, async () => { if (snap) F.push(await shot(p)); }); await sleep(700); if (snap) F.push(await shot(p)); const t = typeof to === 'string' ? await center(p, to) : to; await dg(p, '[data-hook]', { x: t.x, y: t.y - 40 }, 10, async () => { if (snap) F.push(await shot(p)); }); await sleep(900); if (snap) F.push(await shot(p)); };
   F.push(await shot(p));
-  await dg(p, '[data-piece=short]', '[data-socket=span]', 10, async () => { F.push(await shot(p)); }); await sleep(500); F.push(await shot(p)); await sleep(2800);
-  await dg(p, '[data-piece=post]', '[data-socket=post]'); await sleep(700);
+  try {
+  await lift('[data-piece=short]', '[data-socket=span]', true); await sleep(2200);
+  await lift('[data-piece=post]', '[data-socket=post]', false);
   const sp = await p.evaluate("(() => { const r = document.querySelector('[data-socket=span]').getBoundingClientRect(); return { x: r.x, y: r.y + r.height / 2, w: r.width }; })()");
-  await dg(p, '[data-piece=short]', { x: sp.x + sp.w * 0.25, y: sp.y }); await sleep(600); await dg(p, '[data-piece=short]', { x: sp.x + sp.w * 0.75, y: sp.y }); await sleep(1500); F.push(await shot(p));
-  const t = await center(p, '[data-truck]'); await p.mouse.move(t.x, t.y); await p.mouse.down(); await sleep(1500); F.push(await shot(p)); await sleep(1800); F.push(await shot(p));
-  await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='2'", { timeout: 16000 }); await p.mouse.up(); await sleep(600); F.push(await shot(p));
-  await dg(p, '[data-box]', '[data-dropzone]', 10, async () => { F.push(await shot(p)); }); await sleep(700); F.push(await shot(p)); await sleep(2500); F.push(await shot(p));
+  await lift('[data-piece=short]', { x: sp.x + sp.w * 0.25, y: sp.y + 40 }, false); await lift('[data-piece=short]', { x: sp.x + sp.w * 0.75, y: sp.y + 40 }, true); await sleep(800);
+  await askAll(); await sleep(700);
+  const t = await center(p, '[data-truck]'); await p.mouse.move(t.x, t.y); await p.mouse.down(); await sleep(1500); F.push(await shot(p)); await p.waitForSelector('[data-ask]', { timeout: 20000 }); await p.mouse.up(); await askAll(); await sleep(600); F.push(await shot(p));
+  await lift('[data-box]', '[data-dropzone]', true); await sleep(500); await askAll(); await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
+  } catch (e) { console.log('M04 sheet error:', String(e).slice(0, 160)); F.push(await shot(p)); }
   await grid(F, path.join(OUT, `mission-m04-${VW}x${VH}.png`)); await p.close();
 }
 if (WHICH === 'ALL' || WHICH === 'M05') {

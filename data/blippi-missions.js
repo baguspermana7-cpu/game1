@@ -27,7 +27,9 @@
     { id: 'dump-truck', name: 'DUMP TRUCK', art: 'veh-dump-truck', thumb: 'veh-dump-truck', tags: ['haul', 'tip'],
       say: 'Ayo muat dan tuang!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] },
     { id: 'tow-truck', name: 'TRUK DEREK', art: 'veh-tow-truck', thumb: 'veh-tow-truck', tags: ['tow', 'drive_land'],
-      say: 'Ayo tarik gerobaknya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] }
+      say: 'Ayo tarik gerobaknya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] },
+    { id: 'mobile-crane', name: 'DEREK', art: 'veh-mobile-crane', thumb: 'veh-mobile-crane', tags: ['lift_hook', 'haul'],
+      say: 'Ayo angkat dan turunkan!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] }
   ]
 
   var WORLDS = [
@@ -132,31 +134,33 @@
     },
     'W01-M04': {
       id: 'W01-M04', world: 'kota-roda', title: 'Jembatan untuk Semua', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',
-      needs: ['haul'], vehicle: 'truk-air', bg: 'bg-w01-m04-jembatan',
-      reward: { key: 'reward:W01-M04', sticker: 'stiker-jembatan', stickerName: 'Stiker Jembatan' },
+      needs: ['lift_hook'], vehicle: 'mobile-crane', bg: 'bg-w01-m04-jembatan',
+      reward: { key: 'reward:W01-M04', sticker: 'stiker-jembatan', stickerName: 'Stiker Jembatan', vehicle: 'mobile-crane' },
       worldDelta: 'kota-roda:jembatan-akses',
       steps: [
-        { id: 'pasang', label: 'PASANG', tool: 'balok', toolName: 'PASANG', toolArt: 'tool-balok', icon: 'wheel',
-          instr: 'Seret balok ke sungai.', wrong: 'Pasang jembatannya dulu. Truk menunggu.' },
+        { id: 'pasang', label: 'PASANG', tool: 'balok', toolName: 'KAIT', toolArt: 'tool-kait', icon: 'wheel',
+          instr: 'Angkat balok ke bayangan.', wrong: 'Pasang jembatannya dulu. Truk menunggu.' },
         { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'tool-jalan', icon: 'wheel',
           instr: 'Tahan truk agar menyeberang.', wrong: 'Jembatan sudah jadi. Tahan truknya!' },
-        { id: 'antar', label: 'ANTAR', tool: 'paket', toolName: 'ANTAR', toolArt: 'tool-paket', icon: 'box',
-          instr: 'Seret paket ke taman.', wrong: 'Truk sudah sampai. Seret paketnya.' }
+        { id: 'antar', label: 'ANGKAT', tool: 'paket', toolName: 'ANGKAT', toolArt: 'tool-paket', icon: 'box',
+          instr: 'Angkat paket ke bayangan.', wrong: 'Truk sudah sampai. Angkat paketnya.' }
       ],
       lines: {
-        start: 'Sungai memisahkan jalan dan taman. Ayo buat jembatan!',
+        start: 'Sungai memisahkan jalan. Derek akan membuat jembatan!',
         short: 'Pendek belum sampai. Pasang tiang tengah!',
-        dragIt: 'Seret baloknya ke sungai.',
+        dragHook: 'Seret kait ke balok.',
+        dragHookParcel: 'Seret kait ke paket di truk.',
+        lifted: 'Terangkat! Bawa ke bayangan.',
+        dropMiss: 'Belum pas. Turunkan di bayangan ya.',
         postWhere: 'Tiang berdiri di air, di tengah sungai.',
         placed: 'Terpasang!',
         built: 'Jembatan jadi! Tahan truk untuk menyeberang.',
         wait: 'Jembatannya belum jadi. Truk menunggu di tepi.',
-        dragParcel: 'Seret paketnya ke taman.',
-        parcelMiss: 'Belum sampai. Letakkan di tempat yang bergaris.',
+        parcelMiss: 'Belum pas. Turunkan paket di bayangan.',
         wrongTool: 'Pakai alat yang menyala oranye ya.',
         win: 'Hore! Jembatan terbuka untuk semua!'
       },
-      hints: ['Cari tempat yang bergaris oranye di sungai.', 'Lihat bayangan bagian itu di tempatnya.', 'Lihat tanganku. Seret seperti ini!']
+      hints: ['Kait yang menyala bisa mengangkat balok.', 'Bawa balok ke bentuk yang berkilau di sungai.', 'Lihat tanganku. Ikuti garis ini!']
     },
     'W01-M05': {
       id: 'W01-M05', world: 'kota-roda', title: 'Hari Pembukaan Taman', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',

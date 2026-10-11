@@ -81,7 +81,7 @@
 
   // part2 (owner's 2026-10-11 plates + mission-piece sheets, Codex crops copied under game names). Kept apart from SHIPPED because tools/sync-codex-art.py rewrites that map.
   var PART2 = ['bg-w01-m04-jembatan', 'bg-w01-m05-pembukaan', 'pc-sand-flat', 'pc-sand-dug', 'pc-sand-pile', 'prop-jungkat', 'pc-swing', 'pc-slide', 'pc-beam-short', 'pc-beam-long', 'pc-post',
-    'pc-gate-closed', 'pc-gate-open', 'pc-cart', 'pc-ramp-low', 'pc-ramp-high', 'pc-card-circle', 'bg-w02-m04-dua-jalan', 'bg-w02-m05-parade-air', 'stiker-aliran', 'lencana-w02', 'pulau-taman-air-selesai', 'pc2-tetes', 'pc-jets-a', 'pc-jets-b', 'stiker-parade', 'pc-mud', 'pc-hook', 'stiker-sambung', 'stiker-gerobak', 'bg-w02-m02-aliran', 'bg-w02-m03-lumpur', 'veh-dump-truck', 'veh-tow-truck', 'prop-kait', 'stiker-jembatan', 'stiker-taman', 'lencana-w01', 'pulau-kota-roda-selesai']
+    'pc-gate-closed', 'pc-gate-open', 'pc-cart', 'pc-ramp-low', 'pc-ramp-high', 'pc-card-circle', 'bg-w02-m04-dua-jalan', 'bg-w02-m05-parade-air', 'stiker-aliran', 'lencana-w02', 'pulau-taman-air-selesai', 'pc2-tetes', 'pc-jets-a', 'pc-jets-b', 'stiker-parade', 'pc-mud', 'pc-hook', 'stiker-sambung', 'stiker-gerobak', 'bg-w02-m02-aliran', 'bg-w02-m03-lumpur', 'veh-dump-truck', 'veh-tow-truck', 'veh-mobile-crane', 'prop-kait', 'stiker-jembatan', 'stiker-taman', 'lencana-w01', 'pulau-kota-roda-selesai']
   PART2.forEach(function (k) { SHIPPED[k] = true })
 
   var ROWS = [
