@@ -1,6 +1,5 @@
-# Missions part 2 status (2026-10-11)
-- DONE: W01-M01..M05, W02-M01..M05 (W02 finale: badge lencana-w02, island pulau-taman-air-selesai; mid state pulau-taman-air-aktif after M01).
-- All steps are drags/holds ON scene objects; qa-blippi 479/479 (token g1-20261011h).
-- Ingested: bg-w02-m02..m05 (+portrait), mission-pieces-1 crops (pc-*), mission-pieces-2 crops (pc2-* all 25, 344 KB; unused ones are shipped in the SW shell until W03-W06 use them), islands-after, badges.
-- NEXT: W03 (plates bg-w03-m01..m05; pc2-papan/daun/ubin-bintang/gigi-*), then W04, W05, W06.
-- Sheets: tools/qa-part2-sheet.mjs <out> <M01..M05|W02M02..W02M05> [w h].
+# Missions status (2026-10-11, reset in progress)
+- PUSHED/DONE: W01-M01..M05, W02-M01..M05 (sync pass), W01-M02 excavator fix, W01-M03 dump truck rebuild (qa-blippi 496/496); kit hooks K.ask / K.ghost / K.driver in blippi-mkit.js.
+- IN PROGRESS (NOT wired): W02-M03 tow-truck rewrite (hook on the truck boom, draw-the-route) saved at docs/wip/blippi-lumpur-tow.wip.js; assets veh-tow-truck + prop-kait already in assets/blippi. Needs: tow-truck vehicle entry, mission data (steps kait/ban/tarik), tray/layout kept above y=730, sheet run (the sheet script flow W02M03 exists), qa checks.
+- NEXT per reset order: W02-M02 own water place (not garage plaza), W01-M04 crane, W01-M02 step 3 -> K.ghost + K.driver, then M01, M05, W02-M01/M04/M05, then W03+ (plates bg-w03-m01..m05 ingested).
+- Tray covers y>738 of the 941 stage: keep every touchable above it. Shell token g1-20261011l.

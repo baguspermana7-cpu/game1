@@ -25,7 +25,9 @@
         { id: 'bucket-lebar', name: 'BUCKET LEBAR', art: 'modul-bucket-lebar', info: 'Bucket lebar. Sekali gali dapat banyak pasir.' }
       ] },
     { id: 'dump-truck', name: 'DUMP TRUCK', art: 'veh-dump-truck', thumb: 'veh-dump-truck', tags: ['haul', 'tip'],
-      say: 'Ayo muat dan tuang!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] }
+      say: 'Ayo muat dan tuang!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] },
+    { id: 'tow-truck', name: 'TRUK DEREK', art: 'veh-tow-truck', thumb: 'veh-tow-truck', tags: ['tow', 'drive_land'],
+      say: 'Ayo tarik gerobaknya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] }
   ]
 
   var WORLDS = [
@@ -235,31 +237,33 @@
     },
     'W02-M03': {
       id: 'W02-M03', world: 'taman-air', title: 'Gerobak di Lumpur', sub: 'Taman Air', thumb: 'thumb-taman-air',
-      needs: ['drive_land'], vehicle: 'buggy', bg: 'bg-w02-m03-lumpur',
-      reward: { key: 'reward:W02-M03', sticker: 'stiker-gerobak', stickerName: 'Stiker Gerobak', vehicle: 'buggy' },
+      needs: ['tow'], vehicle: 'tow-truck', bg: 'bg-w02-m03-lumpur',
+      reward: { key: 'reward:W02-M03', sticker: 'stiker-gerobak', stickerName: 'Stiker Gerobak', vehicle: 'tow-truck' },
       worldDelta: 'taman-air:jalur-kebun',
       steps: [
         { id: 'kait', label: 'KAIT', tool: 'kait', toolName: 'KAIT', toolArt: 'tool-kait', icon: 'wheel',
           instr: 'Seret kait ke gerobak.', wrong: 'Pasang kaitnya dulu ke gerobak.' },
         { id: 'ban', label: 'BAN', tool: 'ban', toolName: 'BAN', toolArt: 'tool-ban', icon: 'wheel',
-          instr: 'Seret ban ke buggy.', wrong: 'Kait sudah terpasang. Pilih ban untuk buggy.' },
-        { id: 'tarik', label: 'TARIK', tool: 'tarik', toolName: 'TARIK', toolArt: 'tool-jalan', icon: 'box',
-          instr: 'Seret buggy ke satu jalur.', wrong: 'Ban sudah dipilih. Pilih jalur untuk menarik gerobak.' }
+          instr: 'Seret ban ke truk.', wrong: 'Kait sudah terpasang. Pilih ban untuk truk derek.' },
+        { id: 'tarik', label: 'TARIK', tool: 'tarik', toolName: 'TARIK', toolArt: 'tool-rute', icon: 'box',
+          instr: 'Gambar jalan ke bendera.', wrong: 'Ban sudah dipilih. Gambar jalan dengan jarimu.' }
       ],
       lines: {
-        start: 'Gerobaknya harus sampai ke gerbang taman air!',
-        dragHook: 'Seret kaitnya ke lingkaran di antara buggy dan gerobak.',
-        hookMiss: 'Belum pas. Taruh kait di lingkaran.',
+        start: 'Gerobaknya harus sampai ke bendera!',
+        dragHook: 'Seret kaitnya ke gerobak yang berkilau.',
+        hookMiss: 'Belum pas. Taruh kait di bayangan kait.',
         hooked: 'Terkait! Sekarang pilih ban.',
-        dragTire: 'Seret ban ke buggy.',
+        dragTire: 'Seret ban ke truk derek.',
         tireSmooth: 'Ban halus. Cepat di jalan kering.',
-        tireTread: 'Ban berpola. Mencengkeram tanah licin.',
-        dragBuggy: 'Seret buggy ke salah satu lingkaran.',
-        slip: 'Ban halus tergelincir. Coba ban berpola!',
-        wrongTool: 'Pakai alat yang menyala oranye ya.',
-        win: 'Hore! Gerobak sampai di taman air!'
+        tireTread: 'Ban bergerigi. Mencengkeram lumpur.',
+        startAtTruck: 'Mulai gambar dari truk derek ya.',
+        drawIt: 'Gambar jalan panjang dengan jarimu.',
+        routeShort: 'Jalannya belum sampai bendera. Lanjutkan!',
+        slip: 'Ban halus tergelincir di lumpur. Coba ban bergerigi, atau lewat jalan kering!',
+        wrongTool: 'Pakai alat yang menyala ya.',
+        win: 'Hore! Gerobak sampai di bendera!'
       },
-      hints: ['Benda yang menyala bisa diseret ke lingkaran oranye.', 'Ban berpola mencengkeram lumpur lebih kuat.', 'Lihat tanganku. Seret seperti ini!']
+      hints: ['Kait yang berkilau diseret ke gerobak.', 'Ban bergerigi mencengkeram lumpur. Jalan kering aman untuk semua ban.', 'Lihat tanganku. Ikuti garis ini!']
     },
     'W02-M04': {
       id: 'W02-M04', world: 'taman-air', title: 'Dua Jalan untuk Air', sub: 'Taman Air', thumb: 'thumb-taman-air',

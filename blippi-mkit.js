@@ -193,6 +193,23 @@
       row.style.cssText += ';display:flex;gap:14px;justify-content:center;align-items:center'
       var i
       for (i = 0; i < q.count.n; i++) { var c = document.createElement('div'); c.style.cssText = 'position:relative;width:96px;height:96px;flex:0 0 auto'; api.B.A.fill(c, q.count.key); row.appendChild(c) }
+    } else if (q.scene && q.scene.groups && q.scene.groups.length) {
+      // the engine's picture of the sum: every group as that many icons ('leave' ones faded and crossed out),
+      // '+' between added groups - a counting question must SHOW what is counted (one icon for 'berapa?' was wrong)
+      var gs = q.scene.groups, total = 0
+      gs.forEach(function (g) { total += g.n })
+      var sz = Math.max(40, Math.min(110, Math.floor(820 / Math.max(1, total + (gs.length - 1)) - 8)))
+      var row2 = api.at(card, '', 30, 136, 880, 120)
+      row2.setAttribute('data-ask-pics', String(total))
+      row2.style.cssText += ';display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;align-content:center'
+      gs.forEach(function (g, gi) {
+        if (gi > 0 && g.role !== 'leave') { var plus = document.createElement('b'); plus.textContent = '+'; plus.style.cssText = 'font:900 ' + Math.round(sz * 0.6) + 'px Nunito,sans-serif;color:#F4761A;margin:0 6px'; row2.appendChild(plus) }
+        for (var j = 0; j < g.n; j++) {
+          var ic = new Image(); ic.alt = ''; ic.src = LIB + g.key + '.webp'
+          ic.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;object-fit:contain;flex:0 0 auto' + (g.role === 'leave' ? ';opacity:.35;filter:grayscale(1)' : '')
+          row2.appendChild(ic)
+        }
+      })
     } else if (q.pic) {
       var pic = api.at(card, '', 390, 130, 160, 120)
       var im = new Image(); im.alt = ''; im.src = LIB + q.pic + '.webp'; im.style.cssText = 'width:100%;height:100%;object-fit:contain'; pic.appendChild(im)
@@ -205,7 +222,7 @@
     var done = false
     var btns = []
     q.choices.forEach(function (ch, k) {
-      var b = api.at(card, 'obtn', x0 + k * (cw + gap), (q.count || q.pic) ? 290 : 250, cw, 190, 'button')
+      var b = api.at(card, 'obtn', x0 + k * (cw + gap), (q.count || q.pic || q.scene) ? 290 : 250, cw, 190, 'button')
       b.type = 'button'
       b.setAttribute('data-choice', String(ch))
       b.style.cssText += ';font:900 56px/1 Fredoka,Nunito,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0'

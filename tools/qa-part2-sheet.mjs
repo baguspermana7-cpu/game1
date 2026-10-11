@@ -45,13 +45,21 @@ if (WHICH === 'ALL' || WHICH === 'W02M02') {
   await grid(F, path.join(OUT, `mission-w02m02-${VW}x${VH}.png`)); await p.close();
 }
 if (WHICH === 'ALL' || WHICH === 'W02M03') {
-  const p = await open('W02-M03', 'buggy'); const F = [];
+  const p = await open('W02-M03', 'tow-truck'); const F = [];
+  const sw = async (a, b, mid) => { const c = await center(p, a); await p.mouse.move(c.x, c.y); await p.mouse.down(); for (let i = 0; i < b.length; i++) { await p.mouse.move(b[i].x, b[i].y, { steps: 6 }); if (mid && i === 1) await mid(); } await p.mouse.up(); };
+  const askFirst = async () => { await p.waitForSelector('[data-ask]', { timeout: 8000 }); await sleep(300); };
+  const stage = await p.evaluate("(() => { const r = document.getElementById('stage').getBoundingClientRect(); return [r.left, r.top, r.width / 1672]; })()");
+  const X = (x, y) => ({ x: stage[0] + x * stage[2], y: stage[1] + y * stage[2] });
   F.push(await shot(p));
-  await dg(p, '[data-hook]', '[data-socket=hitch]', 10, async () => { F.push(await shot(p)); }); await sleep(1300); F.push(await shot(p));
-  await dg(p, '[data-tire=jalan]', '[data-buggy]'); await sleep(1300); F.push(await shot(p));
-  await dg(p, '[data-buggy]', '[data-socket=ring-lumpur]', 10, async () => { F.push(await shot(p)); }); await sleep(1500); F.push(await shot(p)); await sleep(1500); F.push(await shot(p)); await sleep(2800); F.push(await shot(p));
-  await dg(p, '[data-tire=berpola]', '[data-buggy]'); await sleep(900);
-  await dg(p, '[data-buggy]', '[data-socket=ring-lumpur]'); await sleep(1800); F.push(await shot(p)); await sleep(1800); F.push(await shot(p));
+  await dg(p, '[data-hook]', '[data-hitch]', 10, async () => { F.push(await shot(p)); }); await sleep(900); F.push(await shot(p));
+  await askFirst(); F.push(await shot(p)); await p.evaluate(() => [...document.querySelectorAll('[data-choice]')].find(e => e.getAttribute('data-choice') === 'Bergerigi').click()); await sleep(1200);
+  await dg(p, '[data-tire=jalan]', '[data-truck]'); await sleep(1300); F.push(await shot(p));
+  const route = [X(880, 700), X(760, 650), X(640, 615), X(480, 595), X(330, 560), X(190, 500)];
+  await sw('[data-truck]', route.slice(1), async () => { F.push(await shot(p)); }); await sleep(1100); F.push(await shot(p)); await sleep(1400); F.push(await shot(p)); await sleep(2800); F.push(await shot(p));
+  await dg(p, '[data-tire=berpola]', '[data-truck]'); await sleep(900);
+  await sw('[data-truck]', route.slice(1)); await sleep(1500); F.push(await shot(p)); await sleep(1800); F.push(await shot(p)); await sleep(1500); F.push(await shot(p));
+  await askFirst(); F.push(await shot(p));
+  for (let k = 0; k < 4 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); b[0] && b[0].click(); }); await sleep(500); }
   await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
   await grid(F, path.join(OUT, `mission-w02m03-${VW}x${VH}.png`)); await p.close();
 }
