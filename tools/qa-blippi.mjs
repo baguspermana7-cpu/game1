@@ -141,8 +141,11 @@ await p.click('[data-tool=papan]');
   ok(await p.$$eval('[data-board=on]', e => e.length) === 0, 'W01 wrong drop placed a plank');
   for (const sl of ['S0', 'S1', 'S2']) { c0 = await center(p, '[data-plank-pile]'); const t0 = await center(p, '[data-slot=' + sl + ']'); await p.mouse.move(c0.x, c0.y); await p.mouse.down(); await p.mouse.move(t0.x, t0.y, { steps: 8 }); await p.mouse.up(); await sleep(650); }
 }
+const askAll1 = async () => { await waitFor(p, "!!document.querySelector('[data-ask]')", 8000); for (let k = 0; k < 8 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); } };
+ok(await waitFor(p, "!!document.querySelector('[data-ask]')", 6000), 'W01 no counting question after the planks'); await askAll1();
 await sleep(500);
 ok(await p.evaluate(() => document.querySelector('.step.on').getAttribute('data-step')) === '1', 'W01 planks did not complete the bridge');
+ok(await p.evaluate("!!document.querySelector('[data-buggy] [data-driver]') && ![...document.querySelectorAll('#m-scene *')].some(e => /dashed/.test(e.style.border || e.style.cssText))"), 'W01: Blippi not in the buggy / a dashed ring is on screen');
 await p.reload({ waitUntil: 'load' }); await p.evaluate("Blippi.go('mission',{mission:'W01-M01',vehicle:'buggy'})"); await sleep(200);
 ok(await p.evaluate(() => document.querySelector('.step.on').getAttribute('data-step')) === '1', 'W01 resume lost step');
 await p.click('[data-tool=jalan]');
@@ -156,10 +159,20 @@ ok(await p.evaluate(() => document.querySelector('.step.on').getAttribute('data-
   ok(await p.evaluate(() => document.querySelector('.step.on').getAttribute('data-step')) === '2', 'W01 a parcel TAP delivered (must be a drag)');
   c = await center(p, '[data-box]'); const fl = await center(p, '[data-slot=prop-bendera]'); await p.mouse.move(c.x, c.y); await p.mouse.down(); await p.mouse.move(fl.x, fl.y, { steps: 10 }); await p.mouse.up();
 }
+ok(await waitFor(p, "!!document.querySelector('[data-ask]')", 6000), 'W01 no question after the delivery'); await askAll1(); await waitFor(p, "!!document.querySelector('[data-ask]')", 3000); await askAll1();
 await waitFor(p, "!!document.querySelector('[data-payoff=first]')");
 ok(await p.$('[data-payoff=first]') !== null, 'W01 no first payoff');
 ok(await p.evaluate(() => document.querySelector('[data-park]').getAttribute('data-park')) === 'on', 'W01 park path missing');
 ok(await p.evaluate(() => Object.keys(Blippi.state().rewards).length) === 1, 'W01 reward count');
+{ // W01-M01 route choice: the upper crossing is the SHORT way (2 planks); the first plank picks the route and hides the other
+  const rp = await fresh(1280, 800);
+  await rp.evaluate("Blippi.go('mission',{mission:'W01-M01',vehicle:'buggy'})"); await sleep(600);
+  ok(await rp.evaluate("document.querySelectorAll('[data-slot=T0],[data-slot=T1],[data-slot=S0],[data-slot=S1],[data-slot=S2]').length") === 5, 'W01 route: both crossings are not shown at the start');
+  for (const sl of ['T0', 'T1']) { const c0 = await center(rp, '[data-plank-pile]'); const t0 = await center(rp, '[data-slot=' + sl + ']'); await rp.mouse.move(c0.x, c0.y); await rp.mouse.down(); await rp.mouse.move(t0.x, t0.y, { steps: 8 }); await rp.mouse.up(); await sleep(700); }
+  ok(await waitFor(rp, "!!document.querySelector('[data-ask]')", 6000), 'W01 route: two planks on the short crossing did not complete it');
+  ok(await rp.evaluate("[...document.querySelectorAll('[data-ask-pics], [data-ask] .at')].length >= 1 && Blippi.state().progress['W01-M01'].data.route === 'S' && getComputedStyle(document.querySelector('[data-slot=S0]')).display === 'none'"), 'W01 route: short route not remembered / the long crossing stayed');
+  await rp.close();
+}
 // 3. W02-M01 by real pointer, from the hub card (recommended is now W02)
 await p.click('[data-act=lanjut]'); await sleep(200);
 await p.evaluate("Blippi.commit(s => { ['W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'].forEach(i => { s.done[i] = 1; }); })");

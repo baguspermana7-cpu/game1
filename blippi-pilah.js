@@ -230,7 +230,7 @@
             busy = false
             if (nTaken() >= KINDS.length) {
               api.later(function () {
-                K.ask(api, { custom: { id: 'm01-sum', prompt: '3 kertas, 2 plastik, 1 kaleng. Berapa semuanya?', choices: ['5', '6', '7'], answer: '6', count: { key: 'w3-kertas-remuk', n: 6 }, hint1: 'Hitung: 3 dan 2 jadi 5, tambah 1 lagi.' }, done: function () { api.warn(L.loaded); api.later(function () { goStart(function () { api.advance() }) }, 500) } })
+                K.ask(api, { custom: { id: 'm01-sum', prompt: '3 kertas, 2 plastik, 1 kaleng. Berapa semuanya?', choices: ['5', '6', '7'], answer: '6', scene: { groups: [{ key: 'w3-kertas-remuk', n: 3 }, { key: 'w3-botol', n: 2 }, { key: 'w3-kaleng', n: 1 }] }, hint1: 'Hitung: 3 dan 2 jadi 5, tambah 1 lagi.' }, done: function () { api.warn(L.loaded); api.later(function () { goStart(function () { api.advance() }) }, 500) } })
               }, 600)
             } else api.warn(L.more2)
           })
@@ -294,7 +294,7 @@
       api.fx('confetti', 1380, 300, 340)
       save()
       api.later(function () {
-        K.ask(api, { context: 'gate', grade: 1, done: function () { api.later(function () { api.advance() }, 300) } })
+        K.ask(api, { context: 'gate', grade: 1, topic: 'matematika', done: function () { api.later(function () { api.advance() }, 300) } })
       }, 700)
     }
     truck.addEventListener('pointerdown', function (ev) {

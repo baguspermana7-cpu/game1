@@ -9,22 +9,28 @@
   var B = w.Blippi
   var K = w.BlippiKit
   var PLANK = '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp'
-  var SLOTS = [{ x: 740, y: 503 }, { x: 872, y: 511 }, { x: 1004, y: 518 }]
+  var SLOTS_L = [{ x: 740, y: 503 }, { x: 872, y: 511 }, { x: 1004, y: 518 }]     // the wide crossing: 3 planks (the long way)
+  var SLOTS_S = [{ x: 815, y: 408 }, { x: 955, y: 412 }]                          // the narrow crossing upstream: 2 planks (the short way)
+  var SLOTS = SLOTS_L.concat(SLOTS_S)                                             // slot index 0-2 = long, 3-4 = short
   var PILE = { x: 250, y: 500 }
   var START = { x: 480, y: 462 }
-  var PATH = [START, { x: 672, y: 494 }, { x: 1078, y: 516 }, { x: 1230, y: 500 }]
+  var PATH_L = [START, { x: 672, y: 494 }, { x: 1078, y: 516 }, { x: 1230, y: 500 }]
+  var PATH_S = [START, { x: 700, y: 420 }, { x: 1030, y: 415 }, { x: 1230, y: 500 }]
   var FLAG = { x: 1335, y: 470 }
   var SW = 166
   var SH = 166
 
-  function lens () {
+  function lens (PATH) {
     var legs = []
     var tot = 0
     var i
     for (i = 0; i < PATH.length - 1; i++) { var d = Math.hypot(PATH[i + 1].x - PATH[i].x, PATH[i + 1].y - PATH[i].y); legs.push(d); tot += d }
     return { legs: legs, total: tot }
   }
-  var LEN = lens()
+  var PATHS = { L: PATH_L, S: PATH_S }
+  var LENS = { L: lens(PATH_L), S: lens(PATH_S) }
+  var LEN = LENS.L                    // the chosen route's length (set once the child picks a crossing)
+  var PATH = PATH_L
   function at (dist) {
     var d = dist
     var i
@@ -57,12 +63,14 @@
     var saved = api.data() || {}
     var drag = null
     var hd = null
-    if (rs) { placed = [0, 1, 2]; if (rs.step >= 2) dist = LEN.total }
-    void saved
+    var route = saved.route === 'S' ? 'S' : null      // 'S' short (2 planks) | 'L' long (3 planks) | null until the first plank lands
+    if (rs) { route = saved.route === 'S' ? 'S' : 'L'; placed = route === 'S' ? [3, 4] : [0, 1, 2]; PATH = PATHS[route]; LEN = LENS[route]; if (rs.step >= 2) dist = LEN.total }
+    function routeOf (i) { return i >= 3 ? 'S' : 'L' }
+    function need () { return route === 'S' ? 2 : 3 }
 
     var slotEls = SLOTS.map(function (s, i) {
       var e = api.at(sc, 'jslot', s.x - SW / 2, s.y - 78, SW, SH)
-      e.setAttribute('data-slot', 'S' + i)
+      e.setAttribute('data-slot', i < 3 ? 'S' + i : 'T' + (i - 3))
       e.style.pointerEvents = 'none'
       var ph = document.createElement('div')
       ph.className = 'jslot-ph'
@@ -115,7 +123,7 @@
         slotEls[i].style.transform = 'translateY(' + dip.toFixed(1) + 'px)'
       }
     }
-    function nextFree () { var i; for (i = 0; i < 3; i++) if (placed.indexOf(i) < 0) return i; return -1 }
+    function nextFree () { var i; for (i = 0; i < SLOTS.length; i++) if (placed.indexOf(i) < 0 && (!route || routeOf(i) === route)) return i; return -1 }
     function show (i, anim) {
       var e = slotEls[i]
       e.innerHTML = ''
@@ -125,20 +133,29 @@
     }
     placed.forEach(function (i) { show(i, false) })
 
+    function chooseRoute (r) {
+      route = r
+      PATH = PATHS[r]
+      LEN = LENS[r]
+      slotEls.forEach(function (e, k) { if (routeOf(k) !== r) e.style.display = 'none' })
+      api.warn(r === 'S' ? L.shortWay : L.longWay)
+    }
     function put (i) {
       if (api.step() !== 0 || placed.indexOf(i) >= 0) return
+      if (route && routeOf(i) !== route) return
+      if (!route) chooseRoute(routeOf(i))
       placed = placed.concat([i])
       show(i, true)
       api.sfx('bump')
       api.fx('dust', SLOTS[i].x, SLOTS[i].y + 40, 170)
       api.fx('spark', SLOTS[i].x, SLOTS[i].y - 20, 130)
-      api.warn(L.board)
-      if (placed.length >= 3) {
-        api.persist({ route: 'R' })
+      if (placed.length < need()) api.warn(L.board)
+      if (placed.length >= need()) {
+        api.persist({ route: route })
         api.later(function () {
           api.sfx('ok')
-          SLOTS.forEach(function (s) { api.fx('gold-star', s.x, s.y - 30, 170) })
-          K.ask(api, { custom: { id: 'm01-count', prompt: 'Ada berapa papan di jembatan?', count: { key: 'pc-beam-short', n: 3 }, choices: ['2', '3', '4'], answer: '3', hint1: 'Hitung papannya satu-satu.' }, done: function () { api.advance() } })
+          SLOTS.forEach(function (s, k) { if (routeOf(k) === route) api.fx('gold-star', s.x, s.y - 30, 170) })
+          K.ask(api, { custom: { id: 'm01-count', prompt: 'Ada berapa papan di jembatan?', count: { key: 'pc-beam-short', n: need() }, choices: ['2', '3', '4'], answer: String(need()), hint1: 'Hitung papannya satu-satu.' }, done: function () { api.advance() } })
         }, 520)
       }
     }
@@ -174,7 +191,7 @@
       var best = -1
       var bd = 120
       var i
-      for (i = 0; i < 3; i++) { if (placed.indexOf(i) >= 0) continue; var dd = Math.hypot(p.x - SLOTS[i].x, p.y - SLOTS[i].y); if (dd < bd) { bd = dd; best = i } }
+      for (i = 0; i < SLOTS.length; i++) { if (placed.indexOf(i) >= 0 || (route && routeOf(i) !== route)) continue; var dd = Math.hypot(p.x - SLOTS[i].x, p.y - SLOTS[i].y); if (dd < bd) { bd = dd; best = i } }
       var done = function () { if (d.g.parentNode) d.g.parentNode.removeChild(d.g) }
       if (d.moved < 10) { done(); best = nextFree() } // a plain tap places the next plank
       if (best >= 0) { done(); put(best) } else if (d.moved >= 10) {
@@ -199,7 +216,7 @@
             dist = LEN.total
             place(at(dist), t)
             holding = false
-            api.persist({ route: 'R' })
+            api.persist({ route: route || 'L' })
             api.advance()
             return
           }
@@ -272,10 +289,12 @@
         api.fx('dust', FLAG.x, FLAG.y + 30, 150)
         api.fx('confetti', FLAG.x, FLAG.y - 40, 280)
         if (flag.animate && !api.reduced()) flag.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg)' }, { transform: 'rotate(8deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }], { duration: 900, easing: 'ease-out' })
-        api.persist({ route: 'R' })
+        api.persist({ route: route || 'L' })
         api.later(function () {
           K.ask(api, { custom: { id: 'm01-flag', prompt: 'Bendera ini warna apa?', choices: ['Merah', 'Biru', 'Hijau'], answer: 'Biru', hint1: 'Lihat bendera di tiang.' }, done: function () {
-            K.ask(api, { context: 'gate', grade: 1, done: function () { api.advance() } })
+            K.ask(api, { custom: { id: 'm01-which', prompt: 'Jalan mana yang butuh papan lebih sedikit?', choices: ['Jalan atas', 'Jalan bawah'], answer: 'Jalan atas', hint1: 'Jalan atas cuma 2 papan. Jalan bawah 3 papan.' }, done: function () {
+              K.ask(api, { context: 'gate', grade: 1, done: function () { api.advance() } })
+            } })
           } })
         }, 700)
       })
@@ -309,7 +328,7 @@
           if (lvl >= 4 && nextFree() >= 0) put(nextFree())
         } else if (s === 1) {
           go.classList.add('glow'); setTimeout(function () { go.classList.remove('glow') }, 2600)
-          if (lvl >= 4) { dist = LEN.total; place(at(dist), 0); api.persist({ route: 'R' }); api.advance() }
+          if (lvl >= 4) { dist = LEN.total; place(at(dist), 0); api.persist({ route: route || 'L' }); api.advance() }
         } else {
           box.classList.add('glow')
           if (lvl >= 4) deliver(null)

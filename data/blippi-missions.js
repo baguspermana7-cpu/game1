@@ -35,7 +35,7 @@
   var WORLDS = [
     { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'], finale: 'W01-M05', art: 'pulau-kota-roda', artDone: 'pulau-kota-roda-selesai', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
     { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', missions: ['W02-M01', 'W02-M02', 'W02-M03', 'W02-M04', 'W02-M05'], art: 'pulau-taman-air', artDone: 'pulau-taman-air-selesai', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
-    { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01'], thumb: 'veh-recycling-truck', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
+    { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01', 'W03-M02'], thumb: 'veh-recycling-truck', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
     { id: 'wonder-lab', name: 'WONDER LAB', locked: 'Terbuka setelah pulau lain selesai.', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
@@ -49,7 +49,7 @@
       worldDelta: 'kota-roda:jalur-taman',
       steps: [
         { id: 'pasang', label: 'PASANG', tool: 'papan', toolName: 'PAPAN', toolArt: 'tool-papan', icon: 'plank',
-          instr: 'Seret tiga papan ke jembatan.',
+          instr: 'Pilih jalan. Seret papan.',
           wrong: 'Belum waktunya. Sekarang kita pasang papan dulu.' },
         { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'tool-jalan', icon: 'wheel',
           instr: 'Tahan tombol, buggy melaju.',
@@ -59,8 +59,10 @@
           wrong: 'Antar paketnya setelah sampai di bendera.' }
       ],
       lines: {
-        start: 'Ada sungai di depan. Ayo buat jalan!',
+        start: 'Pilih jalan atas atau bawah. Seret papan!',
         pickRoute: 'Bagus! Seret papannya satu per satu.',
+        shortWay: 'Jalan atas: pendek, cuma dua papan!',
+        longWay: 'Jalan bawah: panjang, tiga papan.',
         board: 'Satu papan terpasang!',
         built: 'Jembatan jadi! Tahan JALAN untuk menyeberang.',
         arrive: 'Sampai! Ketuk paketnya untuk mengantar.',
@@ -370,6 +372,41 @@
     hints: ['Sampah yang berkilau cocok dengan satu kotak.', 'Kotak yang menyala itu tempatnya.', 'Lihat tanganku. Seret seperti ini!']
   }
   STICKERS.push({ id: 'W03-M01', name: 'Stiker Pilah', art: 'stiker-pilah' })
+  VEHICLES.push({ id: 'street-sweeper', name: 'TRUK SAPU', art: 'veh-street-sweeper', thumb: 'veh-street-sweeper', tags: ['sweep', 'clean'],
+    say: 'Ayo sapu jalannya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
+  MISSIONS['W03-M02'] = {
+    id: 'W03-M02', world: 'eco-park', title: 'Jejak Sapu Raksasa', sub: 'Eco Park', thumb: 'veh-street-sweeper',
+    needs: ['sweep'], vehicle: 'street-sweeper', bg: 'bg-w03-m02-sapu',
+    reward: { key: 'reward:W03-M02', sticker: 'stiker-sapu', stickerName: 'Stiker Sapu', vehicle: 'street-sweeper' },
+    worldDelta: 'eco-park:jalur-bersih',
+    steps: [
+      { id: 'sapu', label: 'SAPU', tool: 'sapu', toolName: 'SAPU', toolArt: 'veh-street-sweeper', icon: 'wheel',
+        instr: 'Gambar jalan sapu zigzag.', wrong: 'Sapu dulu daunnya. Gambar jalan dengan jarimu.' },
+      { id: 'lengkapi', label: 'LENGKAPI', tool: 'lengkapi', toolName: 'LENGKAPI', toolArt: 'w3-papan-lingkaran', icon: 'box',
+        instr: 'Pasang papan yang cocok.', wrong: 'Daun sudah bersih. Lengkapi papan yang kosong.' },
+      { id: 'irama', label: 'IRAMA', tool: 'irama', toolName: 'IRAMA', toolArt: 'w3-papan-segitiga', icon: 'hand',
+        instr: 'Ketuk papan dari kiri.', wrong: 'Pola sudah lengkap. Ketuk papannya satu per satu.' }
+    ],
+    lines: {
+      start: 'Ada pola rahasia di bawah daun!',
+      startAtTruck: 'Mulai gambar dari truk sapu ya.',
+      drawIt: 'Gambar jalan panjang dengan jarimu.',
+      more: 'Masih ada %n papan tertutup daun. Zigzag lagi!',
+      found: 'Pola rahasia! Ada lingkaran dan segitiga.',
+      dragBoard: 'Seret papan yang cocok ke tempat kosong.',
+      toGap: 'Taruh papannya di tempat kosong.',
+      wrongBoard: 'Belum cocok. Lihat polanya: bergantian.',
+      patternDone: 'Pas! Polanya lengkap.',
+      tapStart: 'Ketuk papan dari kiri atas.',
+      order: 'Mulai dari kiri, baris demi baris.',
+      rhythm: 'Merdu! Lantai taman menyala.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Jalur taman bersih dan cantik!'
+    },
+    hints: ['Truk sapu menyapu di sepanjang garismu. Gambar zigzag.', 'Papan yang tertutup daun masih ada. Sapu di sana.', 'Lihat tanganku. Ikuti garis ini!']
+  }
+  STICKERS.push({ id: 'W03-M02', name: 'Stiker Sapu', art: 'stiker-sapu' })
+
 
   var HUB_LINES = {
     hub: 'Mau menjelajah?',

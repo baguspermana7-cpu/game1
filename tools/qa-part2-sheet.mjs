@@ -26,12 +26,13 @@ const shot = async p => p.screenshot({ encoding: 'base64' });
 const drag = async (p, from, to) => { const c = await center(p, from); await p.mouse.move(c.x, c.y); await p.mouse.down(); await p.mouse.move(c.x + 20, c.y - 20, { steps: 3 }); return { c, up: async (t) => { await p.mouse.move(t.x, t.y, { steps: 10 }); await p.mouse.up(); } }; };
 if (WHICH === 'ALL' || WHICH === 'M01') {
   const p = await open('W01-M01', 'buggy'); const F = [];
+  const askAll = async () => { await p.waitForSelector('[data-ask]', { timeout: 9000 }); await sleep(400); F.push(await shot(p)); for (let k = 0; k < 8 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); } };
   F.push(await shot(p));
-  for (const sl of ['S0', 'S1', 'S2']) { const d = await drag(p, '[data-plank-pile]'); if (sl === 'S0') F.push(await shot(p)); await d.up(await center(p, '[data-slot=' + sl + ']')); await sleep(650); if (sl === 'S0') F.push(await shot(p)); }
-  await sleep(600); F.push(await shot(p));
+  for (const sl of ['T0', 'T1']) { const d = await drag(p, '[data-plank-pile]'); if (sl === 'T0') F.push(await shot(p)); await d.up(await center(p, '[data-slot=' + sl + ']')); await sleep(650); if (sl === 'T0') F.push(await shot(p)); }
+  await askAll(); await sleep(600); F.push(await shot(p));
   const g = await center(p, '[data-act=jalan-hold]'); await p.mouse.move(g.x, g.y); await p.mouse.down(); await sleep(1500); F.push(await shot(p)); await sleep(1500); F.push(await shot(p));
   await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='2'", { timeout: 14000 }); await p.mouse.up(); await sleep(500); F.push(await shot(p));
-  const b0 = await drag(p, '[data-box]'); await p.mouse.move(b0.c.x + 80, b0.c.y - 60, { steps: 4 }); F.push(await shot(p)); await b0.up(await center(p, '[data-slot=prop-bendera]')); await sleep(500); F.push(await shot(p)); await sleep(1500); F.push(await shot(p));
+  const b0 = await drag(p, '[data-box]'); await p.mouse.move(b0.c.x + 80, b0.c.y - 60, { steps: 4 }); F.push(await shot(p)); await b0.up(await center(p, '[data-slot=prop-bendera]')); await sleep(500); F.push(await shot(p)); await askAll(); await sleep(1200); if (await p.$('[data-ask]')) await askAll(); await sleep(600); F.push(await shot(p));
   await grid(F, path.join(OUT, `mission-m01-${VW}x${VH}.png`)); await p.close();
 }
 const dg = async (p, from, to, steps = 10, mid) => { const a = await center(p, from); const t = typeof to === 'string' ? await center(p, to) : to; await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.move(a.x + 25, a.y - 25, { steps: 3 }); if (mid) await mid(); await p.mouse.move(t.x, t.y, { steps }); await p.mouse.up(); };

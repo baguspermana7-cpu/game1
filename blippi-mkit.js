@@ -170,7 +170,7 @@
     var q = o.custom
     if (!q) {
       var SE = w.SoalEngine
-      var got = SE && SE.pick({ game: 'blippi', context: o.context || 'gate', avatar: 'auto', count: 1, grade: o.grade || 1, exclude: stats.log.slice(-40) })
+      var got = SE && SE.pick({ game: 'blippi', context: o.context || 'gate', avatar: 'auto', count: 1, grade: o.grade || 1, topic: o.topic, exclude: stats.log.slice(-40) })
       q = got && got[0]
       if (!q) { if (o.done) o.done(true); return null }
     }
@@ -205,11 +205,25 @@
       gs.forEach(function (g, gi) {
         if (gi > 0 && g.role !== 'leave') { var plus = document.createElement('b'); plus.textContent = '+'; plus.style.cssText = 'font:900 ' + Math.round(sz * 0.6) + 'px Nunito,sans-serif;color:#F4761A;margin:0 6px'; row2.appendChild(plus) }
         for (var j = 0; j < g.n; j++) {
-          var ic = new Image(); ic.alt = ''; ic.src = LIB + g.key + '.webp'
+          var ic = new Image(); ic.alt = ''; ic.src = /^(w3-|veh-|pc2-)/.test(g.key) ? 'assets/blippi/' + g.key + '.webp' : LIB + g.key + '.webp'
           ic.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;object-fit:contain;flex:0 0 auto' + (g.role === 'leave' ? ';opacity:.35;filter:grayscale(1)' : '')
           row2.appendChild(ic)
         }
       })
+    } else if (q.row && q.row.length) {
+      // a pattern strip (no plus signs): the pieces in order, then a '?' box for the child to answer
+      var rsz = Math.max(60, Math.min(120, Math.floor(820 / (q.row.length + 1) - 12)))
+      var row3 = api.at(card, '', 30, 136, 880, 130)
+      row3.setAttribute('data-ask-pics', String(q.row.length))
+      row3.style.cssText += ';display:flex;gap:10px;justify-content:center;align-items:center'
+      q.row.forEach(function (key) {
+        var im3 = new Image(); im3.alt = ''; im3.src = 'assets/blippi/' + key + '.webp'
+        im3.style.cssText = 'width:' + rsz + 'px;height:' + rsz + 'px;object-fit:contain;flex:0 0 auto'
+        row3.appendChild(im3)
+      })
+      var qm = document.createElement('b'); qm.textContent = '?'
+      qm.style.cssText = 'width:' + rsz + 'px;height:' + rsz + 'px;border-radius:18px;background:#FFF3C4;border:5px solid #13318A;color:#13318A;font:900 ' + Math.round(rsz * 0.6) + 'px/' + (rsz - 10) + 'px Fredoka,Nunito,sans-serif;text-align:center;flex:0 0 auto'
+      row3.appendChild(qm)
     } else if (q.pic) {
       var pic = api.at(card, '', 390, 130, 160, 120)
       var im = new Image(); im.alt = ''; im.src = LIB + q.pic + '.webp'; im.style.cssText = 'width:100%;height:100%;object-fit:contain'; pic.appendChild(im)
@@ -222,7 +236,7 @@
     var done = false
     var btns = []
     q.choices.forEach(function (ch, k) {
-      var b = api.at(card, 'obtn', x0 + k * (cw + gap), (q.count || q.pic || q.scene) ? 290 : 250, cw, 190, 'button')
+      var b = api.at(card, 'obtn', x0 + k * (cw + gap), (q.count || q.pic || q.scene || q.row) ? 290 : 250, cw, 190, 'button')
       b.type = 'button'
       b.setAttribute('data-choice', String(ch))
       b.style.cssText += ';font:900 56px/1 Fredoka,Nunito,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0'
