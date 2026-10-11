@@ -77,6 +77,7 @@
         api.touch()
         var r = B.toRef(ev.clientX, ev.clientY)
         d = { id: ev.pointerId, x0: r.x, y0: r.y, moved: 0, p: r }
+        K.juice(api, 'pop', r.x, r.y, el)
         el.classList.remove('glow')
         el.style.zIndex = '30'
         try { el.setPointerCapture(ev.pointerId) } catch (e) { /* synthetic */ }
@@ -95,7 +96,7 @@
         el.style.zIndex = '7'
         var inGap = cu.p.x > CX0 - 60 && cu.p.x < CX0 + 3 * CW + 60 && cu.p.y > CY - 90 && cu.p.y < CY + CH + 90
         if (!cancel && cu.moved > 10 && inGap) {
-          if (filled + m.n > 3) { api.warn(L.tooLong); api.sfx('bad'); for (var k = filled; k < 3; k++) K.glow(gh[k], 2800) } else { put(it); return }
+          if (filled + m.n > 3) { api.warn(L.tooLong); K.juice(api, 'wobble', cu.p.x, cu.p.y, el); for (var k = filled; k < 3; k++) K.glow(gh[k], 2800) } else { put(it); return }
         } else if (!cancel) api.warn(cu.moved > 10 ? L.toGap : L.dragPiece)
         api.tween({ x: cu.p.x - cu.x0, y: cu.p.y - cu.y0 }, { x: 0, y: 0 }, 280, function (t) { el.style.transform = 'translate(' + t.x + 'px,' + t.y + 'px)' }, function () { el.style.transform = '' })
       }
@@ -112,7 +113,7 @@
       b.setAttribute('data-built', it.m.id)
       b.style.cssText += ';z-index:5;pointer-events:none'
       K.land(api, b)
-      api.sfx('bump')
+      K.juice(api, 'splash', CX0 + (filled + n / 2) * CW, CY + CH - 10)
       api.fx('dust', CX0 + (filled + n / 2) * CW, CY + CH, 150)
       filled += n
       save()
@@ -156,6 +157,7 @@
       lastT = now
       u = Math.min(1, u + dt / 3400)
       var p = pathAt(u)
+      if (Math.floor(u * 14) !== Math.floor((u - dt / 3400) * 14)) { api.fx('dust', p.x - 90, p.y - 6, 90); api.sfx('tap') }
       placeTruck(p.x, p.y + Math.sin(now / 70) * 1.2)
       if (u >= 1) { hold = false; arrive(); return }
       raf = requestAnimationFrame(drive)
@@ -169,6 +171,8 @@
       placeTruck(DEST.x, DEST.y)
       api.sfx('bump')
       api.fx('dust', DEST.x - 100, DEST.y, 160)
+      K.juice(api, 'horn', DEST.x + 60, DEST.y - 140)
+      K.juice(api, 'cheer', DEST.x, DEST.y - 120)
       api.warn(L.crossed)
       api.later(function () { api.advance() }, 900)
     }
@@ -179,7 +183,7 @@
       try { truck.setPointerCapture(ev.pointerId) } catch (e) { /* synthetic */ }
       hold = true
       lastT = performance.now()
-      api.sfx('honk')
+      K.juice(api, 'horn', cur.x + 100, cur.y - 120)
       truck.classList.remove('glow')
       raf = requestAnimationFrame(drive)
     })
@@ -216,7 +220,8 @@
       el.addEventListener('click', function () {
         if (api.step() !== 2 || busy || el.getAttribute('data-sent')) return
         api.touch()
-        if (c.id !== order[tapped]) { api.warn(L.order); K.glow(crs[order[tapped]], 2600); api.sfx('bad'); return }
+        if (c.id !== order[tapped]) { api.warn(L.order); K.glow(crs[order[tapped]], 2600); K.juice(api, 'wobble', c.x + 60, c.y + 30, el); return }
+        K.juice(api, 'pop', c.x + 60, c.y + 30, el)
         send(el, c)
       })
     })
@@ -227,6 +232,7 @@
       el.style.pointerEvents = 'none'
       tapped++
       var n = tapped
+      K.juice(api, 'whirr', c.x + 60, c.y - 20)
       api.tween({ x: c.x, y: c.y }, { x: STORE.x + (n - 1) * 20, y: STORE.y + (n - 1) * 40 }, 600, function (p, k) { el.style.transform = 'translate(' + (p.x - c.x) + 'px,' + (p.y - c.y - Math.sin(k * Math.PI) * 120) + 'px) scale(' + (1 - k * 0.45) + ')' }, function () {
         api.sfx('ok')
         api.fx('gold-star', STORE.x + 40, STORE.y + 30, 140)

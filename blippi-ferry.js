@@ -176,6 +176,7 @@
         api.touch()
         var r = B.toRef(ev.clientX, ev.clientY)
         d = { id: ev.pointerId, x0: r.x, y0: r.y, moved: 0, p: r }
+        K.juice(api, 'pop', r.x, r.y, c)
         c.classList.remove('glow')
         c.style.zIndex = '30'
         try { c.setPointerCapture(ev.pointerId) } catch (e) { /* synthetic */ }
@@ -225,7 +226,7 @@
         c.style.display = 'none'
         ghosts[slot].style.display = 'none'
         deck[slot].style.display = 'block'
-        api.sfx('bump')
+        K.juice(api, 'splash', cur.x, cur.y - 20)
         api.fx('dust', cur.x - TW / 2 + dp.x + DW / 2, cur.y - TH + dp.y + DH, 110)
         K.ripple(svg, cur.x, cur.y - 14, 120)
         api.tween({ x: 0, y: 0 }, { x: 0, y: 7 }, 160, function (p) { place(cur.x, cur.y, p.y) }, function () { api.tween({ x: 0, y: 7 }, { x: 0, y: 0 }, 220, function (p) { place(cur.x, cur.y, p.y) }) })
@@ -249,6 +250,7 @@
       if (s !== 1) return
       var r = B.toRef(ev.clientX, ev.clientY)
       drag = { id: ev.pointerId, ox: cur.x - r.x, moved: 0, x0: r.x, from: cur.x }
+      K.juice(api, 'horn', cur.x + 60, cur.y - TH * 0.6)
       ferry.classList.remove('glow')
       try { ferry.setPointerCapture(ev.pointerId) } catch (e) { /* synthetic */ }
     })
@@ -271,6 +273,7 @@
       if (nearDock(target)) { dock(); return }
       if (nearDock(other)) {
         api.warn(L.wrongDock.replace('%n', String(wrongN)))
+        K.juice(api, 'wobble', cur.x, cur.y - 100, ferry)
         K.glow(signs[other], 2600); K.glow(signs[target], 3200)
         var sh = signs[other]
         if (sh.animate && !api.reduced()) sh.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-9px)' }, { transform: 'translateX(9px)' }, { transform: 'translateX(0)' }], { duration: 300 })
@@ -289,9 +292,9 @@
       var d = DOCKS[target]
       goalG.style.display = 'none'
       api.tween({ x: cur.x, y: cur.y }, { x: d.x, y: d.y }, 380, function (p) { place(p.x, p.y) }, function () {
-        api.sfx('bump')
+        K.juice(api, 'horn', cur.x, cur.y - 140)
         K.ripple(svg, cur.x, cur.y - 14, 150)
-        api.fx('gold-star', cur.x, cur.y - 120, 160)
+        K.juice(api, 'cheer', cur.x, cur.y - 120)
         busy = false
         save()
         api.warn(L.docked)
@@ -315,6 +318,7 @@
       var rc = deck[di]
       var rr = rc.getBoundingClientRect()
       var p0 = B.toRef(rr.left, rr.top)
+      K.juice(api, 'pop', p0.x + 30, p0.y + 20)
       var d = DOCKS[target]
       var to = { x: SLOTS[sl].x + d.ox, y: SLOTS[sl].y + d.oy }
       pslots[sl].setAttribute('data-used', '1')
@@ -334,6 +338,7 @@
         api.art(real, 'pc2-peti', 0, 0, PW, PH, '')
         K.land(api, real)
         api.sfx('bump')
+        api.sfx('collect')
         api.fx('dust', to.x + PW / 2, to.y + PH, 110)
         busy = false
         if (nUnloaded() >= 3) {

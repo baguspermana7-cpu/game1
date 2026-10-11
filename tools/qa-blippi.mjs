@@ -950,6 +950,39 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   for (let k = 0; k < 6 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
   await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
   ok(await mp.$('[data-payoff=first]') !== null && await mp.evaluate("!!Blippi.state().rewards['reward:W06-M01'] && Blippi.state().world['wonder-lab:jalur-terrain'] === 1"), 'W06-M01: no payoff / reward / world change');
+  // ---- W06-M02 colour lab
+  const hold2 = async (sel, ms) => { const c = await center(mp, sel); await mp.mouse.move(c.x, c.y); await mp.mouse.down(); await sleep(ms); await mp.mouse.up(); };
+  await mp.evaluate("Blippi.go('mission',{mission:'W06-M02',vehicle:'monster-truck'})"); await sleep(700);
+  ok(await waitFor(mp, "document.querySelectorAll('#m-scene [data-disp]').length === 3 && !!document.querySelector('[data-roller]') && !!document.querySelector('[data-bowl]') && document.querySelectorAll('#m-scene [data-goal]').length === 1", 4500), 'W06-M02: dispensers + bowl + roller + ghost goal missing at the start');
+  ok(await mp.evaluate("!!document.querySelector('[data-truck] [data-art=veh-monster-truck]') && !!document.querySelector('[data-truck] [data-driver]') && !document.querySelector('#m-scene [data-socket]') && !/dashed/.test(document.getElementById('m-scene').innerHTML)"), 'W06-M02: monster truck + Blippi missing / an orange ring is in the scene');
+  await answer('Hijau'); await sleep(500);
+  await hold2('[data-disp=merah]', 300); await sleep(300);
+  ok(/Merah tidak/.test(await txt(mp, '[data-instr]')), 'W06-M02: red gave no kind reason');
+  await sleep(2800);
+  await hold2('[data-disp=biru]', 900); await sleep(400); await hold2('[data-disp=biru]', 900); await sleep(400);
+  await hold2('[data-disp=biru]', 300); await sleep(300);
+  ok(/Cukup dua/.test(await txt(mp, '[data-instr]')), 'W06-M02: a third blue scoop was not refused kindly');
+  await sleep(2800);
+  await hold2('[data-disp=kuning]', 900); await sleep(400); await hold2('[data-disp=kuning]', 900); await sleep(500);
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 5000), 'W06-M02: no sum question after 2 blue + 2 yellow');
+  await answer('4'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await stepNow() === '1', 'W06-M02: mixing + question did not advance');
+  const sg2 = await stg(); const XX = (x, y) => ({ x: sg2[0] + x * sg2[2], y: sg2[1] + y * sg2[2] });
+  await dragTo('[data-roller]', XX(1420, 480)); await sleep(500);
+  ok(await stepNow() === '1' && /Celup/.test(await txt(mp, '[data-instr]')), 'W06-M02: painting with a dry roller gave no kind reason / advanced');
+  await sleep(2800);
+  const r1 = await center(mp, '[data-roller]');
+  await mp.mouse.move(r1.x, r1.y); await mp.mouse.down(); const bw = await center(mp, '[data-bowl]'); await mp.mouse.move(bw.x, bw.y, { steps: 8 });
+  await mp.mouse.move(XX(1420, 460).x, XX(1420, 460).y, { steps: 8 });
+  for (const yy of [450, 500, 550]) { await mp.mouse.move(XX(1590, yy).x, XX(1590, yy).y, { steps: 8 }); await mp.mouse.move(XX(1380, yy + 20).x, XX(1380, yy + 20).y, { steps: 8 }); }
+  await mp.mouse.up(); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 6000);
+  ok(await stepNow() === '2' && await mp.$('[data-door-ghost]') !== null, 'W06-M02: painting the door did not advance / no ghost door slot');
+  await dragTo('[data-door]', '[data-truck]');
+  ok(await waitFor(mp, "document.querySelector('[data-newdoor]').style.display === 'block'", 4000), 'W06-M02: the door did not click onto the truck');
+  await waitFor(mp, "!!document.querySelector('[data-ask]')", 6000);
+  for (let k = 0; k < 6 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await mp.$('[data-payoff=first]') !== null && await mp.evaluate("!!Blippi.state().rewards['reward:W06-M02'] && Blippi.state().world['wonder-lab:paviliun-cat'] === 1"), 'W06-M02: no payoff / reward / world change');
   await mp.close();
 }
 // ---------- owner clarity rule: every mission shows its goal (glowing target) and demonstrates the first action (hand) within 4 s ----------
@@ -1253,6 +1286,42 @@ if (process.env.QA_RACE) {
   await waitFor(tp, "!!document.querySelector('[data-payoff=first]')", 9000);
   ok(await tp.$('[data-payoff=first]') !== null && await tp.evaluate("!!Blippi.state().rewards['reward:W04-M02'] && Blippi.state().world['kebun-ceria:lajur-air'] === 1 && !!Blippi.missionDone('W04-M02')"), 'W04-M02: no payoff / reward / world change');
   await tp.close();
+}
+// ---------- W04-M03 forklift: baskets, balance deck, forks ----------
+{
+  const fp = await fresh(1280, 800);
+  const dragTo = async (from, to, steps = 8) => { const a = await center(fp, from); const t = typeof to === 'string' ? await center(fp, to) : to; await fp.mouse.move(a.x, a.y); await fp.mouse.down(); await fp.mouse.move(a.x + 20, a.y - 20, { steps: 3 }); await fp.mouse.move(t.x, t.y, { steps }); await fp.mouse.up(); };
+  const stepNow = () => fp.evaluate("document.querySelector('.step.on').getAttribute('data-step')");
+  const tilt = () => fp.evaluate("+document.querySelector('[data-deck]').getAttribute('data-tilt')");
+  const answerF = async (v) => { await waitFor(fp, "!!document.querySelector('[data-ask]')", 9000); await fp.evaluate(x => { const e = [...document.querySelectorAll('[data-choice]')].find(b => b.getAttribute('data-choice') === x); e && e.click(); }, v); await sleep(900); };
+  await fp.evaluate("Blippi.go('mission',{mission:'W04-M03',vehicle:'forklift'})"); await sleep(700);
+  ok(await waitFor(fp, "document.querySelectorAll('[data-basket]').length === 4 && [...document.querySelectorAll('[data-basket]')].every(b => b.getBoundingClientRect().width > 0) && document.querySelectorAll('[data-gap]').length === 8 && !!document.querySelector('#m-scene .glow')", 4500), 'W04-M03: four baskets + ghost places + glow missing at the start');
+  ok(await fp.evaluate("!!document.querySelector('[data-forklift] [data-art=veh-forklift]') && !!document.querySelector('[data-forklift] [data-driver]') && !document.querySelector('#m-scene [data-socket]') && !/dashed/.test(document.getElementById('m-scene').innerHTML)"), 'W04-M03: forklift + Blippi missing or an orange ring is in the scene');
+  await dragTo('[data-basket="0"]', { x: 8, y: 8 }); await sleep(500);
+  ok(await fp.evaluate("document.querySelector('[data-basket=\"0\"]').parentNode.id === 'm-scene'") && await tilt() === 0, 'W04-M03: a basket dropped off the platform was placed');
+  for (let i = 0; i < 4; i++) { await dragTo(`[data-basket="${i}"]`, `[data-gap="L${i}"]`); await sleep(750); }
+  ok(await tilt() > 5, 'W04-M03: four baskets on the left did not tip the deck left');
+  ok(await waitFor(fp, "!!document.querySelector('[data-ask]')", 5000) && await fp.evaluate("document.querySelectorAll('[data-ask-pics] img').length === 4 || document.querySelectorAll('[data-ask] img').length >= 4"), 'W04-M03: no count question showing the four baskets');
+  await answerF('4'); await waitFor(fp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await stepNow() === '1' && await waitFor(fp, "!!document.querySelector('[data-ask]')", 4000), 'W04-M03: no prediction question at the balance step');
+  await answerF('Seimbang'); await sleep(300);
+  await dragTo('[data-basket="0"]', '[data-gap="R0"]'); await sleep(900);
+  ok(await fp.evaluate("[...document.querySelectorAll('[data-instr]')].map(e => e.textContent).join('')").then(t => /\w/.test(t)) && Math.abs(await tilt()) > 0 && await stepNow() === '1', 'W04-M03: one move should still tip the deck (not balanced yet)');
+  await dragTo('[data-basket="1"]', '[data-gap="R1"]'); await sleep(1500);
+  ok(Math.abs(await tilt()) < 0.01, 'W04-M03: two left + two right did not level the deck');
+  ok(await waitFor(fp, "!!document.querySelector('[data-ask]')", 4000) && await fp.evaluate("document.querySelectorAll('[data-ask-pics] img').length === 4"), 'W04-M03: no 2 + 2 question showing four baskets');
+  await answerF('4'); await waitFor(fp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 5000);
+  ok(await stepNow() === '2' && await fp.$('[data-goal][data-art=veh-forklift]') !== null && await fp.evaluate("document.querySelectorAll('[data-dockgap]').length === 4"), 'W04-M03: no ghost forklift + ghost baskets at the dock');
+  await sleep(1800);
+  ok(await fp.evaluate("document.querySelectorAll('[data-lb]').length === 4 && [...document.querySelectorAll('[data-lb]')].every(e => e.style.display === 'block')"), 'W04-M03: the four baskets are not on the forks');
+  const fc = await center(fp, '[data-forklift]'); await fp.mouse.click(fc.x, fc.y); await sleep(300);
+  ok(await stepNow() === '2' && await fp.evaluate("document.querySelector('[data-goal]').style.display !== 'none'"), 'W04-M03: a forklift TAP drove it (must be a hold)');
+  await fp.mouse.move(fc.x, fc.y); await fp.mouse.down(); await waitFor(fp, "!!document.querySelector('[data-ask]')", 12000); await fp.mouse.up();
+  await waitFor(fp, "!!document.querySelector('[data-ask]')", 9000);
+  for (let k = 0; k < 14 && (await fp.$('[data-ask]') || (k < 8 && await sleep(500) === undefined && await fp.$('[data-ask]'))); k++) { await fp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await waitFor(fp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await fp.$('[data-payoff=first]') !== null && await fp.evaluate("!!Blippi.state().rewards['reward:W04-M03'] && Blippi.state().world['kebun-ceria:meja-muat'] === 1 && !!Blippi.missionDone('W04-M03')"), 'W04-M03: no payoff / reward / world change');
+  await fp.close();
 }
 ok(errors.length === 0, 'page errors: ' + errors.slice(0, 3).join(' | '));
 await b.close();

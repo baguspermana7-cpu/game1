@@ -82,6 +82,8 @@
       if (carrying) { var b = hb(); load.style.transform = 'translate(' + (b.x - loadW / 2) + 'px,' + (b.y - 14) + 'px)' }
     }
     setHook(hookRest().x, hookRest().y)
+    function b0x () { return hb().x }
+    function b0y () { return hb().y }
     function home () { var r = hookRest(); api.tween({ x: hp.x, y: hp.y }, r, 380, function (q) { setHook(q.x, q.y) }) }
 
     // ---- crates: id -> { el, w, h, home, goal, shape }
@@ -193,8 +195,8 @@
         var bd = 140
         pickable().forEach(function (q) { var c = centre(q); var dd = Math.hypot(b.x - c.x, b.y + 20 - c.y); if (dd < bd) { bd = dd; best = q } })
         if (best) {
-          api.sfx('bump')
-          api.fx('spark', b.x, b.y, 160)
+          K.juice(api, 'pop', b.x, b.y)
+          K.juice(api, 'whirr', b.x, b.y - 40)
           attach(best)
           api.warn(L.lifted)
           api.tween({ x: hp.x, y: hp.y }, { x: hp.x, y: hp.y - 60 }, 300, function (q) { setHook(q.x, q.y) })
@@ -214,8 +216,10 @@
       placed[it.id] = true
       if (ghosts[it.id]) ghosts[it.id].style.display = 'none'
       K.land(api, it.el)
+      K.juice(api, 'whirr', TIP.x, TIP.y + 60)
       api.sfx('bump')
       var g = crateGoal(it)
+      K.juice(api, 'cheer', g.x + it.w / 2, g.y)
       api.fx('dust', g.x + it.w / 2, g.y + it.h, 140)
       save()
     }
@@ -229,7 +233,7 @@
         if (!near) { api.warn(L.dropMiss); return false }
         if (near !== it.shape) {
           api.warn(L.wrongShape.replace('%s', it.shape).replace('%s', it.shape))
-          api.sfx('bad')
+          K.juice(api, 'wobble', b0x(), b0y(), hook)
           K.glow(ghosts[it.shape], 3200)
           return false
         }
@@ -249,7 +253,7 @@
       if (!onStack) { api.warn(L.dropMiss); return false }
       if (it.id === 'small' && !placed.big) {
         api.warn(L.bigFirst)
-        api.sfx('bad')
+        K.juice(api, 'wobble', hb().x, hb().y, hook)
         K.glow(ghosts.big, 3200)
         return false
       }
@@ -284,6 +288,7 @@
         n.textContent = String(counted)
         n.setAttribute('data-num', String(counted))
         K.land(api, n)
+        K.juice(api, 'pop', crates[id].el.offsetLeft + crates[id].w / 2, crates[id].el.offsetTop, el)
         api.sfx('ok')
         if (counted < 5) { K.glow(crates[seq[counted]].el, 2600); return }
         busy = true

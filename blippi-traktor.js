@@ -180,7 +180,7 @@
       K.dragCard(api, el, {
         enabled: function () { return api.step() <= 1 && !busy },
         make: function (parent) { var f = api.at(parent, '', 0, 0, 140, 130); api.art(f, 'w4-kartu-' + dir, 0, 0, 140, 130, ''); f.style.filter = 'drop-shadow(0 8px 8px rgba(0,0,0,.3))'; return f },
-        onLift: function () { el.classList.remove('glow') },
+        onLift: function () { el.classList.remove('glow'); api.sfx('tap') },
         tap: function () { addCard(dir) },
         drop: function (pt) {
           var best = -1
@@ -241,6 +241,7 @@
         if (nc === BALE.c && nr === BALE.r) { var bt = pos(nc, nr); return bump(i, from, { x: from.x + (bt.x - from.x) * 0.55, y: from.y + (bt.y - from.y) * 0.55 }, L.bale, true) }
         var to = pos(nc, nr)
         api.sfx('honk')
+        api.fx('dust', from.x - face * 70, from.y + 44, 90)
         api.tween(from, to, 650, function (p, k) { place(p.x, p.y, Math.sin(k * 20) * 1.2) }, function () {
           cell = { c: nc, r: nr }
           place(to.x, to.y)

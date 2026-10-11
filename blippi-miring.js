@@ -138,6 +138,7 @@
         api.touch()
         var r = B.toRef(ev.clientX, ev.clientY)
         drag = { id: ev.pointerId, c: c, moved: 0, x0: r.x, y0: r.y, p: r }
+        K.juice(api, 'pop', r.x, r.y, e)
         e.classList.remove('glow')
         if (e.parentNode !== sc) sc.appendChild(e)
         e.style.width = PW + 'px'
@@ -178,7 +179,7 @@
         // a pile crate cannot be put into the pile slot of another crate while dragging
         render(c)
         e.style.zIndex = c.loc.t === 'pile' ? '7' : '3'
-        if (to) { api.sfx('bump'); K.land(api, e); K.ripple(svg, FX, FY - 12, 140) }
+        if (to && to.t !== 'pile') { K.juice(api, 'splash', FX, FY - 20); K.land(api, e); K.ripple(svg, FX, FY - 12, 140) } else if (to) { api.sfx('bump'); K.land(api, e) }
         var ok = lean()
         if (to && to.t !== 'pile') verdict(ok)
         else showGhosts(api.step() === 1 ? 3 : 0)
@@ -194,14 +195,15 @@
       var r = count('R')
       showGhosts(s === 1 ? Math.max(0, 3) : 0)
       if (ok) { win(s); return }
+      K.juice(api, 'wobble', FX, FY - 150, ferry)
       if (r > l) api.warn(L.leanRight)
       else if (l > r) api.warn(s === 1 ? L.leanLeft : L.moveOne)
     }
     function win (s) {
       if (busy) return
       busy = true
-      api.sfx('ok')
-      api.fx('gold-star', FX, FY - TH + 40, 220)
+      K.juice(api, 'cheer', FX, FY - TH + 40)
+      K.juice(api, 'horn', FX + 120, FY - 200)
       api.warn(L.level)
       if (s === 1) { api.later(function () { busy = false; api.advance() }, 1100); return }
       api.later(function () {
@@ -225,7 +227,7 @@
           api.later(function () {
             K.ask(api, { custom: { id: 'm03-tebak', prompt: 'Peti ada di kiri. Kapal miring ke mana?', choices: ['Kiri', 'Kanan', 'Lurus'], answer: 'Kiri', count: { key: 'pc2-peti', n: 3 }, hint1: 'Sisi yang berat turun. Peti ada di kiri.' }, done: function () {
               tilt.style.transform = 'rotate(-10.8deg)'
-              api.sfx('bump')
+              K.juice(api, 'splash', FX - 120, FY - 20)
               api.warn(L.lean)
               api.later(function () { api.advance() }, 1700)
             } })

@@ -161,6 +161,7 @@
         api.touch()
         var r = B.toRef(ev.clientX, ev.clientY)
         drag = { id: ev.pointerId, c: c, moved: 0, x0: r.x, y0: r.y, p: r }
+        K.juice(api, 'pop', r.x, r.y, e)
         e.classList.remove('glow')
         if (e.parentNode !== sc) sc.appendChild(e)
         e.style.width = PW + 'px'; e.style.height = PH + 'px'; e.style.zIndex = '30'
@@ -189,7 +190,7 @@
         } else if (!cancel && d.moved > 10) { var pi = free('pile'); if (pi >= 0) to = { t: 'pile', i: pi } }
         if (!to) { c.loc = prev; if (!cancel) api.warn(d.moved > 10 ? L.toShip : L.dragCrate) } else c.loc = to
         render(c)
-        if (to) { api.sfx('bump'); K.land(api, e); K.ripple(svg, cur.x, cur.y - 12, 130) }
+        if (to && to.t !== 'pile') { K.juice(api, 'splash', cur.x, cur.y - 20); K.land(api, e); K.ripple(svg, cur.x, cur.y - 12, 130) } else if (to) { api.sfx('bump'); K.land(api, e) }
         var ok = lean()
         if (to && to.t !== 'pile') verdict(ok)
       }
@@ -202,14 +203,15 @@
       var r = count('R')
       if (ok) { loaded(); return }
       if (l + r < 4) return
+      K.juice(api, 'wobble', cur.x, cur.y - 150, ferry)
       if (r > l) api.warn(L.leanRight)
       else api.warn(L.leanLeft)
     }
     function loaded () {
       if (busy) return
       busy = true
-      api.sfx('ok')
-      api.fx('gold-star', cur.x, cur.y - TH + 40, 200)
+      K.juice(api, 'cheer', cur.x, cur.y - TH + 40)
+      K.juice(api, 'horn', cur.x + 100, cur.y - 200)
       api.warn(L.level)
       api.later(function () {
         K.ask(api, { custom: { id: 'm05-side', prompt: '4 peti, kiri dan kanan sama. Tiap sisi berapa?', choices: ['1', '2', '3'], answer: '2', count: { key: 'pc2-peti', n: 2 }, hint1: 'Empat dibagi dua sisi. Dua dan dua.' }, done: function () { busy = false; api.advance() } })
@@ -236,7 +238,7 @@
         dr = { id: ev.pointerId, sail: true }
         hold = true
         lastT = performance.now()
-        api.sfx('honk')
+        K.juice(api, 'horn', cur.x + 80, cur.y - 160)
         ferry.classList.remove('glow')
         raf = requestAnimationFrame(sail)
       }
@@ -249,6 +251,7 @@
       dr.last = r
       dr.pts.push({ x: Math.round(r.x), y: Math.round(r.y) })
       drawRoute(dr.pts)
+      if (dr.pts.length % 5 === 0) { K.ripple(svg, r.x, r.y, 36); api.sfx('tap') }
     })
     function rend (ev, cancel) {
       if (!dr || ev.pointerId !== dr.id) return
@@ -261,7 +264,7 @@
     ferry.addEventListener('pointerup', function (ev) { rend(ev, false) })
     ferry.addEventListener('pointercancel', function (ev) { rend(ev, true) })
     ferry.addEventListener('lostpointercapture', function (ev) { rend(ev, true) })
-    function reject (msg) { api.warn(msg); drawRoute([]); route = null; K.glow(ferry, 2600) }
+    function reject (msg) { api.warn(msg); K.juice(api, 'wobble', cur.x, cur.y - 120, ferry); drawRoute([]); route = null; K.glow(ferry, 2600) }
     function checkRoute (d) {
       var pts = d.pts
       if (d.len < 120 || pts.length < 4) { reject(L.drawIt); return }
@@ -287,8 +290,7 @@
       out.push({ x: ISL[target].dock.x, y: ISL[target].dock.y })
       route = out
       drawRoute(route)
-      api.sfx('ok')
-      api.fx('gold-star', ISL[target].dock.x, ISL[target].dock.y - 80, 160)
+      K.juice(api, 'cheer', ISL[target].dock.x, ISL[target].dock.y - 80)
       api.warn(L.routeOk)
       api.later(function () { api.advance() }, 1000)
     }
@@ -327,7 +329,8 @@
       cancelAnimationFrame(raf)
       goalG.style.display = 'none'
       place(ISL[target].dock.x, ISL[target].dock.y)
-      api.sfx('bump')
+      K.juice(api, 'splash', cur.x, cur.y - 14)
+      K.juice(api, 'horn', cur.x, cur.y - 150)
       K.ripple(svg, cur.x, cur.y - 10, 120)
       drawRoute([])
       api.warn(L.arrived)
@@ -346,6 +349,7 @@
         api.art(fl, 'pc2-peti', 0, 0, DW, DH, '')
         var to = { x: is.c.x - 100 + i * 60, y: is.c.y + 40 + (i % 2) * 20 }
         api.later(function () {
+          K.juice(api, 'pop', p0.x + 30, p0.y + 20)
           api.tween(p0, to, 600, function (p, k) { fl.style.transform = 'translate(' + p.x + 'px,' + (p.y - Math.sin(k * Math.PI) * 110) + 'px) scale(' + (1 + k * 0.5) + ')' }, function () {
             api.sfx('ok')
             api.fx('gold-star', to.x + 30, to.y, 120)

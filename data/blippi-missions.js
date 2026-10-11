@@ -38,7 +38,7 @@
     { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01', 'W03-M02', 'W03-M03', 'W03-M04', 'W03-M05'], finale: 'W03-M05', thumb: 'veh-recycling-truck', art: 'pulau-eco-park', artDone: 'pulau-eco-park-selesai', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
-    { id: 'wonder-lab', name: 'WONDER LAB', mission: 'W06-M01', missions: ['W06-M01'], thumb: 'veh-monster-truck', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
+    { id: 'wonder-lab', name: 'WONDER LAB', mission: 'W06-M01', missions: ['W06-M01', 'W06-M02'], thumb: 'veh-monster-truck', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
   ]
 
   var MISSIONS = {
@@ -665,7 +665,7 @@
   STICKERS.push({ id: 'W05-M05', name: 'Stiker Paket', art: 'stiker-paket' })
 
   /* ---------- W04 Kebun Ceria (added by the W04 build; each mission appends its own block here) ---------- */
-  WORLDS.forEach(function (wd) { if (wd.id === 'kebun-ceria') { wd.mission = 'W04-M01'; wd.missions = ['W04-M01', 'W04-M02'] } })
+  WORLDS.forEach(function (wd) { if (wd.id === 'kebun-ceria') { wd.mission = 'W04-M01'; wd.missions = ['W04-M01', 'W04-M02', 'W04-M03'] } })
   VEHICLES.push({ id: 'farm-tractor', name: 'TRAKTOR', art: 'veh-farm-tractor', thumb: 'veh-farm-tractor', tags: ['haul', 'till'],
     say: 'Ayo olah kebunnya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
   MISSIONS['W04-M01'] = {
@@ -733,6 +733,39 @@
     hints: ['Traktor mulai dari tangki. Jerami menghalangi jalan lurus.', 'Turun dulu, jalan ke kanan, lalu naik ke kebun.', 'Lihat tanganku. Seret panah ke kotak!']
   }
   STICKERS.push({ id: 'W04-M02', name: 'Stiker Urutan', art: 'stiker-urutan' })
+  VEHICLES.push({ id: 'forklift', name: 'FORKLIFT', art: 'veh-forklift', thumb: 'veh-forklift', tags: ['lift_low', 'haul'],
+    say: 'Ayo angkat muatannya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
+  MISSIONS['W04-M03'] = {
+    id: 'W04-M03', world: 'kebun-ceria', title: 'Keranjang Seimbang', sub: 'Kebun Ceria', thumb: 'veh-forklift',
+    needs: ['lift_low'], vehicle: 'forklift', bg: 'bg-w04-m03-keranjang',
+    reward: { key: 'reward:W04-M03', sticker: 'stiker-timbang', stickerName: 'Stiker Timbang', vehicle: 'forklift' },
+    worldDelta: 'kebun-ceria:meja-muat',
+    steps: [
+      { id: 'taruh', label: 'TARUH', tool: 'taruh', toolName: 'TARUH', toolArt: 'w4-keranjang', icon: 'box',
+        instr: 'Taruh keranjang di sisi kiri.', wrong: 'Taruh dulu keranjangnya di papan timbangan.' },
+      { id: 'seimbang', label: 'SEIMBANG', tool: 'seimbang', toolName: 'SEIMBANG', toolArt: 'w4-deck', icon: 'hand',
+        instr: 'Pindahkan dua ke kanan.', wrong: 'Keranjang sudah di papan. Sekarang seimbangkan kiri dan kanan.' },
+      { id: 'angkat', label: 'ANGKAT', tool: 'angkat', toolName: 'ANGKAT', toolArt: 'veh-forklift', icon: 'wheel',
+        instr: 'Tahan forklift, antar ke meja.', wrong: 'Papan sudah seimbang. Tahan forklift supaya mengantar.' }
+    ],
+    lines: {
+      start: 'Empat keranjang apel. Taruh di sisi kiri!',
+      more: 'Bagus! Taruh yang lain di kiri.',
+      leftFirst: 'Dulu taruh di sisi kiri ya.',
+      full: 'Sisi ini sudah penuh.',
+      dragIt: 'Seret keranjang ke papan.',
+      tiltLeft: 'Miring ke kiri! Kiri lebih berat.',
+      moveRight: 'Pindahkan dua keranjang ke kanan.',
+      tiltRight: 'Sekarang miring ke kanan. Pindahkan satu kembali.',
+      flat: 'Datar! Kiri dan kanan sama banyak.',
+      loaded: 'Forklift mengangkat keranjangnya.',
+      holdMore: 'Tahan terus, forklift melaju.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Keranjang seimbang sampai di meja!'
+    },
+    hints: ['Papan miring ke sisi yang lebih banyak.', 'Pindahkan keranjang dari kiri ke tempat berkilau di kanan.', 'Lihat tanganku. Seret keranjangnya!']
+  }
+  STICKERS.push({ id: 'W04-M03', name: 'Stiker Timbang', art: 'stiker-timbang' })
 
   /* ---------- W06 Wonder Lab (added by the W06 build; each mission appends its own block here) ---------- */
   VEHICLES.push({ id: 'monster-truck', name: 'TRUK UJI MONSTER', art: 'veh-monster-truck', thumb: 'veh-monster-truck', tags: ['terrain', 'stunt'],
@@ -775,6 +808,40 @@
     hints: ['Ban dan truk berkilau. Seret ban ke truk.', 'Lumpur butuh ban bergerigi. Kayu cocok untuk semua ban.', 'Lihat tanganku. Ketuk truknya!']
   }
   STICKERS.push({ id: 'W06-M01', name: 'Stiker Ban', art: 'stiker-ban' })
+  MISSIONS['W06-M02'] = {
+    id: 'W06-M02', world: 'wonder-lab', title: 'Laboratorium Warna', sub: 'Wonder Lab', thumb: 'veh-monster-truck',
+    needs: ['mix', 'paint'], vehicle: 'monster-truck', bg: 'bg-w06-m02-warna',
+    reward: { key: 'reward:W06-M02', sticker: 'stiker-campur', stickerName: 'Stiker Campuran' },
+    worldDelta: 'wonder-lab:paviliun-cat',
+    steps: [
+      { id: 'campur', label: 'CAMPUR', tool: 'campur', toolName: 'CAMPUR', toolArt: 'w6-cat-biru', icon: 'drop',
+        instr: 'Tahan cat biru dan kuning.', wrong: 'Campur catnya dulu di mangkuk.' },
+      { id: 'cat', label: 'CAT', tool: 'cat', toolName: 'CAT', toolArt: 'w6-roller', icon: 'wheel',
+        instr: 'Celup roller, cat pintunya.', wrong: 'Catnya sudah jadi. Cat pintunya dengan roller.' },
+      { id: 'pasang', label: 'PASANG', tool: 'pasang', toolName: 'PASANG', toolArt: 'w6-pintu-hijau', icon: 'hand',
+        instr: 'Seret pintu ke truk.', wrong: 'Pintunya sudah hijau. Pasang di truk.' }
+    ],
+    lines: {
+      start: 'Ayo campur warna untuk pintu truk!',
+      askFirst: 'Jawab dulu pertanyaannya ya.',
+      holdPour: 'Tahan botol cat, catnya menetes.',
+      noRed: 'Merah tidak ada di resep. Pakai biru dan kuning.',
+      enough: 'Cukup dua sendok %c. Sekarang yang lain.',
+      green: 'Hijau! Biru dan kuning jadi hijau.',
+      dipped: 'Roller kena cat! Sekarang cat pintunya.',
+      dipFirst: 'Celupkan roller di mangkuk dulu.',
+      dragRoller: 'Seret roller ke mangkuk, lalu ke pintu.',
+      moreCoat: 'Masih ada yang putih. Cat lagi!',
+      painted: 'Pintunya hijau cantik!',
+      dragDoor: 'Seret pintu hijau ke truk.',
+      toTruck: 'Taruh pintunya di truk.',
+      installed: 'Klik! Pintu baru terpasang.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Truk monster punya pintu hijau baru!'
+    },
+    hints: ['Botol biru dan kuning menyala. Tahan satu per satu.', 'Celup roller di mangkuk, lalu gosok pintu putih.', 'Lihat tanganku. Seret seperti ini!']
+  }
+  STICKERS.push({ id: 'W06-M02', name: 'Stiker Campuran', art: 'stiker-campur' })
 
   var HUB_LINES = {
     hub: 'Mau menjelajah?',

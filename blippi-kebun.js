@@ -149,7 +149,7 @@
       K.dragCard(api, el, {
         enabled: function () { return (api.step() === 1 || api.step() === 2) && !busy },
         make: function (parent) { var f = api.at(parent, '', 0, 0, 150, 139); api.art(f, KEY[k], 0, 0, 150, 139, ''); f.style.filter = 'drop-shadow(0 8px 8px rgba(0,0,0,.3))'; return f },
-        onLift: function () { el.classList.remove('glow') },
+        onLift: function () { el.classList.remove('glow'); api.sfx('tap') },
         tap: function () { api.warn(api.step() === 1 ? L.dragSeed : L.dragPlant); K.glow(api.step() === 1 ? trailer : el, 2600); if (api.step() === 2) ghostsFor(k).forEach(function (g) { K.glow(g, 2600) }) },
         drop: function (pt) { return api.step() === 1 ? tryLoad(k, pt) : tryPlant(k, pt) },
         home: function () { return { x: p.x + 10, y: p.y + 10 } }
@@ -275,6 +275,8 @@
       u = Math.min(1, u + dt / 3400)
       var x = START + (END - START) * u
       place(x, Math.sin(now / 60) * 1.3)
+      if (now - (drive.dt || 0) > 190) { drive.dt = now; api.fx('dust', x + TW / 2 + 20, BASE - 10, 70) }
+      if (Math.floor(now / 520) !== Math.floor((now - dt) / 520)) api.sfx('boost')
       for (var i = 0; i < CX.length; i++) if (!furrow[i].getAttribute('data-done') && x - 75 <= CX[i] + 20) { furrow[i].setAttribute('data-done', '1'); till(i) }
       if (u >= 1) { hold = false; arrive(); return }
       raf = requestAnimationFrame(drive)

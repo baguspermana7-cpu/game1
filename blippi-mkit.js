@@ -212,7 +212,7 @@
       gs.forEach(function (g, gi) {
         if (gi > 0 && g.role !== 'leave') { var plus = document.createElement('b'); plus.textContent = '+'; plus.style.cssText = 'font:900 ' + Math.round(sz * 0.6) + 'px Nunito,sans-serif;color:#F4761A;margin:0 6px'; row2.appendChild(plus) }
         for (var j = 0; j < g.n; j++) {
-          var ic = new Image(); ic.alt = ''; ic.src = /^(w3-|veh-|pc2-|w5-|cast-|pc-|prop-)/.test(g.key) ? 'assets/blippi/' + g.key + '.webp' : LIB + g.key + '.webp'
+          var ic = new Image(); ic.alt = ''; ic.src = /^(w6-|w3-|veh-|pc2-|w5-|cast-|pc-|prop-)/.test(g.key) ? 'assets/blippi/' + g.key + '.webp' : LIB + g.key + '.webp'
           ic.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;object-fit:contain;flex:0 0 auto' + (g.role === 'leave' ? ';opacity:.35;filter:grayscale(1)' : '')
           row2.appendChild(ic)
         }
@@ -224,13 +224,16 @@
       row3.setAttribute('data-ask-pics', String(q.row.length))
       row3.style.cssText += ';display:flex;gap:10px;justify-content:center;align-items:center'
       q.row.forEach(function (key) {
+        if (key === '+') { var pl = document.createElement('b'); pl.textContent = '+'; pl.style.cssText = 'font:900 ' + Math.round(rsz * 0.6) + 'px Nunito,sans-serif;color:#F4761A;margin:0 6px'; row3.appendChild(pl); return }
         var im3 = new Image(); im3.alt = ''; im3.src = 'assets/blippi/' + key + '.webp'
         im3.style.cssText = 'width:' + rsz + 'px;height:' + rsz + 'px;object-fit:contain;flex:0 0 auto'
         row3.appendChild(im3)
       })
+      if (q.rowNoBox) { /* a sum: the choices are the answer */ } else {
       var qm = document.createElement('b'); qm.textContent = '?'
       qm.style.cssText = 'width:' + rsz + 'px;height:' + rsz + 'px;border-radius:18px;background:#FFF3C4;border:5px solid #13318A;color:#13318A;font:900 ' + Math.round(rsz * 0.6) + 'px/' + (rsz - 10) + 'px Fredoka,Nunito,sans-serif;text-align:center;flex:0 0 auto'
       row3.appendChild(qm)
+      }
     } else if (q.pic) {
       var pic = api.at(card, '', 390, 130, 160, 120)
       var im = new Image(); im.alt = ''; im.src = LIB + q.pic + '.webp'; im.style.cssText = 'width:100%;height:100%;object-fit:contain'; pic.appendChild(im)
@@ -306,5 +309,19 @@
     return d
   }
 
-  w.BlippiKit = { glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land, waterPath: waterPath, waterBody: waterBody, ripple: ripple, ask: ask, ghost: ghost, driver: driver, stats: stats }
+  // K.juice(api, kind, x, y, el): one call = a sound AND a visible effect for the common actions (owner: every action must be heard and seen)
+  //   pop = something picked up/tapped, whirr = winch/crane motion, splash = lands in water, horn = departure/arrival, cheer = success chime + sparkle, wobble = soft "not that one", tick = tiny step
+  function juice (api, kind, x, y, el) {
+    var B = api.B
+    var later = function (fn, ms) { api.later(fn, ms) }
+    if (kind === 'pop') { B.sfx('collect'); api.fx('spark', x, y, 120); if (el && el.animate && !api.reduced()) el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 220, composite: 'add' }) }
+    else if (kind === 'whirr') { B.sfx('boost'); later(function () { B.sfx('boost') }, 170); later(function () { B.sfx('tap') }, 340); api.fx('speed', x, y, 110) }
+    else if (kind === 'splash') { B.sfx('water'); later(function () { B.sfx('bump') }, 90); api.fx('splash', x, y, 170); api.fx('droplets', x, y - 20, 140) }
+    else if (kind === 'horn') { B.sfx('honk'); later(function () { B.sfx('honk') }, 260); api.fx('cloud', x, y, 140) }
+    else if (kind === 'cheer') { B.sfx('ok'); later(function () { B.sfx('collect') }, 220); api.fx('gold-star', x, y, 200); api.fx('spark', x, y - 40, 150) }
+    else if (kind === 'wobble') { B.sfx('bad'); api.fx('dust', x, y, 100); if (el && el.animate && !api.reduced()) el.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'rotate(-2deg)' }, { transform: 'rotate(0)' }], { duration: 360, composite: 'add' }) }
+    else if (kind === 'tick') { B.sfx('tap') }
+  }
+
+  w.BlippiKit = { juice: juice, glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land, waterPath: waterPath, waterBody: waterBody, ripple: ripple, ask: ask, ghost: ghost, driver: driver, stats: stats }
 })(window)
