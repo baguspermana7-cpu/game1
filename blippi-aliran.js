@@ -7,7 +7,7 @@
   'use strict'
   var K = w.BlippiKit
   var NS = 'http://www.w3.org/2000/svg'
-  var PUMP = { x: 120, y: 556, w: 200, h: 137 }
+  var PUMP = { x: 0, y: 440, w: 420, h: 273 }
   var GAP = { x: 480, y: 702, r: 46 }
   var HOSE_A = 'M300,650 C360,700 410,705 440,700'
   var HOSE_C = 'M440,700 L520,702'
@@ -67,15 +67,22 @@
     setLevel(level)
 
     // ---- scene pieces: the pump (the thing you hold), the round clue tag, the socket ring
-    var pump = api.art(sc, 'modul-pompa', PUMP.x, PUMP.y, PUMP.w, PUMP.h, 'pumpunit')
+    var pump = api.at(sc, 'pumpunit', PUMP.x, PUMP.y, PUMP.w, PUMP.h, 'button')
+    pump.type = 'button'
     pump.setAttribute('data-pump', '1')
-    pump.style.cssText += ';z-index:6;touch-action:none;cursor:pointer'
+    pump.setAttribute('aria-label', 'Truk air: tahan untuk memompa')
+    pump.style.cssText += ';background:none;border:0;padding:0;z-index:6;touch-action:none;cursor:pointer'
+    var tart = api.art(pump, 'veh-truk-air-sisi', 0, 0, PUMP.w, PUMP.h, '')
+    tart.setAttribute('data-veh', 'truk-air')
+    K.driver(pump, { x: 0.395, y: 0.25, w: 0.11, h: 0.2 })
     var tag = api.art(sc, 'pc-card-circle', GAP.x - 52, GAP.y - 112, 104, 66, 'tagcard')
     tag.style.zIndex = '5'
     tag.style.pointerEvents = 'none'
-    var ring = K.socket(api, sc, GAP.x - GAP.r, GAP.y - GAP.r, GAP.r * 2, GAP.r * 2, 'coupler')
-    ring.style.borderRadius = '50%'
-    ring.style.display = 'none'
+    var ring = api.at(sc, 'ghostpiece', GAP.x - 40, GAP.y - 40, 80, 80)
+    ring.setAttribute('data-socket', 'coupler')
+    ring.style.cssText += ';pointer-events:none;z-index:3;opacity:.8;filter:brightness(1.4) saturate(.5) drop-shadow(0 0 3px #fff) drop-shadow(0 0 12px rgba(255,255,255,.95));display:none'
+    ring.innerHTML = '<svg viewBox="0 0 90 90" width="80" height="80">' + SHAPE.bulat + '</svg>'
+    if (ring.animate && !api.reduced()) ring.animate([{ opacity: 0.6, transform: 'scale(1)' }, { opacity: 0.92, transform: 'scale(1.08)' }, { opacity: 0.6, transform: 'scale(1)' }], { duration: 1500, iterations: Infinity, easing: 'ease-in-out' })
     var jets = api.art(sc, 'pc-jets-a', POND.x - 110, POND.y - 205, 220, 180, 'jets')
     jets.style.cssText += ';z-index:4;pointer-events:none;opacity:0'
     var plugEls = {}
@@ -140,7 +147,7 @@
       ring.style.display = 'block'
       K.glow(ring, 3000)
       api.persist({})
-      api.later(function () { setWater(0); api.advance() }, 1400)
+      api.later(function () { setWater(0); K.ask(api, { custom: { id: 'm22-shape', prompt: 'Konektor mana yang bulat?', choices: ['Kotak', 'Bulat', 'Segitiga'], answer: 'Bulat', hint1: 'Bulat itu seperti roda.' }, done: function () { api.advance() } }) }, 1400)
     }
     function finish () {
       api.sfx('ok')
@@ -149,7 +156,7 @@
       if (jets.animate && !api.reduced()) jets.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }], { duration: 600, easing: 'cubic-bezier(.23,1,.32,1)' })
       api.fx('gold-star', POND.x, POND.y - 100, 240)
       api.persist({})
-      api.later(function () { api.advance() }, 900)
+      api.later(function () { K.ask(api, { context: 'gate', grade: 1, done: function () { api.advance() } }) }, 900)
     }
     pump.addEventListener('pointerdown', function (ev) {
       var s = api.step()

@@ -37,11 +37,12 @@ if (WHICH === 'ALL' || WHICH === 'M01') {
 const dg = async (p, from, to, steps = 10, mid) => { const a = await center(p, from); const t = typeof to === 'string' ? await center(p, to) : to; await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.move(a.x + 25, a.y - 25, { steps: 3 }); if (mid) await mid(); await p.mouse.move(t.x, t.y, { steps }); await p.mouse.up(); };
 if (WHICH === 'ALL' || WHICH === 'W02M02') {
   const p = await open('W02-M02', 'truk-air'); const F = [];
+  const askAll = async () => { await p.waitForSelector('[data-ask]', { timeout: 12000 }); await sleep(400); F.push(await shot(p)); for (let k = 0; k < 8 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); } };
   F.push(await shot(p));
-  const pc = await center(p, '[data-pump]'); await p.mouse.move(pc.x, pc.y); await p.mouse.down(); await sleep(900); F.push(await shot(p)); await sleep(1500); await p.mouse.up(); await sleep(900); F.push(await shot(p)); await sleep(900);
+  const pc = await center(p, '[data-pump]'); await p.mouse.move(pc.x, pc.y); await p.mouse.down(); await sleep(900); F.push(await shot(p)); await sleep(1500); await p.mouse.up(); await askAll(); await sleep(900); F.push(await shot(p)); await sleep(900);
   await dg(p, '[data-plug=kotak]', '[data-socket=coupler]', 10, async () => { F.push(await shot(p)); }); await sleep(700); F.push(await shot(p));
   await dg(p, '[data-plug=bulat]', '[data-socket=coupler]'); await sleep(1200); F.push(await shot(p));
-  const q = await center(p, '[data-pump]'); await p.mouse.move(q.x, q.y); await p.mouse.down(); await sleep(1500); F.push(await shot(p)); await sleep(2200); F.push(await shot(p)); await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p)); await p.mouse.up();
+  const q = await center(p, '[data-pump]'); await p.mouse.move(q.x, q.y); await p.mouse.down(); await sleep(1500); F.push(await shot(p)); await sleep(2200); F.push(await shot(p)); await p.waitForSelector('[data-ask]', { timeout: 12000 }).catch(() => {}); await p.mouse.up(); await askAll(); await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
   await grid(F, path.join(OUT, `mission-w02m02-${VW}x${VH}.png`)); await p.close();
 }
 if (WHICH === 'ALL' || WHICH === 'W02M03') {
