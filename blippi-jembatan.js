@@ -31,8 +31,8 @@
   var HW = 100
   var HH = 102
   var TRUCK = { w: 250, h: 180, y: 392, x0: 330, x1: 1010 }
-  var PARCEL = { w: 78, h: 68 }
-  var DROP = { x: 1180, y: 600, w: 104, h: 90 }
+  var PARCEL = { w: 110, h: 96 }
+  var DROP = { x: 1150, y: 560, w: 160, h: 138 }
 
   var mod = { mount: function (api) {
     var B = api.B
