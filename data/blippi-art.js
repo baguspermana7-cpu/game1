@@ -195,6 +195,9 @@
   // see data/blippi-approved.json. hub-meja-peta / hub-papan stay UNSHIPPED (bg-hub already paints them).
   // slots whose picture the shipped real background already paints: they stay as invisible hotspots (never doubled)
   var PAINTED = { 'hub-garasi': 'bg-hub', 'hub-meja-peta': 'bg-hub', 'hub-papan': 'bg-hub' }
+  // W05 Pelabuhan (owner plates + harbor ferry / crate crops)
+  ;['bg-w05-m01-ferry', 'bg-w05-m02-crane-peti', 'bg-w05-m03-muatan-miring', 'bg-w05-m04-jembatan-dermaga', 'bg-w05-m05-paket-pulau', 'veh-harbor-ferry', 'stiker-ferry', 'pc2-peti', 'lencana-w05', 'pulau-pelabuhan'].forEach(function (k) { SHIPPED[k] = true })
+
   function painted (key) { return !!(PAINTED[key] && SHIPPED[PAINTED[key]]) }
 
   // owner art for the bridge plank is still wrong in the pack, so the PAPAN tool shows the shared library's wooden bridge segment

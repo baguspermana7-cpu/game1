@@ -408,6 +408,44 @@
   STICKERS.push({ id: 'W03-M02', name: 'Stiker Sapu', art: 'stiker-sapu' })
 
 
+  /* ---------- W05 Pelabuhan Penjelajah (added by the W05 build; each mission appends its own block here) ---------- */
+  ;(function () {
+    var pw = WORLDS.filter(function (x) { return x.id === 'pelabuhan' })[0]
+    if (pw) { delete pw.locked; pw.mission = 'W05-M01'; pw.missions = ['W05-M01']; pw.thumb = 'veh-harbor-ferry' }
+  })()
+  VEHICLES.push({ id: 'harbor-ferry', name: 'FERI PELABUHAN', art: 'veh-harbor-ferry', thumb: 'veh-harbor-ferry', tags: ['float', 'haul'],
+    say: 'Ayo antar peti!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
+  MISSIONS['W05-M01'] = {
+    id: 'W05-M01', world: 'pelabuhan', title: 'Perjalanan Ferry', sub: 'Pelabuhan Penjelajah', thumb: 'veh-harbor-ferry',
+    needs: ['float'], vehicle: 'harbor-ferry', bg: 'bg-w05-m01-ferry',
+    reward: { key: 'reward:W05-M01', sticker: 'stiker-ferry', stickerName: 'Stiker Feri', vehicle: 'harbor-ferry' },
+    worldDelta: 'pelabuhan:rute-pulau',
+    steps: [
+      { id: 'muat', label: 'MUAT', tool: 'muat', toolName: 'MUAT', toolArt: 'pc2-peti', icon: 'box',
+        instr: 'Seret peti ke kapal.', wrong: 'Muat petinya dulu ke kapal.' },
+      { id: 'antar', label: 'ANTAR', tool: 'antar', toolName: 'ANTAR', toolArt: 'prop-bendera', icon: 'wheel',
+        instr: 'Antar ke dermaga bendera.', wrong: 'Peti sudah di kapal. Sekarang antar ke dermaga bendera.' },
+      { id: 'turun', label: 'TURUN', tool: 'turun', toolName: 'TURUN', toolArt: 'veh-harbor-ferry', icon: 'hand',
+        instr: 'Ketuk peti, turunkan.', wrong: 'Kapal sudah sampai. Ketuk petinya supaya turun.' }
+    ],
+    lines: {
+      start: 'Pulau menunggu peti. Ayo muat!',
+      dragCrate: 'Seret petinya ke kapal.',
+      toShip: 'Taruh petinya di atas kapal.',
+      more: 'Bagus! Muat peti yang lain.',
+      loaded: 'Kapal sudah penuh. Berlayar!',
+      dragShip: 'Seret kapalnya di atas air.',
+      wrongDock: 'Dermaga itu minta %n peti. Kita bawa 3. Cari yang bendera.',
+      nearDock: 'Dekatkan kapal ke dermaga bendera.',
+      docked: 'Sandar! Sekarang turunkan petinya.',
+      tapCrate: 'Ketuk peti di kapal.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Semua peti sampai di pulau!'
+    },
+    hints: ['Dermaga dengan bendera menunggu 3 peti.', 'Seret kapal ke dermaga yang berkilau.', 'Lihat tanganku. Seret seperti ini!']
+  }
+  STICKERS.push({ id: 'W05-M01', name: 'Stiker Feri', art: 'stiker-ferry' })
+
   var HUB_LINES = {
     hub: 'Mau menjelajah?',
     map: 'Pilih pulau, lalu ketuk JELAJAHI.',
