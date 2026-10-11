@@ -196,7 +196,7 @@
   // slots whose picture the shipped real background already paints: they stay as invisible hotspots (never doubled)
   var PAINTED = { 'hub-garasi': 'bg-hub', 'hub-meja-peta': 'bg-hub', 'hub-papan': 'bg-hub' }
   // W05 Pelabuhan (owner plates + harbor ferry / crate crops)
-  ;['bg-w05-m01-ferry', 'bg-w05-m02-crane-peti', 'bg-w05-m03-muatan-miring', 'bg-w05-m04-jembatan-dermaga', 'bg-w05-m05-paket-pulau', 'veh-harbor-ferry', 'stiker-ferry', 'pc2-peti', 'lencana-w05', 'pulau-pelabuhan'].forEach(function (k) { SHIPPED[k] = true })
+  ;['bg-w05-m01-ferry', 'bg-w05-m02-crane-peti', 'bg-w05-m03-muatan-miring', 'bg-w05-m04-jembatan-dermaga', 'bg-w05-m05-paket-pulau', 'veh-harbor-ferry', 'stiker-ferry', 'stiker-peti', 'pc2-peti', 'lencana-w05', 'pulau-pelabuhan'].forEach(function (k) { SHIPPED[k] = true })
 
   // W04 Kebun Ceria (owner plates + farm pack crops, alpha-cut)
   var PART4 = ['bg-w04-m01-baris-kebun', 'veh-farm-tractor', 'w4-trailer', 'w4-wortel', 'w4-tomat', 'w4-petak', 'stiker-kebun']

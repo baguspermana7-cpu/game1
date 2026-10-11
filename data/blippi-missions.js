@@ -444,7 +444,7 @@
   /* ---------- W05 Pelabuhan Penjelajah (added by the W05 build; each mission appends its own block here) ---------- */
   ;(function () {
     var pw = WORLDS.filter(function (x) { return x.id === 'pelabuhan' })[0]
-    if (pw) { delete pw.locked; pw.mission = 'W05-M01'; pw.missions = ['W05-M01']; pw.thumb = 'veh-harbor-ferry' }
+    if (pw) { delete pw.locked; pw.mission = 'W05-M01'; pw.missions = ['W05-M01', 'W05-M02']; pw.thumb = 'veh-harbor-ferry' }
   })()
   VEHICLES.push({ id: 'harbor-ferry', name: 'FERI PELABUHAN', art: 'veh-harbor-ferry', thumb: 'veh-harbor-ferry', tags: ['float', 'haul'],
     say: 'Ayo antar peti!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
@@ -478,6 +478,37 @@
     hints: ['Dermaga dengan bendera menunggu 3 peti.', 'Seret kapal ke dermaga yang berkilau.', 'Lihat tanganku. Seret seperti ini!']
   }
   STICKERS.push({ id: 'W05-M01', name: 'Stiker Feri', art: 'stiker-ferry' })
+  MISSIONS['W05-M02'] = {
+    id: 'W05-M02', world: 'pelabuhan', title: 'Crane dan Tiga Peti', sub: 'Pelabuhan Penjelajah', thumb: 'veh-mobile-crane',
+    needs: ['lift_hook'], vehicle: 'mobile-crane', bg: 'bg-w05-m02-crane-peti',
+    reward: { key: 'reward:W05-M02', sticker: 'stiker-peti', stickerName: 'Stiker Peti' },
+    worldDelta: 'pelabuhan:gudang-mini',
+    steps: [
+      { id: 'cocok', label: 'COCOK', tool: 'cocok', toolName: 'COCOK', toolArt: 'pc2-peti', icon: 'box',
+        instr: 'Angkat peti ke bentuknya.', wrong: 'Angkat petinya dulu dengan kait.' },
+      { id: 'susun', label: 'SUSUN', tool: 'susun', toolName: 'SUSUN', toolArt: 'prop-kait', icon: 'plank',
+        instr: 'Susun: besar dulu, kecil atas.', wrong: 'Tiga peti sudah di tempatnya. Sekarang susun dua peti.' },
+      { id: 'hitung', label: 'HITUNG', tool: 'hitung', toolName: 'HITUNG', toolArt: 'veh-mobile-crane', icon: 'hand',
+        instr: 'Ketuk peti dari kiri.', wrong: 'Peti sudah tersusun. Sekarang hitung petinya.' }
+    ],
+    lines: {
+      start: 'Peti tiga bentuk. Ayo angkat dengan kait!',
+      dragHook: 'Seret kait ke peti.',
+      lifted: 'Terangkat! Bawa ke bentuknya.',
+      dropMiss: 'Turunkan petinya di bentuk yang cocok.',
+      wrongShape: 'Peti ini bentuk %s. Cari bentuk %s.',
+      placed: 'Pas! Angkat peti yang lain.',
+      shapesDone: 'Tiga peti sudah pas!',
+      bigFirst: 'Peti kecil akan penyok. Besar dulu di bawah.',
+      stacked: 'Menara peti sudah kokoh!',
+      tapFirst: 'Mulai dari kiri, ketuk satu per satu.',
+      order: 'Mulai dari kiri.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Gudang mini sudah rapi dan menyala!'
+    },
+    hints: ['Peti punya gambar bentuk. Cari garis bentuk yang sama.', 'Bentuk yang berkilau itu tempatnya.', 'Lihat tanganku. Seret kaitnya seperti ini!']
+  }
+  STICKERS.push({ id: 'W05-M02', name: 'Stiker Peti', art: 'stiker-peti' })
 
   /* ---------- W04 Kebun Ceria (added by the W04 build; each mission appends its own block here) ---------- */
   WORLDS.forEach(function (wd) { if (wd.id === 'kebun-ceria') { wd.mission = 'W04-M01'; wd.missions = ['W04-M01'] } })
