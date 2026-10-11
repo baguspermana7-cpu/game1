@@ -126,6 +126,7 @@
     var exc = api.art(sc, 'veh-excavator', EXC.park.x, EXC.park.y, EXC.w, EXC.h, 'excv')
     exc.setAttribute('data-excavator', '1')
     exc.style.cssText += ';z-index:8;pointer-events:none;transform-origin:92% 92%'
+    K.driver(exc, { x: 0.58, y: 0.38, w: 0.17, h: 0.27 })
     var excShadow = api.at(sc, 'shd', 0, 0, 220, 30)
     excShadow.style.zIndex = '7'
     var ex = { x: EXC.park.x, y: EXC.park.y }
@@ -211,13 +212,10 @@
       var sl = it.slot
       var z = api.at(sc, '', sl.x, sl.y, sl.w, sl.h)
       z.setAttribute('data-slot', 'park' + i)
-      z.style.cssText += ';border:5px dashed #FF8A1F;border-radius:22px;background:rgba(255,196,64,.18);pointer-events:none;z-index:2;display:none'
-      var sh = api.at(z, '', 14, 6, sl.w - 28, sl.h - 12)
-      sh.style.cssText += ';pointer-events:none'
-      var ic = pic(sh, it, Math.min(sl.w - 28, sl.h - 12))
-      ic.style.cssText += ';margin:0 auto;filter:brightness(0) opacity(.35)'
+      z.style.cssText += ';pointer-events:none;z-index:2;display:none'
+      K.ghost(api, z, it.key, 0, 0, sl.w, sl.h)
       slots[i] = z
-      if (carried.indexOf(i) >= 0) { z.style.display = 'block'; z.style.border = '0'; z.style.background = 'none'; z.querySelector('div').style.display = 'none'; drawInstalled(i, false) }
+      if (carried.indexOf(i) >= 0) { z.style.display = 'block'; z.querySelector('div').style.display = 'none'; drawInstalled(i, false) }
     })
     function drawInstalled (i, anim) {
       var sl = ITEMS[i].slot
@@ -285,7 +283,7 @@
       var from = p ? { x: p.x - 45, y: p.y - 45 } : pieceHome(i)
       api.tween(from, { x: sl.x + sl.w / 2 - 45, y: sl.y + sl.h / 2 - 45 }, 240, function (q) { d.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)' }, function () {
         d.style.display = 'none'
-        slots[i].style.border = '0'; slots[i].style.background = 'none'; slots[i].querySelector('div').style.display = 'none'
+        slots[i].querySelector('div').style.display = 'none'
         drawInstalled(i, true)
         api.fx('spark', sl.x + sl.w / 2, sl.y + sl.h / 2, 200)
       })
