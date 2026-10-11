@@ -94,7 +94,7 @@
   ;['bg-w05-m01-ferry', 'bg-w05-m02-crane-peti', 'bg-w05-m03-muatan-miring', 'bg-w05-m04-jembatan-dermaga', 'bg-w05-m05-paket-pulau', 'veh-harbor-ferry', 'stiker-ferry', 'stiker-peti', 'w5-ponton', 'stiker-balance', 'stiker-dermaga', 'stiker-paket', 'pulau-pelabuhan-selesai', 'pc2-peti', 'lencana-w05', 'pulau-pelabuhan'].forEach(function (k) { SHIPPED[k] = true })
 
   // W06 Wonder Lab (owner plates + monster truck / tyre-test crops)
-  var PART6 = ['bg-w06-m01-ban', 'bg-w06-m02-warna', 'bg-w06-m03-lintasan', 'bg-w06-m04-lampu', 'bg-w06-m05-festival', 'lencana-w06', 'veh-monster-truck', 'stiker-ban', 'w6-cat-biru', 'w6-cat-kuning', 'w6-cat-merah', 'w6-roller', 'w6-pintu-putih', 'w6-pintu-hijau', 'stiker-campur']
+  var PART6 = ['bg-w06-m01-ban', 'bg-w06-m02-warna', 'bg-w06-m03-lintasan', 'bg-w06-m04-lampu', 'bg-w06-m05-festival', 'lencana-w06', 'veh-monster-truck', 'stiker-ban', 'w6-cat-biru', 'w6-cat-kuning', 'w6-cat-merah', 'w6-roller', 'w6-pintu-putih', 'w6-pintu-hijau', 'stiker-campur', 'w6-trk-lurus', 'w6-trk-belok', 'w6-trk-tanjakan', 'w6-trk-tinggi', 'stiker-lintasan', 'w6-lampion', 'w6-kon-bulat', 'w6-kon-kotak', 'w6-kon-segitiga', 'w6-bianglala', 'stiker-festival', 'pulau-wonder-lab-selesai']
   PART6.forEach(function (k) { SHIPPED[k] = true })
 
   var ROWS = [

@@ -38,7 +38,7 @@
     { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01', 'W03-M02', 'W03-M03', 'W03-M04', 'W03-M05'], finale: 'W03-M05', thumb: 'veh-recycling-truck', art: 'pulau-eco-park', artDone: 'pulau-eco-park-selesai', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
-    { id: 'wonder-lab', name: 'WONDER LAB', mission: 'W06-M01', missions: ['W06-M01', 'W06-M02', 'W06-M03'], thumb: 'veh-monster-truck', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
+    { id: 'wonder-lab', name: 'WONDER LAB', mission: 'W06-M01', missions: ['W06-M01', 'W06-M02', 'W06-M03', 'W06-M04', 'W06-M05'], finale: 'W06-M05', thumb: 'veh-monster-truck', art: 'pulau-wonder-lab', artDone: 'pulau-wonder-lab-selesai', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
   ]
 
   var MISSIONS = {
@@ -941,6 +941,74 @@
     hints: ['Bentuk bayangan menunjukkan modul yang cocok.', 'Tanjakan rendah terlalu pendek. Ganti yang tinggi.', 'Lihat tanganku. Seret seperti ini!']
   }
   STICKERS.push({ id: 'W06-M03', name: 'Stiker Lintasan', art: 'stiker-lintasan' })
+  MISSIONS['W06-M04'] = {
+    id: 'W06-M04', world: 'wonder-lab', title: 'Lampu Wahana Menyala', sub: 'Wonder Lab', thumb: 'veh-monster-truck',
+    needs: ['repair', 'sequence'], vehicle: 'monster-truck', bg: 'bg-w06-m04-lampu',
+    reward: { key: 'reward:W06-M04', sticker: 'w6-lampion', stickerName: 'Stiker Lampu' },
+    worldDelta: 'wonder-lab:panggung-cahaya',
+    steps: [
+      { id: 'sambung', label: 'SAMBUNG', tool: 'sambung', toolName: 'SAMBUNG', toolArt: 'w6-kon-bulat', icon: 'plank',
+        instr: 'Seret konektor ke bentuknya.', wrong: 'Dayanya mati. Sambung konektor dulu.' },
+      { id: 'urutan', label: 'URUTAN', tool: 'urutan', toolName: 'URUTAN', toolArt: 'w6-lampion', icon: 'hand',
+        instr: 'Lihat, lalu ketuk sama.', wrong: 'Daya sudah menyala. Ikuti urutan lampion.' },
+      { id: 'panggung', label: 'PANGGUNG', tool: 'panggung', toolName: 'PANGGUNG', toolArt: 'veh-monster-truck', icon: 'wheel',
+        instr: 'Tahan truk ke panggung.', wrong: 'Lampu sudah menyala. Tahan truknya ke panggung.' }
+    ],
+    lines: {
+      start: 'Wahana mati lampu! Ayo sambung.',
+      dragKon: 'Seret konektor ke bayangan bentuknya.',
+      toSocket: 'Taruh konektor di bayangannya.',
+      wrongShape: 'Konektor %a belum cocok di lubang %b.',
+      more: 'Klik! Sambung yang lain.',
+      powered: 'Dayanya menyala! Lampion berkedip.',
+      watch: 'Lihat urutan lampionnya.',
+      yourTurn: 'Giliranmu! Ketuk sama.',
+      slip: 'Hampir! Lihat lagi pelan-pelan.',
+      remembered: 'Urutannya benar! Semua lampu menyala.',
+      fixFirst: 'Sambung konektor dulu.',
+      lightsFirst: 'Nyalakan lampion dulu.',
+      tapTruck: 'Tahan truknya, ke panggung!',
+      holdMore: 'Tahan terus, truknya melaju.',
+      show: 'Pertunjukan cahaya dimulai!',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Panggung cahaya menyala!'
+    },
+    hints: ['Konektor dan bayangannya punya bentuk yang sama.', 'Lihat urutan kedipnya, lalu ketuk lampion yang sama.', 'Lihat tanganku. Ikuti lampion ini!']
+  }
+  STICKERS.push({ id: 'W06-M04', name: 'Stiker Lampu', art: 'w6-lampion' })
+  MISSIONS['W06-M05'] = {
+    id: 'W06-M05', world: 'wonder-lab', title: 'Festival Penemuan', sub: 'Wonder Lab', thumb: 'veh-monster-truck',
+    needs: ['display', 'parade', 'ride'], vehicle: 'monster-truck', bg: 'bg-w06-m05-festival',
+    reward: { key: 'reward:W06-M05', sticker: 'stiker-festival', stickerName: 'Stiker Festival', badge: 'lencana-w06', badgeName: 'Lencana Wonder Lab' },
+    worldDelta: 'wonder-lab:festival',
+    steps: [
+      { id: 'pajang', label: 'PAJANG', tool: 'pajang', toolName: 'PAJANG', toolArt: 'veh-monster-truck', icon: 'wheel',
+        instr: 'Seret tiga truk ke panggung.', wrong: 'Pilih dan pajang tiga kendaraan dulu.' },
+      { id: 'parade', label: 'PARADE', tool: 'parade', toolName: 'PARADE', toolArt: 'veh-street-sweeper', icon: 'hand',
+        instr: 'Ketuk urutan parade.', wrong: 'Kendaraan sudah dipajang. Pilih urutan parade.' },
+      { id: 'coba', label: 'COBA', tool: 'coba', toolName: 'COBA', toolArt: 'w6-bianglala', icon: 'hand',
+        instr: 'Ketuk wahana, coba!', wrong: 'Parade selesai. Pilih satu wahana untuk dicoba.' }
+    ],
+    lines: {
+      start: 'Festival penemuan akan dibuka!',
+      dragVeh: 'Seret truk ke panggung yang berkilau.',
+      toPad: 'Taruh truk di panggung pajangan.',
+      more: 'Bagus! Pajang truk yang lain.',
+      displayed: 'Tiga truk sudah dipajang!',
+      tapOrder: 'Ketuk truk, urutan parade.',
+      next1: 'Satu! Siapa yang kedua?',
+      next2: 'Dua! Siapa yang terakhir?',
+      alreadyOrder: 'Truk itu sudah dapat nomor.',
+      paradeGo: 'Parade dimulai!',
+      paraded: 'Parade yang meriah!',
+      pickRide: 'Pilih satu wahana, ketuk!',
+      opened: 'Festival Penemuan dibuka! Selamat datang!',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Festival Penemuan dibuka untuk semua!'
+    },
+    hints: ['Truk berkilau. Seret ke panggung pajangan.', 'Ketuk truk satu per satu. Kamu yang memilih urutannya!', 'Lihat tanganku. Ketuk wahananya!']
+  }
+  STICKERS.push({ id: 'W06-M05', name: 'Stiker Festival', art: 'stiker-festival' })
 
   var HUB_LINES = {
     hub: 'Mau menjelajah?',

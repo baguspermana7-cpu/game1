@@ -471,5 +471,101 @@ if (WHICH === 'ALL' || WHICH === 'W04M03') {
   await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
   await grid(F, path.join(OUT, `mission-w04m03-${VW}x${VH}.png`)); await p.close();
 }
+if (WHICH === 'ALL' || WHICH === 'W06M03') {
+  const p = await open('W06-M03', 'monster-truck'); const F = [];
+  const ans = async v => { await p.waitForSelector('[data-ask]', { timeout: 12000 }); await sleep(500); F.push(await shot(p)); await p.evaluate(x => { const e = [...document.querySelectorAll('[data-choice]')].find(b => b.getAttribute('data-choice') === x); e && e.click(); }, v); await sleep(900); };
+  F.push(await shot(p));
+  await dg(p, '[data-piece=b1]', '[data-slot="0"]'); await sleep(600); F.push(await shot(p)); await sleep(2800);
+  const ORDER = [['l4', 0], ['b1', 1], ['l3', 2], ['t1', 3], ['l2', 5], ['l1', 6]];
+  for (const [i, o] of ORDER.entries()) { await dg(p, `[data-piece=${o[0]}]`, `[data-slot="${o[1]}"]`, 10, i === 1 ? async () => { F.push(await shot(p)); } : undefined); await sleep(800); if (i === 3) F.push(await shot(p)); }
+  await ans('6'); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='1'", { timeout: 6000 }).catch(() => {}); await sleep(600); F.push(await shot(p));
+  await p.click('[data-truck]'); await sleep(1500); F.push(await shot(p)); await sleep(1300); F.push(await shot(p)); await sleep(1200); F.push(await shot(p)); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='2'", { timeout: 14000 }).catch(() => {}); await sleep(600); F.push(await shot(p));
+  await dg(p, '[data-piece=h1]', '[data-slot="3"]', 10, async () => { F.push(await shot(p)); }); await sleep(800); F.push(await shot(p));
+  await p.click('[data-truck]'); await sleep(1700); F.push(await shot(p)); await sleep(1500); F.push(await shot(p)); await sleep(1500); F.push(await shot(p));
+  await p.waitForSelector('[data-ask]', { timeout: 14000 }).catch(() => {}); await sleep(400); F.push(await shot(p));
+  for (let k = 0; k < 6 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
+  await grid(F, path.join(OUT, `mission-w06m03-${VW}x${VH}.png`)); await p.close();
+}
+if (WHICH === 'ALL' || WHICH === 'W04M04') {
+  const p = await open('W04-M04', 'farm-tractor'); const F = [];
+  const ans = async v => { await p.waitForSelector('[data-ask]', { timeout: 9000 }); await sleep(500); F.push(await shot(p)); await p.evaluate(x => { const e = [...document.querySelectorAll('[data-choice]')].find(b => b.getAttribute('data-choice') === x); e && e.click(); }, v); await sleep(900); };
+  F.push(await shot(p));
+  const v = await center(p, '[data-tap]'); await p.mouse.move(v.x, v.y); await p.mouse.down(); await sleep(1200); F.push(await shot(p)); await sleep(1800); F.push(await shot(p));
+  await p.waitForSelector('[data-ask]', { timeout: 9000 }); await p.mouse.up(); await ans('6'); await sleep(1000); F.push(await shot(p));
+  const st = await p.evaluate("(() => { const r = document.getElementById('stage').getBoundingClientRect(); return [r.left, r.top, r.width / 1672]; })()");
+  const X = (x, y) => ({ x: st[0] + x * st[2], y: st[1] + y * st[2] });
+  const tr = async (i, xs) => { const c = await center(p, '[data-tractor]'); await p.mouse.move(c.x, c.y); await p.mouse.down(); await p.mouse.move(c.x + 60, c.y, { steps: 4 }); await p.mouse.move(X(xs, 700).x, c.y, { steps: 10 }); F.push(await shot(p)); await p.mouse.up(); await sleep(1200); F.push(await shot(p)); await sleep(1400); };
+  await tr(0, 570); F.push(await shot(p)); await ans('4'); await sleep(500);
+  await tr(1, 1150); await tr(2, 1500); F.push(await shot(p)); await ans('6'); await sleep(1200); F.push(await shot(p));
+  await p.click('[data-bed="0"]'); await sleep(500); F.push(await shot(p));
+  for (const i of [1, 2, 0]) { await p.click(`[data-bed="${i}"]`); await sleep(700); if (i === 2) F.push(await shot(p)); }
+  await sleep(900); F.push(await shot(p));
+  await p.waitForSelector('[data-ask]', { timeout: 9000 }).catch(() => {}); await sleep(400); F.push(await shot(p));
+  for (let k = 0; k < 8 && (await p.$('[data-ask]') || (k < 3 && await sleep(500) === undefined && await p.$('[data-ask]'))); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.getAttribute('data-choice') === 'Hortensia') || b.find(e => e.classList.contains('glow')) || b[0]; g && g.click(); }); await sleep(900); }
+  await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
+  await grid(F, path.join(OUT, `mission-w04m04-${VW}x${VH}.png`)); await p.close();
+}
+if (WHICH === 'ALL' || WHICH === 'W04M05') {
+  const p = await open('W04-M05', 'farm-tractor'); const F = [];
+  const ans = async v => { await p.waitForSelector('[data-ask]', { timeout: 9000 }); await sleep(500); F.push(await shot(p)); await p.evaluate(x => { const e = [...document.querySelectorAll('[data-choice]')].find(b => b.getAttribute('data-choice') === x); e && e.click(); }, v); await sleep(900); };
+  F.push(await shot(p));
+  await p.click('[data-pile=tomat]'); await sleep(500); F.push(await shot(p));
+  await p.click('[data-pile=wortel]'); await sleep(400); await p.click('[data-pile=jagung]'); await sleep(700); F.push(await shot(p));
+  await ans('7'); await sleep(1200); F.push(await shot(p));
+  const t = await center(p, '[data-tractor]'); await p.mouse.move(t.x, t.y); await p.mouse.down();
+  for (let i = 0; i < 4; i++) { await p.waitForFunction("!document.querySelector('[data-ask]')", { timeout: 9000 }).catch(() => {}); await sleep(1300); F.push(await shot(p)); await sleep(1500); if (i < 3) { await p.mouse.up(); await sleep(1700); F.push(await shot(p)); const c = await center(p, '[data-tractor]'); await p.mouse.move(c.x, c.y); await p.mouse.down(); } }
+  await p.waitForSelector('[data-ask]', { timeout: 12000 }).catch(() => {}); await p.mouse.up(); await sleep(300); await ans('Tomat'); await sleep(1500); F.push(await shot(p));
+  const plan = [['wortel', 'wortel0'], ['wortel', 'wortel1'], ['tomat', 'tomat0'], ['jagung', 'jagung0'], ['wortel', 'wortel2'], ['tomat', 'tomat1'], ['jagung', 'jagung1']];
+  for (let i = 0; i < plan.length; i++) { await dg(p, `[data-src=${plan[i][0]}]`, `[data-gap="${plan[i][1]}"]`, 10, i === 1 ? async () => { F.push(await shot(p)); } : undefined); await sleep(650); if (i === 3) F.push(await shot(p)); }
+  await sleep(1500); F.push(await shot(p));
+  await p.waitForSelector('[data-ask]', { timeout: 9000 }).catch(() => {}); await sleep(400); F.push(await shot(p));
+  for (let k = 0; k < 8 && (await p.$('[data-ask]') || (k < 3 && await sleep(500) === undefined && await p.$('[data-ask]'))); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')) || b[0]; g && g.click(); }); await sleep(900); }
+  await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
+  await grid(F, path.join(OUT, `mission-w04m05-${VW}x${VH}.png`)); await p.close();
+}
+if (WHICH === 'ALL' || WHICH === 'W06M04') {
+  const p = await open('W06-M04', 'monster-truck'); const F = [];
+  const ans = async v => { await p.waitForSelector('[data-ask]', { timeout: 12000 }); await sleep(500); F.push(await shot(p)); await p.evaluate(x => { const e = [...document.querySelectorAll('[data-choice]')].find(b => b.getAttribute('data-choice') === x); e && e.click(); }, v); await sleep(900); };
+  F.push(await shot(p));
+  await dg(p, '[data-kon=kotak]', '[data-sock=bulat]'); await sleep(500); F.push(await shot(p)); await sleep(2800);
+  for (const k of ['bulat', 'kotak', 'segitiga']) { await dg(p, `[data-kon=${k}]`, `[data-sock=${k}]`, 10, k === 'kotak' ? async () => { F.push(await shot(p)); } : undefined); await sleep(700); }
+  await sleep(500); F.push(await shot(p));
+  await ans('3'); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='1'", { timeout: 6000 }).catch(() => {}); await sleep(900);
+  // watch the pattern, slip once on purpose, then repeat it
+  for (let i = 0; i < 3; i++) { await sleep(900); F.push(await shot(p)); }
+  await p.waitForFunction("/Giliranmu/.test(document.querySelector('[data-instr]').textContent)", { timeout: 15000 }).catch(() => {}); F.push(await shot(p));
+  const seq0 = (await p.evaluate("document.getElementById('m-scene').getAttribute('data-seq')")).split(',');
+  const wrong = String((+seq0[0] + 1) % 4);
+  await p.click(`[data-lamp="${wrong}"]`); await sleep(500); F.push(await shot(p));
+  await p.waitForFunction("/Giliranmu/.test(document.querySelector('[data-instr]').textContent)", { timeout: 20000 }).catch(() => {});
+  const seq1 = (await p.evaluate("document.getElementById('m-scene').getAttribute('data-seq')")).split(',');
+  for (const v of seq1) { await p.click(`[data-lamp="${v}"]`); await sleep(450); if (v === seq1[0]) F.push(await shot(p)); }
+  await p.waitForSelector('[data-ask]', { timeout: 8000 }).catch(() => {}); await sleep(500); F.push(await shot(p));
+  const choices = await p.evaluate("[...document.querySelectorAll('[data-choice]')].map(e => e.getAttribute('data-choice'))");
+  await ans(choices[1] || '5'); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='2'", { timeout: 8000 }).catch(() => {}); await sleep(700); F.push(await shot(p));
+  const t = await center(p, '[data-truck]'); await p.mouse.move(t.x, t.y); await p.mouse.down(); await sleep(1400); F.push(await shot(p)); await p.waitForFunction("document.querySelector('[data-goal]').style.display === 'none'", { timeout: 12000 }).catch(() => {}); await p.mouse.up(); await sleep(900); F.push(await shot(p)); await sleep(1500); F.push(await shot(p));
+  await p.waitForSelector('[data-ask]', { timeout: 12000 }).catch(() => {}); await sleep(400); F.push(await shot(p));
+  for (let k = 0; k < 6 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
+  await grid(F, path.join(OUT, `mission-w06m04-${VW}x${VH}.png`)); await p.close();
+}
+if (WHICH === 'ALL' || WHICH === 'W06M05') {
+  const p = await open('W06-M05', 'monster-truck'); const F = [];
+  const ans = async v => { await p.waitForSelector('[data-ask]', { timeout: 12000 }); await sleep(500); F.push(await shot(p)); await p.evaluate(x => { const e = [...document.querySelectorAll('[data-choice]')].find(b => b.getAttribute('data-choice') === x); e && e.click(); }, v); await sleep(900); };
+  F.push(await shot(p));
+  await dg(p, '[data-veh-card=daur]', '[data-pad="0"]'); await sleep(800); F.push(await shot(p));
+  await dg(p, '[data-veh-card=monster]', '[data-pad="2"]', 10, async () => { F.push(await shot(p)); }); await sleep(800);
+  await dg(p, '[data-veh-card=sapu]', '[data-pad="1"]'); await sleep(900); F.push(await shot(p));
+  await ans('1'); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='1'", { timeout: 6000 }).catch(() => {}); await sleep(700); F.push(await shot(p));
+  for (const k of ['sapu', 'daur', 'monster']) { await p.click(`[data-veh-card=${k}]`); await sleep(600); if (k === 'daur') F.push(await shot(p)); }
+  await sleep(1400); F.push(await shot(p)); await sleep(1600); F.push(await shot(p)); await sleep(1500); F.push(await shot(p));
+  await ans('4'); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='2'", { timeout: 8000 }).catch(() => {}); await sleep(800); F.push(await shot(p));
+  await p.click('[data-ride=bianglala]'); await sleep(1000); F.push(await shot(p)); await sleep(1400); F.push(await shot(p));
+  await p.waitForSelector('[data-ask]', { timeout: 14000 }).catch(() => {}); await sleep(400); F.push(await shot(p));
+  for (let k = 0; k < 6 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
+  await grid(F, path.join(OUT, `mission-w06m05-${VW}x${VH}.png`)); await p.close();
+}
 console.log(errs.length ? errs : 'no page errors');
 await b.close();

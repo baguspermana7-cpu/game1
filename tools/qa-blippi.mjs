@@ -983,6 +983,81 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   for (let k = 0; k < 6 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
   await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
   ok(await mp.$('[data-payoff=first]') !== null && await mp.evaluate("!!Blippi.state().rewards['reward:W06-M02'] && Blippi.state().world['wonder-lab:paviliun-cat'] === 1"), 'W06-M02: no payoff / reward / world change');
+  // ---- W06-M03 build a track
+  await mp.evaluate("Blippi.go('mission',{mission:'W06-M03',vehicle:'monster-truck'})"); await sleep(700);
+  ok(await waitFor(mp, "document.querySelectorAll('#m-scene [data-piece]').length === 7 && document.querySelectorAll('#m-scene [data-slot-kind]').length === 6 && document.querySelectorAll('#m-scene .ghostpiece').length >= 6 && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'W06-M03: modules + ghost slots + glow missing at the start');
+  ok(await mp.evaluate("!!document.querySelector('[data-truck] [data-art=veh-monster-truck]') && !!document.querySelector('[data-truck] [data-driver]') && !document.querySelector('#m-scene [data-socket]') && !/dashed/.test(document.getElementById('m-scene').innerHTML)"), 'W06-M03: monster truck + Blippi missing / an orange ring is in the scene');
+  await dragTo('[data-piece=b1]', '[data-slot="0"]'); await sleep(500);
+  ok(/modul belok/.test(await txt(mp, '[data-instr]')) && await mp.$('[data-piece=b1]:not([data-placed])') !== null, 'W06-M03: a wrong shape gave no kind reason / fitted');
+  await sleep(2800);
+  for (const o of [['l4', 0], ['b1', 1], ['l3', 2], ['t1', 3], ['l2', 5], ['l1', 6]]) { await dragTo(`[data-piece=${o[0]}]`, `[data-slot="${o[1]}"]`); await sleep(650); }
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 5000), 'W06-M03: no count question after building');
+  await answer('6'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await stepNow() === '1', 'W06-M03: building + question did not advance');
+  await mp.click('[data-truck]');
+  ok(await waitFor(mp, "/kurang jauh/.test(document.querySelector('[data-instr]').textContent)", 14000), 'W06-M03: the low ramp gave no splash / kind reason');
+  await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 14000);
+  ok(await stepNow() === '2', 'W06-M03: the failed test did not lead to the revision step');
+  await mp.click('[data-truck]'); await sleep(400);
+  ok(await stepNow() === '2' && /Ganti/.test(await txt(mp, '[data-instr]')), 'W06-M03: testing before the swap ran / gave no reason');
+  await sleep(3200);
+  await dragTo('[data-piece=h1]', '[data-slot="3"]'); await sleep(800);
+  ok(await mp.$('[data-piece=h1][data-placed="3"]') !== null, 'W06-M03: the tall ramp did not replace the low one');
+  await mp.click('[data-truck]');
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 16000), 'W06-M03: the tall ramp run did not reach the finish');
+  for (let k = 0; k < 6 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await mp.$('[data-payoff=first]') !== null && await mp.evaluate("!!Blippi.state().rewards['reward:W06-M03'] && Blippi.state().world['wonder-lab:lintasan-buatan'] === 1"), 'W06-M03: no payoff / reward / world change');
+  // ---- W06-M04 lights
+  await mp.evaluate("Blippi.go('mission',{mission:'W06-M04',vehicle:'monster-truck'})"); await sleep(700);
+  ok(await waitFor(mp, "document.querySelectorAll('#m-scene [data-kon]').length === 3 && document.querySelectorAll('#m-scene [data-sock]').length === 3 && document.querySelectorAll('#m-scene [data-lamp]').length === 4 && document.querySelectorAll('#m-scene .ghostpiece').length >= 3 && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'W06-M04: connectors + ghost sockets + lanterns + glow missing at the start');
+  ok(await mp.evaluate("!!document.querySelector('[data-truck] [data-art=veh-monster-truck]') && !!document.querySelector('[data-truck] [data-driver]') && !document.querySelector('#m-scene [data-socket]') && !/dashed/.test(document.getElementById('m-scene').innerHTML)"), 'W06-M04: monster truck + Blippi missing / an orange ring is in the scene');
+  await dragTo('[data-kon=kotak]', '[data-sock=bulat]'); await sleep(500);
+  ok(/belum cocok/.test(await txt(mp, '[data-instr]')) && await mp.$('[data-kon=kotak]:not([data-gone])') !== null, 'W06-M04: a wrong shape gave no kind reason / fitted');
+  await sleep(2800);
+  for (const k of ['bulat', 'kotak', 'segitiga']) { await dragTo(`[data-kon=${k}]`, `[data-sock=${k}]`); await sleep(650); }
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 6000), 'W06-M04: no question after the power came on');
+  await answer('3'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await stepNow() === '1', 'W06-M04: connectors + question did not advance');
+  await waitFor(mp, "/Giliranmu/.test(document.querySelector('[data-instr]').textContent)", 15000);
+  const sq0 = (await mp.evaluate("document.getElementById('m-scene').getAttribute('data-seq')")).split(',');
+  ok(sq0.length === 3, 'W06-M04: the first pattern is not 3 long');
+  await mp.click(`[data-lamp="${(+sq0[0] + 1) % 4}"]`); await sleep(500);
+  ok(/Hampir/.test(await txt(mp, '[data-instr]')), 'W06-M04: a wrong lantern gave no soft retry line');
+  await waitFor(mp, "/Giliranmu/.test(document.querySelector('[data-instr]').textContent)", 20000);
+  for (const v of (await mp.evaluate("document.getElementById('m-scene').getAttribute('data-seq')")).split(',')) { await mp.click(`[data-lamp="${v}"]`); await sleep(450); }
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 6000), 'W06-M04: repeating the pattern gave no question');
+  const ch = await mp.evaluate("[...document.querySelectorAll('[data-choice]')].map(e => e.getAttribute('data-choice'))");
+  await answer(ch[1]); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 8000);
+  ok(await stepNow() === '2' && await mp.$('[data-goal]') !== null, 'W06-M04: the pattern did not advance / no ghost truck on the stage');
+  const tm = await center(mp, '[data-truck]'); await mp.mouse.move(tm.x, tm.y); await mp.mouse.down(); await waitFor(mp, "document.querySelector('[data-goal]').style.display === 'none'", 12000); await mp.mouse.up();
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 9000), 'W06-M04: no closing question after the show');
+  for (let k = 0; k < 6 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await mp.$('[data-payoff=first]') !== null && await mp.evaluate("!!Blippi.state().rewards['reward:W06-M04'] && Blippi.state().world['wonder-lab:panggung-cahaya'] === 1"), 'W06-M04: no payoff / reward / world change');
+  // ---- W06-M05 festival finale
+  await mp.evaluate("Blippi.go('mission',{mission:'W06-M05',vehicle:'monster-truck'})"); await sleep(700);
+  ok(await waitFor(mp, "document.querySelectorAll('#m-scene [data-veh-card]').length === 4 && document.querySelectorAll('#m-scene [data-pad]').length === 3 && document.querySelectorAll('#m-scene .ghostpiece').length >= 3 && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'W06-M05: four vehicles + three ghost podiums + glow missing at the start');
+  ok(await mp.evaluate("document.querySelectorAll('[data-veh-card] [data-driver]').length === 4 && !document.querySelector('#m-scene [data-socket]') && !/dashed/.test(document.getElementById('m-scene').innerHTML)"), 'W06-M05: Blippi missing in a vehicle / an orange ring is in the scene');
+  await dragTo('[data-veh-card=daur]', { x: 20, y: 700 }); await sleep(500);
+  ok(await mp.$('[data-veh-card=daur]:not([data-podium])') !== null, 'W06-M05: a missed drop put a vehicle on a podium');
+  await dragTo('[data-veh-card=daur]', '[data-pad="0"]'); await sleep(700); await dragTo('[data-veh-card=monster]', '[data-pad="2"]'); await sleep(700); await dragTo('[data-veh-card=sapu]', '[data-pad="1"]'); await sleep(900);
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 5000), 'W06-M05: no question after displaying three');
+  await answer('1'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await stepNow() === '1', 'W06-M05: displaying + question did not advance');
+  for (const k of ['sapu', 'daur', 'monster']) { await mp.click(`[data-veh-card=${k}]`); await sleep(600); }
+  ok(await mp.$$eval('[data-order-badge]', e => e.length) === 3, 'W06-M05: the 1-2-3 parade numbers did not appear');
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 12000), 'W06-M05: no question after the parade');
+  await answer('4'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 8000);
+  ok(await stepNow() === '2' && await mp.$$eval('[data-ride]', e => e.length) === 3, 'W06-M05: the parade did not advance / no three rides');
+  await mp.click('[data-ride=bianglala]');
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 9000), 'W06-M05: no closing question after trying a ride');
+  for (let k = 0; k < 6 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); }
+  await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await mp.$('[data-payoff=first]') !== null && await mp.$('[data-badge=lencana-w06]') !== null, 'W06-M05: no payoff / W06 badge');
+  ok(await mp.evaluate("!!Blippi.state().rewards['reward:W06-M05'] && Blippi.state().world['wonder-lab:festival'] === 1 && !!Blippi.missionDone('W06-M05')"), 'W06-M05: reward / world change / done missing');
+  await mp.evaluate("Blippi.go('map',{world:'wonder-lab'})"); await sleep(400);
+  ok(await mp.evaluate("!!document.querySelector('[data-world-label=wonder-lab] ~ .badge') || !!document.querySelector('[data-world=wonder-lab] [data-art=pulau-wonder-lab-selesai]')"), 'W06-M05: the map shows no finished wonder-lab');
   await mp.close();
 }
 // ---------- owner clarity rule: every mission shows its goal (glowing target) and demonstrates the first action (hand) within 4 s ----------
@@ -1323,11 +1398,6 @@ if (process.env.QA_RACE) {
   ok(await fp.$('[data-payoff=first]') !== null && await fp.evaluate("!!Blippi.state().rewards['reward:W04-M03'] && Blippi.state().world['kebun-ceria:meja-muat'] === 1 && !!Blippi.missionDone('W04-M03')"), 'W04-M03: no payoff / reward / world change');
   await fp.close();
 }
-ok(errors.length === 0, 'page errors: ' + errors.slice(0, 3).join(' | '));
-await b.close();
-console.log(fails.map(f => 'FAIL ' + f).join('\n'));
-console.log(`qa-blippi: ${checks - fails.length}/${checks} checks passed, ${errors.length} page errors`);
-process.exit(fails.length ? 1 : 0);
 // ---------- W04-M04 three beds + W04-M05 picnic finale ----------
 {
   const pp = await fresh(1280, 800);
@@ -1390,3 +1460,8 @@ process.exit(fails.length ? 1 : 0);
   ok(await pp.evaluate("!!document.querySelector('[data-world-label=kebun-ceria].dn') || !!document.querySelector('[data-world-label=kebun-ceria]')"), 'W04: the finished kebun-ceria island is not on the map');
   await pp.close();
 }
+ok(errors.length === 0, 'page errors: ' + errors.slice(0, 3).join(' | '));
+await b.close();
+console.log(fails.map(f => 'FAIL ' + f).join('\n'));
+console.log(`qa-blippi: ${checks - fails.length}/${checks} checks passed, ${errors.length} page errors`);
+process.exit(fails.length ? 1 : 0);
