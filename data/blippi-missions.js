@@ -75,20 +75,24 @@
         { id: 'baca', label: 'BACA', tool: 'baca', toolName: 'PETUNJUK', toolArt: 'tool-baca', icon: 'bulb',
           instr: 'Ketuk gulungan petunjuk.', wrong: 'Baca petunjuknya dulu. Menggali nanti ya.' },
         { id: 'gali', label: 'GALI', tool: 'gali', toolName: 'GALI', toolArt: 'tool-gali', icon: 'box',
-          instr: 'Ketuk petak pasir yang cocok.', wrong: 'Pakai bucket untuk menggali petak pasir.' },
-        { id: 'pasang', label: 'PASANG', tool: 'pasang', toolName: 'PASANG', toolArt: 'tool-pasang', icon: 'wheel',
-          instr: 'Seret benda ke gerbang.', wrong: 'Antar bendanya ke gerbang setelah semuanya ketemu.' }
+          instr: 'Ketuk petak, ekskavator menggali.', wrong: 'Ketuk petak pasir supaya ekskavator menggali.' },
+        { id: 'pasang', label: 'PASANG', tool: 'pasang', toolName: 'PASANG', toolArt: 'tool-taman', icon: 'wheel',
+          instr: 'Seret ke bayangannya.', wrong: 'Semua sudah ketemu. Pasang di taman.' }
       ],
       lines: {
-        start: 'Ada tiga benda terkubur di pasir. Baca petunjuknya!',
-        read: 'Petunjuk dibaca. Gali petak yang cocok!',
+        start: 'Ada tiga mainan taman terkubur di pasir. Baca petunjuknya!',
+        read: 'Cocokkan bentuknya. Ketuk petak yang menyala di peta kecil.',
+        readFirst: 'Baca petunjuk dulu ya.',
         found: 'Ketemu!',
-        empty: 'Di sini hanya pasir. Baca petunjuknya lagi ya.',
-        allFound: 'Semua ketemu! Antar ke gerbang taman.',
+        empty: 'Cuma kerikil. Lihat petunjuknya lagi!',
+        dugAlready: 'Petak ini sudah digali. Coba yang lain!',
+        allFound: 'Semua ketemu! Pasang di taman.',
+        dragIt: 'Seret ke bayangannya di taman.',
+        wrongSpot: 'Bukan di sini. Cari bayangan yang sama.',
         wrongTool: 'Pakai alat yang menyala oranye ya.',
-        win: 'Hore! Taman punya tiga benda baru!'
+        win: 'Hore! Taman punya tiga mainan baru!'
       },
-      hints: ['Gulungan petunjuk bercahaya. Baca dulu.', 'Lihat kotak kecil di petunjuk: petak oranye itu tempatnya.', 'Lihat tanganku. Gali di sini!']
+      hints: ['Gulungan petunjuk bercahaya. Baca dulu.', 'Lihat kotak kecil di petunjuk: petak oranye itu tempatnya.', 'Lihat tanganku. Ketuk petak ini!']
     },
     'W01-M03': {
       id: 'W01-M03', world: 'kota-roda', title: 'Bukit dan Muatan', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',

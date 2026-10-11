@@ -80,7 +80,7 @@
   }
 
   // part2 (owner's 2026-10-11 plates + mission-piece sheets, Codex crops copied under game names). Kept apart from SHIPPED because tools/sync-codex-art.py rewrites that map.
-  var PART2 = ['bg-w01-m04-jembatan', 'bg-w01-m05-pembukaan', 'pc-sand-flat', 'pc-swing', 'pc-slide', 'pc-beam-short', 'pc-beam-long', 'pc-post',
+  var PART2 = ['bg-w01-m04-jembatan', 'bg-w01-m05-pembukaan', 'pc-sand-flat', 'pc-sand-dug', 'pc-sand-pile', 'prop-jungkat', 'pc-swing', 'pc-slide', 'pc-beam-short', 'pc-beam-long', 'pc-post',
     'pc-gate-closed', 'pc-gate-open', 'pc-cart', 'pc-ramp-low', 'pc-ramp-high', 'pc-card-circle', 'bg-w02-m04-dua-jalan', 'bg-w02-m05-parade-air', 'stiker-aliran', 'lencana-w02', 'pulau-taman-air-selesai', 'pc2-tetes', 'pc-jets-a', 'pc-jets-b', 'stiker-parade', 'pc-mud', 'pc-hook', 'stiker-sambung', 'stiker-gerobak', 'bg-w02-m02-aliran', 'bg-w02-m03-lumpur', 'veh-dump-truck', 'stiker-jembatan', 'stiker-taman', 'lencana-w01', 'pulau-kota-roda-selesai']
   PART2.forEach(function (k) { SHIPPED[k] = true })
 
@@ -196,7 +196,7 @@
   // owner art for the bridge plank is still wrong in the pack, so the PAPAN tool shows the shared library's wooden bridge segment
   var SHARED = { 'tool-baca': '../Dunia-Emosi/assets/db/lib/game/treasure-map.webp', 'tool-gali': 'assets/blippi/modul-bucket-sempit.webp', 'tool-pasang': '../Dunia-Emosi/assets/db/lib/game/gear.webp',
     'tool-kira': '../Dunia-Emosi/assets/db/lib/game/question-block.webp', 'tool-uji': 'assets/blippi/yard-tanjakan.webp', 'tool-antar': '../Dunia-Emosi/assets/db/lib/game/crate-wood.webp',
-    'stiker-harta': '../Dunia-Emosi/assets/db/lib/game/treasure-chest.webp', 'stiker-bukit': '../Dunia-Emosi/assets/db/lib/mojo-chase/items/ramp.webp', 'tool-balok': 'assets/blippi/pc-beam-long.webp', 'tool-sambung': 'assets/blippi/pc-post.webp', 'tool-rencana': '../Dunia-Emosi/assets/db/lib/game/treasure-map.webp', 'tool-buka': 'assets/blippi/pc-gate-open.webp', 'tool-siapkan': 'assets/blippi/pc-sand-flat.webp', 'tool-kait': 'assets/blippi/pc-hook.webp', 'tool-pancuran': 'assets/blippi/pc-jets-a.webp', 'tool-ban': 'assets/blippi/modul-ban-berpola.webp',
+    'stiker-harta': '../Dunia-Emosi/assets/db/lib/game/treasure-chest.webp', 'stiker-bukit': '../Dunia-Emosi/assets/db/lib/mojo-chase/items/ramp.webp', 'tool-balok': 'assets/blippi/pc-beam-long.webp', 'tool-taman': 'assets/blippi/pc-swing.webp', 'tool-sambung': 'assets/blippi/pc-post.webp', 'tool-rencana': '../Dunia-Emosi/assets/db/lib/game/treasure-map.webp', 'tool-buka': 'assets/blippi/pc-gate-open.webp', 'tool-siapkan': 'assets/blippi/pc-sand-flat.webp', 'tool-kait': 'assets/blippi/pc-hook.webp', 'tool-pancuran': 'assets/blippi/pc-jets-a.webp', 'tool-ban': 'assets/blippi/modul-ban-berpola.webp',
     'tool-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp', 'prop-papan': '../Dunia-Emosi/assets/db/lib/kereta-tile/bridge.webp' }
   function src (key) { return SHARED[key] || (SHIPPED[key] ? BASE + key + '.webp' : null) }
 

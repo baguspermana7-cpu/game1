@@ -269,7 +269,13 @@
     var to = trail.pop() || 'hub'
     go(to, null, true)
   }
-  function home () { location.href = '../Dunia-Emosi/index.html' }
+  // inside Dunia Emosi's frame (games/blippi.html keeps the installed app full screen) the parent navigates home
+  function home () {
+    var framed = false
+    try { framed = w.top !== w && w.top.location.origin === location.origin } catch (e) { framed = false }
+    if (framed) { w.top.postMessage('blippi:home', location.origin); return }
+    location.href = '../Dunia-Emosi/index.html'
+  }
 
   /* ---------- shared chrome ---------- */
   function circle (parent, icon, x, y, label, fn) {
@@ -348,20 +354,31 @@
     var s = at(stage, 'scrim on', 0, 0, W, H)
     s.setAttribute('role', 'dialog')
     s.setAttribute('aria-modal', 'true')
-    var m = at(s, 'panel modal', 446, o.top || 210, 780, o.h || 520)
+    var n = (o.buttons || []).length
+    // three or more choices stack as one column of big, equal buttons (side by side they overflowed and overlapped)
+    var stack = n > 2
+    var tp = parseFloat(getComputedStyle(stage).getPropertyValue('--tp')) || 92   // the 56-real-px touch floor, in reference px
+    var bh = stack ? Math.max(96, tp) : 92
+    var gap = stack ? (tp > 110 ? 12 : 24) : 20
+    var textH = o.text ? 70 : 0
+    if (stack && (o.buttons || []).length > 4) textH = 0
+    var hh = stack ? Math.max(o.h || 0, 120 + textH + n * bh + (n - 1) * gap + 40) : (o.h || 520)
+    var top = Math.max(20, Math.min(o.top || 210, Math.round((H - hh) / 2)))
+    var m = at(s, 'panel modal' + (stack ? ' stack' : ''), 446, top, 780, hh)
     txt(m, 'title', 0, 0, null, null, o.title)
     var body = document.createElement('p')
     body.textContent = o.text || ''
-    if (o.h) body.style.top = '110px'
+    if (o.h || stack) body.style.top = '100px'
     m.appendChild(body)
-    var n = (o.buttons || []).length
-    var bw = n > 2 ? 220 : 300
-    var gap = 20
+    var bw = stack ? 620 : 300
     var total = n * bw + (n - 1) * gap
     ;(o.buttons || []).forEach(function (bd, i) {
-      var b = btn(m, 'obtn mbtn ' + (bd.blue ? 'bbtn' : ''), (780 - total) / 2 + i * (bw + gap), (o.h || 520) - 130, bw, 92, bd.label, function () { if (bd.fn) bd.fn(); if (bd.keep !== true) closeModal() })
+      var x = stack ? (780 - bw) / 2 : (780 - total) / 2 + i * (bw + gap)
+      var y = stack ? 110 + textH + i * (bh + gap) : hh - 130
+      var b = btn(m, 'obtn mbtn ' + (bd.blue ? 'bbtn' : ''), x, y, bw, bh, bd.label, function () { if (bd.keep !== true) closeModal(); if (bd.fn) bd.fn() })   // close first: a button may open the next dialog
       b.textContent = bd.label
-      b.style.fontSize = '30px'
+      b.style.fontSize = stack ? '30px' : '30px'
+      b.style.whiteSpace = 'nowrap'
       b.setAttribute('data-act', bd.id || '')
     })
     modalEl = s
@@ -460,9 +477,6 @@
       l.setAttribute('role', 'button')
       l.addEventListener('click', function () { sfx('tap'); go('map', { world: wd.id }, true) })
       if (done) at(el, 'badge', wd.label[0] + wd.label[2] - 30, wd.label[1] - 16, 52, 52).innerHTML = ICON.check
-      if (lockedOf(wd)) {
-        at(el, 'badge', wd.label[0] + wd.label[2] - 30, wd.label[1] - 16, 52, 52).innerHTML = ICON.lock.replace('class="f"', 'style="fill:#fff;stroke:none"')
-      }
     })
     var sw = null
     D.worlds.forEach(function (wd) { if (wd.id === sel) sw = wd })
@@ -481,7 +495,9 @@
     var th = at(el, 'thumb', 560, 710 - ex, 140, 74)
     if (sw.thumb) th.appendChild(A.frame(sw.thumb))
     else { th.innerHTML = '<div class="lockic">' + ICON.lock.replace('class="f"', 'style="fill:#fff;stroke:none"') + '</div>'; th.firstChild.style.position = 'absolute' }
-    var m = sw.mission && !lockedOf(sw) ? D.missions[worldMission(sw)] : null
+    var list = lockedOf(sw) ? [] : (sw.missions || [sw.mission])
+    var pick = (params && params.pick && list.indexOf(params.pick) >= 0) ? params.pick : (list.length ? worldMission(sw) : null)
+    var m = pick ? D.missions[pick] : null
     var t1 = txt(el, 'title', 718, 708 - ex, 226, 40, sw.name === 'TAMAN AIR' ? 'Taman Air' : titleCase(sw.name))
     t1.style.textAlign = 'left'; t1.style.fontSize = '31px'
     var t2 = txt(el, '', 720, 752 - ex, 226, 38, m ? m.title : lockedOf(sw))
@@ -489,7 +505,13 @@
     t2.setAttribute('data-card-sub', '1')
     var jb = btn(el, 'obtn', 948, 712 - ex, 232, 70, 'Jelajahi', function () {
       if (!m) { say(null); return }
-      go('vehicles', { mission: m.id })
+      // owner: everything open, play freely -- one big button per mission of this island, straight into it with the
+      // vehicle the job needs (PRD loaner rule); the garage stays a side screen
+      if (list.length < 2) { go('mission', { mission: m.id, vehicle: m.vehicle }); return }
+      modal({ title: 'Pilih Misi', buttons: list.map(function (id, i) {
+        var mm = D.missions[id]
+        return { id: 'misi-' + id, label: (i + 1) + '. ' + mm.title + (missionDone(id) ? '  \u2713' : ''), blue: id !== pick, fn: function () { go('mission', { mission: id, vehicle: mm.vehicle }) } }
+      }) })
     })
     jb.setAttribute('data-act', 'jelajahi')
     jb.innerHTML = ICON.play + '<span style="font-size:30px">JELAJAHI</span>'
@@ -497,7 +519,9 @@
     nav(el, 'peta', [325, 797, 1090, 128])
   }
   // a world's finale (M05) closes it; a world with `after` opens when that mission is done (PRD order), otherwise `locked` text stays
-  function lockedOf (wd) { return wd.locked && !(wd.after && missionDone(wd.after)) ? wd.locked : '' }
+  // owner 2026-10-11: "Nggak usah kunci2an. Semua terbuka dan bisa dimainkan dg bebas" -- every world that has
+  // missions is open; a world still being built says so instead of a lock reason
+  function lockedOf (wd) { return (wd.missions && wd.missions.length) || wd.mission ? '' : 'Segera hadir' }
   function worldDone (wd) { return !!(wd.finale ? missionDone(wd.finale) : (wd.mission && missionDone(wd.mission))) }
   // the next unfinished mission of a world (its last one when all are done)
   function worldMission (wd) {

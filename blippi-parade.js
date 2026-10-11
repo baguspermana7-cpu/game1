@@ -45,11 +45,11 @@
     svg.setAttribute('width', '1672')
     svg.setAttribute('height', '941')
     svg.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;z-index:4'
-    svg.innerHTML = '<ellipse id="pw" cx="' + POOL.x + '" cy="' + POOL.y + '" rx="' + POOL.rx + '" ry="' + POOL.ry + '" fill="#4FB6EC" opacity="0"/>' +
+    svg.innerHTML = ''+
       '<path id="ho" fill="none" stroke="#B8860B" stroke-width="22" stroke-linecap="round"/><path id="hi" fill="none" stroke="#F5C518" stroke-width="14" stroke-linecap="round"/>' +
       '<path id="hw" fill="none" stroke="#9fe0ff" stroke-width="8" stroke-linecap="round" opacity="0" stroke-dasharray="14 12"/>'
     sc.appendChild(svg)
-    var pw = svg.querySelector('#pw')
+    var pool = K.waterBody(svg, POOL.x, POOL.y, POOL.rx, POOL.ry)
     var ho = svg.querySelector('#ho')
     var hi = svg.querySelector('#hi')
     var hw = svg.querySelector('#hw')
@@ -62,10 +62,7 @@
     }
     function setLevel (v) {
       level = Math.max(0, Math.min(1, v))
-      pw.setAttribute('opacity', level > 0 ? '.9' : '0')
-      pw.setAttribute('rx', String(POOL.rx * (0.1 + 0.9 * level)))
-      pw.setAttribute('ry', String(POOL.ry * (0.1 + 0.9 * level)))
-      pw.setAttribute('data-level', level.toFixed(2))
+      pool.set(level)
     }
     var ring = K.socket(api, sc, INLET.x - 44, INLET.y - 44, 88, 88, 'inlet')
     ring.style.borderRadius = '50%'

@@ -38,14 +38,15 @@
     svg.setAttribute('width', '1672')
     svg.setAttribute('height', '941')
     svg.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;z-index:3'
-    svg.innerHTML = '<ellipse id="pw" cx="' + POND.x + '" cy="' + POND.y + '" rx="' + POND.rx + '" ry="' + POND.ry + '" fill="#4FB6EC" opacity="0"/>' +
+    svg.innerHTML = ''+
       '<g id="hA"><path d="' + HOSE_A + '" fill="none" stroke="#B8860B" stroke-width="24" stroke-linecap="round"/><path d="' + HOSE_A + '" fill="none" stroke="#F5C518" stroke-width="16" stroke-linecap="round"/></g>' +
       '<g id="hC" style="display:none"><path d="' + HOSE_C + '" fill="none" stroke="#B8860B" stroke-width="24" stroke-linecap="round"/><path d="' + HOSE_C + '" fill="none" stroke="#F5C518" stroke-width="16" stroke-linecap="round"/></g>' +
       '<g id="hB"><path d="' + HOSE_B + '" fill="none" stroke="#B8860B" stroke-width="24" stroke-linecap="round"/><path d="' + HOSE_B + '" fill="none" stroke="#F5C518" stroke-width="16" stroke-linecap="round"/></g>' +
       '<path id="wat" d="M300,650 C360,700 410,705 440,700 L520,702 C560,700 600,690 662,702" fill="none" stroke="#9fe0ff" stroke-width="12" stroke-linecap="round" opacity="0"/>' +
       '<ellipse id="puddle" cx="448" cy="724" rx="2" ry="1" fill="#6FC4F2" opacity="0"/>'
     sc.appendChild(svg)
-    var pw = svg.querySelector('#pw')
+    var pond = K.waterBody(svg, POND.x, POND.y, POND.rx, POND.ry)
+    var ripA = 0
     var hC = svg.querySelector('#hC')
     var wat = svg.querySelector('#wat')
     var puddle = svg.querySelector('#puddle')
@@ -61,10 +62,7 @@
     setWater(0)
     function setLevel (v) {
       level = Math.max(0, Math.min(1, v))
-      pw.setAttribute('opacity', String(level * 0.9))
-      pw.setAttribute('rx', String(POND.rx * (0.25 + 0.75 * level)))
-      pw.setAttribute('ry', String(POND.ry * (0.25 + 0.75 * level)))
-      pw.setAttribute('data-level', level.toFixed(2))
+      pond.set(level)
     }
     setLevel(level)
 
@@ -128,7 +126,7 @@
         if (progress >= gapAt - 0.002) { holding = false; spill(); }
       } else if (s === 2) {
         if (progress < 1) setWater(Math.min(1, progress + dt / 1100))
-        else setLevel(level + dt / 2600)
+        else { setLevel(level + dt / 2600); ripA += dt; if (ripA > 380) { ripA = 0; K.ripple(svg, 662, 706, 40) } }
         if (level >= 1) { holding = false; finish() }
       }
     }

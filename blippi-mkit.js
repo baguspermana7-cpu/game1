@@ -83,5 +83,78 @@
     if (el.animate && !api.reduced()) el.animate([{ transform: 'translateY(-70px)', opacity: 0 }, { transform: 'translateY(6px)', opacity: 1, offset: 0.6 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.23,1,.32,1)' })
   }
 
-  w.BlippiKit = { glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land }
+
+  /* ---------- water that reads as water (shared by every water mission) ----------
+   * waterPath: a channel with a dark body, a light edge and a moving sheen (a dashed highlight that travels along it); setProgress reveals it from the source.
+   * waterBody: a basin/pond surface that rises (rx/ry scale), with a meniscus highlight arc and a slow ripple ring; ripple() drops a splash ring where a channel enters. */
+  var NS = 'http://www.w3.org/2000/svg'
+  var wid = 0
+  function waterStyle (svg) {
+    if (svg.getAttribute('data-wstyle')) return
+    svg.setAttribute('data-wstyle', '1')
+    var st = document.createElementNS(NS, 'style')
+    st.textContent = '@keyframes kflow{to{stroke-dashoffset:-48}}@keyframes krip{0%{transform:scale(.25);opacity:.9}100%{transform:scale(1.5);opacity:0}}' +
+      '.kflow{animation:kflow .75s linear infinite}.krip{transform-box:fill-box;transform-origin:center;animation:krip .9s ease-out forwards}' +
+      '@media (prefers-reduced-motion:reduce){.kflow{animation:none}.krip{animation:none;opacity:0}}'
+    svg.appendChild(st)
+  }
+  function waterPath (svg, d, width) {
+    waterStyle(svg)
+    var id = 'kw' + (++wid)
+    var defs = document.createElementNS(NS, 'defs')
+    defs.innerHTML = '<mask id="' + id + '" maskUnits="userSpaceOnUse" x="0" y="0" width="1672" height="941"><path d="' + d + '" fill="none" stroke="#fff" stroke-width="' + (width + 12) + '" stroke-linecap="round" stroke-linejoin="round" class="kmask"/></mask>'
+    var g = document.createElementNS(NS, 'g')
+    g.setAttribute('mask', 'url(#' + id + ')')
+    g.style.opacity = '0'
+    g.innerHTML = '<path d="' + d + '" fill="none" stroke="#2F8FD8" stroke-width="' + width + '" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="' + d + '" fill="none" stroke="#7CCBF5" stroke-width="' + (width - 7) + '" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="' + d + '" fill="none" stroke="#D6F2FF" stroke-width="' + Math.max(3, width / 6) + '" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="16 32" class="kflow"/>'
+    svg.appendChild(defs)
+    svg.appendChild(g)
+    var mk = defs.querySelector('.kmask')
+    var len = mk.getTotalLength()
+    return {
+      len: len,
+      set: function (p) {
+        mk.setAttribute('stroke-dasharray', (len * p) + ' ' + (len + 40))
+        g.style.opacity = p > 0.001 ? '0.96' : '0'
+      }
+    }
+  }
+  function waterBody (svg, cx, cy, rx, ry) {
+    waterStyle(svg)
+    var g = document.createElementNS(NS, 'g')
+    g.style.opacity = '0'
+    g.innerHTML = '<ellipse class="kb" cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="#3FA9E6"/>' +
+      '<ellipse class="ki" cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="none" stroke="#B9E8FF" stroke-width="5" opacity=".85"/>' +
+      '<path class="km" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/>'
+    svg.appendChild(g)
+    var b = g.querySelector('.kb')
+    var i = g.querySelector('.ki')
+    var m = g.querySelector('.km')
+    return {
+      el: g,
+      set: function (v, full) {
+        var k = 0.1 + 0.9 * v
+        var x = full ? full.rx * k : rx * k
+        var y = full ? full.ry * k : ry * k
+        ;[b, i].forEach(function (e) { e.setAttribute('rx', String(x)); e.setAttribute('ry', String(y)) })
+        // meniscus: a bright arc along the upper-left rim
+        m.setAttribute('d', 'M' + (cx - x * 0.72) + ',' + (cy - y * 0.42) + ' Q' + (cx - x * 0.3) + ',' + (cy - y * 0.9) + ' ' + (cx + x * 0.25) + ',' + (cy - y * 0.88))
+        g.style.opacity = v > 0 ? '1' : '0'
+        g.setAttribute('data-level', v.toFixed(2))
+      }
+    }
+  }
+  function ripple (svg, x, y, r) {
+    waterStyle(svg)
+    var e = document.createElementNS(NS, 'ellipse')
+    e.setAttribute('cx', String(x)); e.setAttribute('cy', String(y)); e.setAttribute('rx', String(r || 40)); e.setAttribute('ry', String((r || 40) * 0.32))
+    e.setAttribute('fill', 'none'); e.setAttribute('stroke', '#EAF8FF'); e.setAttribute('stroke-width', '4')
+    e.setAttribute('class', 'krip')
+    svg.appendChild(e)
+    setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e) }, 1000)
+  }
+
+  w.BlippiKit = { glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land, waterPath: waterPath, waterBody: waterBody, ripple: ripple }
 })(window)

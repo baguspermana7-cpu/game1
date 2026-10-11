@@ -93,3 +93,4 @@
 @keyframes life-flow { from { transform: translate(0, 0); } to { transform: translate(-17px, 96px); } }
 @keyframes life-fall { from { transform: translateY(0); } to { transform: translateY(52px); } }
 @media (prefers-reduced-motion: reduce) { .life-sheen-in, .life-falls-in { animation: none; } }
+.bgslot { isolation: isolate; }   /* the life layer (z-index 2) stays inside the plate, under the mission chrome */

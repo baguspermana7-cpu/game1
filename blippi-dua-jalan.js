@@ -16,9 +16,11 @@
   var PUMP = { x: 470, y: 168, w: 170, h: 116 }
 
   function path (pts) {
+    // smooth: quadratic curves through the midpoints of the polyline
     var d = 'M' + pts[0][0] + ',' + pts[0][1]
     var i
-    for (i = 1; i < pts.length; i++) d += ' L' + pts[i][0] + ',' + pts[i][1]
+    for (i = 1; i < pts.length - 1; i++) { var mx = (pts[i][0] + pts[i + 1][0]) / 2; var my = (pts[i][1] + pts[i + 1][1]) / 2; d += ' Q' + pts[i][0] + ',' + pts[i][1] + ' ' + mx + ',' + my }
+    d += ' L' + pts[pts.length - 1][0] + ',' + pts[pts.length - 1][1]
     return d
   }
   function polyLen (pts) { var t = 0; var i; for (i = 0; i < pts.length - 1; i++) t += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); return t }
@@ -54,25 +56,13 @@
     svg.setAttribute('width', '1672')
     svg.setAttribute('height', '941')
     svg.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;z-index:3'
-    var h = ''
-    ;['L', 'R'].forEach(function (k) {
-      h += '<ellipse id="bw' + k + '" cx="' + BASIN[k].x + '" cy="' + BASIN[k].y + '" rx="10" ry="3" fill="#4FB6EC" opacity="0"/>'
-      h += '<path id="ch' + k + '" d="' + path(CH[k]) + '" fill="none" stroke="#9fe0ff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>'
-    })
-    svg.innerHTML = h
     sc.appendChild(svg)
-    var els = { L: { ch: svg.querySelector('#chL'), bw: svg.querySelector('#bwL') }, R: { ch: svg.querySelector('#chR'), bw: svg.querySelector('#bwR') } }
-    var tot = { L: polyLen(CH.L), R: polyLen(CH.R) }
-    // the stroke length that equals the polyline length
-    ;['L', 'R'].forEach(function (k) { tot[k] = els[k].ch.getTotalLength() })
+    var wb = { L: K.waterBody(svg, BASIN.L.x, BASIN.L.y, BASIN.L.rx, BASIN.L.ry), R: K.waterBody(svg, BASIN.R.x, BASIN.R.y, BASIN.R.rx, BASIN.R.ry) }
+    var wp = { L: K.waterPath(svg, path(CH.L), 24), R: K.waterPath(svg, path(CH.R), 24) }
+    var ripT = 0
     function paint (k) {
-      var e = els[k]
-      e.ch.setAttribute('stroke-dasharray', (tot[k] * prog[k]) + ' ' + tot[k])
-      e.ch.setAttribute('opacity', prog[k] > 0.001 ? '.95' : '0')
-      e.bw.setAttribute('opacity', level[k] > 0 ? '.92' : '0')
-      e.bw.setAttribute('rx', String(BASIN[k].rx * (0.08 + 0.92 * level[k])))
-      e.bw.setAttribute('ry', String(BASIN[k].ry * (0.08 + 0.92 * level[k])))
-      e.bw.setAttribute('data-level', level[k].toFixed(2))
+      wp[k].set(prog[k])
+      wb[k].set(level[k])
     }
     ;['L', 'R'].forEach(function (k) { if (level[k] >= 1) prog[k] = 1; paint(k) })
 
@@ -143,7 +133,11 @@
           var blocked = k === closed && !valveOpen
           var cap = blocked ? DAM_AT[k] : 1
           if (prog[k] < cap) prog[k] = Math.min(cap, prog[k] + dt / 2400)
-          else if (!blocked && level[k] < 1 && prog[k] >= 1) level[k] = Math.min(1, level[k] + dt / 1900)
+          else if (!blocked && level[k] < 1 && prog[k] >= 1) {
+            level[k] = Math.min(1, level[k] + dt / 1900)
+            ripT += dt
+            if (ripT > 380) { ripT = 0; var e = CH[k][CH[k].length - 1]; K.ripple(svg, e[0], e[1] + 6, 46) }
+          }
           paint(k)
         })
         var c = closed
