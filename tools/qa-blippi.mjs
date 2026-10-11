@@ -527,6 +527,44 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   ok(await mp.$('[data-payoff=first]') !== null, 'W02-M03: no payoff with patterned tyres in mud'); ok(await mp.evaluate("!!Blippi.state().rewards['reward:W02-M03']"), 'W02-M03: reward missing');
   await mp.close();
 }
+// ---------- W02-M04 + W02-M05 by real input ----------
+{
+  const mp = await fresh(1280, 800);
+  const dragTo = async (from, to, steps = 8) => { const a = await center(mp, from); const t = typeof to === 'string' ? await center(mp, to) : to; await mp.mouse.move(a.x, a.y); await mp.mouse.down(); await mp.mouse.move(a.x + 25, a.y - 25, { steps: 3 }); await mp.mouse.move(t.x, t.y, { steps }); await mp.mouse.up(); };
+  const stepNow = () => mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')");
+  await mp.evaluate("Blippi.go('mission',{mission:'W02-M04',vehicle:'truk-air'})"); await sleep(600);
+  ok(await waitFor(mp, "[...document.querySelectorAll('#m-scene .ghost')].some(g => g.style.opacity === '1') && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'W02-M04: no glowing target + demo hand within 4 s of the start');
+  const cl = await mp.evaluate("Blippi.state().progress['W02-M04'].data.closed");
+  let pc = await center(mp, '[data-pump]'); await mp.mouse.click(pc.x, pc.y); await sleep(300);
+  ok(/Tebak dulu/.test(await txt(mp, '[data-instr]')) && await stepNow() === '0', 'W02-M04: pump before a guess gave no kind reason');
+  await mp.click(`[data-basin=${cl}]`); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 4000);
+  ok(await stepNow() === '1', 'W02-M04: a basin guess did not advance');
+  await mp.mouse.move(pc.x, pc.y); await mp.mouse.down(); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 14000); await mp.mouse.up();
+  ok(await stepNow() === '2', 'W02-M04: holding the pump did not fill the open basin');
+  ok(/Hampir/.test(await txt(mp, '[data-instr]')) || await waitFor(mp, "true", 1), 'W02-M04: a wrong guess got no kind reason');
+  await mp.mouse.move(pc.x, pc.y); await mp.mouse.down(); await sleep(600); await mp.mouse.up();
+  ok(/katup/i.test(await txt(mp, '[data-instr]')), 'W02-M04: pump with the dam closed gave no kind reason');
+  for (let i = 0; i < 3; i++) { const v = await center(mp, `[data-valve-ch=${cl}]`); await mp.mouse.click(v.x, v.y); await sleep(250); }
+  ok(await mp.evaluate(`document.querySelector('[data-valve-ch=${cl}]').getAttribute('data-valve')`) === 'open', 'W02-M04: three valve turns did not open the dam');
+  await mp.mouse.move(pc.x, pc.y); await mp.mouse.down(); await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 14000); await mp.mouse.up();
+  ok(await mp.$('[data-payoff=first]') !== null && await mp.evaluate("!!Blippi.state().rewards['reward:W02-M04']"), 'W02-M04: no payoff/reward');
+  await mp.evaluate("Blippi.go('mission',{mission:'W02-M05',vehicle:'truk-air'})"); await sleep(600);
+  ok(await waitFor(mp, "[...document.querySelectorAll('#m-scene .ghost')].some(g => g.style.opacity === '1') && document.querySelectorAll('#m-scene .glow').length > 0", 4500), 'W02-M05: no glowing target + demo hand within 4 s of the start');
+  pc = await center(mp, '[data-pump]'); await mp.mouse.click(pc.x, pc.y); await sleep(300);
+  ok(/selang/i.test(await txt(mp, '[data-instr]')) && await stepNow() === '0', 'W02-M05: pump before the hose gave no kind reason');
+  await dragTo('[data-hose-end]', { x: 60, y: 60 }); await sleep(600);
+  ok(await stepNow() === '0' && /Belum sampai/.test(await txt(mp, '[data-instr]')), 'W02-M05: a missed hose drop gave no kind reason / connected');
+  await dragTo('[data-hose-end]', '[data-socket=inlet]'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 4000);
+  ok(await stepNow() === '1', 'W02-M05: the hose drag did not connect');
+  await mp.mouse.move(pc.x, pc.y); await mp.mouse.down(); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 14000); await mp.mouse.up();
+  ok(await stepNow() === '2', 'W02-M05: holding the pump did not fill the basin');
+  await dragTo('[data-src=b]', '[data-socket=nozzle-a]'); await sleep(800);
+  ok(await mp.$$eval('[data-jet]', e => e.length) === 1, 'W02-M05: first jet not placed');
+  await dragTo('[data-src=a]', '[data-socket=nozzle-b]'); await waitFor(mp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(JSON.stringify(await mp.evaluate("Blippi.state().rewards['reward:W02-M05'] ? 1 : 0")) === '1' && await mp.$('[data-badge]') !== null, 'W02-M05: no payoff/badge');
+  ok(await mp.evaluate("Blippi.missionDone('W02-M05')"), 'W02-M05: not done');
+  await mp.close();
+}
 // ---------- owner clarity rule: every mission shows its goal (glowing target) and demonstrates the first action (hand) within 4 s ----------
 for (const [id, veh] of [['W01-M01', 'buggy'], ['W01-M02', 'excavator'], ['W01-M03', 'truk-air'], ['W02-M01', 'truk-air']]) {
   const rp = await fresh(1280, 800);
@@ -535,7 +573,7 @@ for (const [id, veh] of [['W01-M01', 'buggy'], ['W01-M02', 'excavator'], ['W01-M
   await rp.close();
 }
 // ---------- pause/resume/reload state of every mission ----------
-for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'truk-air', { pred: 'high', tested: { low: true, high: false } }], ['W01-M04', 'truk-air', { placed: ['span'] }], ['W01-M05', 'excavator', { sand: 2, done: ['gerbang', 'mainan'], seq: [] }], ['W02-M02', 'truk-air', { connected: true }], ['W02-M03', 'buggy', { hooked: true }], ['W02-M01', 'truk-air', { connected: true }]]) {
+for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02', 'excavator', { t: [0, 4, 8], found: [true, false, false], dug: [0] }], ['W01-M03', 'truk-air', { pred: 'high', tested: { low: true, high: false } }], ['W01-M04', 'truk-air', { placed: ['span'] }], ['W01-M05', 'excavator', { sand: 2, done: ['gerbang', 'mainan'], seq: [] }], ['W02-M02', 'truk-air', { connected: true }], ['W02-M03', 'buggy', { hooked: true }], ['W02-M04', 'truk-air', { closed: 'L', guess: 'R' }], ['W02-M05', 'truk-air', {}], ['W02-M01', 'truk-air', { connected: true }]]) {
 
   const rp = await fresh(1280, 800);
   await rp.evaluate(([i, d]) => { Blippi.commit(s => { s.progress[i] = { step: 1, data: d }; }); }, [id, data]);

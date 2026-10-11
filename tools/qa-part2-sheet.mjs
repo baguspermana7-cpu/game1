@@ -55,6 +55,27 @@ if (WHICH === 'ALL' || WHICH === 'W02M03') {
   await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
   await grid(F, path.join(OUT, `mission-w02m03-${VW}x${VH}.png`)); await p.close();
 }
+if (WHICH === 'ALL' || WHICH === 'W02M04') {
+  const p = await open('W02-M04', 'truk-air'); const F = [];
+  F.push(await shot(p));
+  const cl = await p.evaluate("Blippi.state().progress['W02-M04'].data.closed"); const op = cl === 'L' ? 'R' : 'L';
+  await p.click(`[data-basin=${cl}]`); await sleep(1200); F.push(await shot(p));
+  const pc = await center(p, '[data-pump]'); await p.mouse.move(pc.x, pc.y); await p.mouse.down(); await sleep(1800); F.push(await shot(p)); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='2'", { timeout: 14000 }); await p.mouse.up(); F.push(await shot(p));
+  await sleep(2500); F.push(await shot(p));
+  for (let i = 0; i < 3; i++) { await p.click(`[data-valve-ch=${cl}]`); await sleep(350); if (i === 1) F.push(await shot(p)); }
+  F.push(await shot(p)); await p.mouse.move(pc.x, pc.y); await p.mouse.down(); await sleep(2200); F.push(await shot(p)); await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 14000 }).catch(() => {}); F.push(await shot(p)); await p.mouse.up();
+  await grid(F, path.join(OUT, `mission-w02m04-${VW}x${VH}.png`)); await p.close();
+}
+if (WHICH === 'ALL' || WHICH === 'W02M05') {
+  const p = await open('W02-M05', 'truk-air'); const F = [];
+  F.push(await shot(p));
+  await dg(p, '[data-hose-end]', '[data-socket=inlet]', 10, async () => { F.push(await shot(p)); }); await sleep(1100); F.push(await shot(p));
+  const pc = await center(p, '[data-pump]'); await p.mouse.move(pc.x, pc.y); await p.mouse.down(); await sleep(1800); F.push(await shot(p)); await p.waitForFunction("document.querySelector('.step.on').getAttribute('data-step')==='2'", { timeout: 14000 }); await p.mouse.up(); await sleep(900); F.push(await shot(p));
+  await dg(p, '[data-src=b]', '[data-socket=nozzle-a]', 10, async () => { F.push(await shot(p)); }); await sleep(900); F.push(await shot(p));
+  await dg(p, '[data-src=a]', '[data-socket=nozzle-b]'); await sleep(1000); F.push(await shot(p)); await sleep(1200); F.push(await shot(p));
+  await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
+  await grid(F, path.join(OUT, `mission-w02m05-${VW}x${VH}.png`)); await p.close();
+}
 if (WHICH === 'ALL' || WHICH === 'M02') {
   const p = await open('W01-M02', 'excavator'); const F = [];
   F.push(await shot(p)); await p.click('[data-act=baca]'); await sleep(900); F.push(await shot(p));

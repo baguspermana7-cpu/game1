@@ -28,7 +28,7 @@
 
   var WORLDS = [
     { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'], finale: 'W01-M05', art: 'pulau-kota-roda', artDone: 'pulau-kota-roda-selesai', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
-    { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', missions: ['W02-M01', 'W02-M02', 'W02-M03'], art: 'pulau-taman-air', artDone: 'pulau-taman-air-aktif', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
+    { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', missions: ['W02-M01', 'W02-M02', 'W02-M03', 'W02-M04', 'W02-M05'], art: 'pulau-taman-air', artDone: 'pulau-taman-air-selesai', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
     { id: 'eco-park', name: 'ECO PARK', locked: 'Terbuka setelah Taman Air.', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
@@ -245,6 +245,58 @@
         win: 'Hore! Gerobak sampai di taman air!'
       },
       hints: ['Benda yang menyala bisa diseret ke lingkaran oranye.', 'Ban berpola mencengkeram lumpur lebih kuat.', 'Lihat tanganku. Seret seperti ini!']
+    },
+    'W02-M04': {
+      id: 'W02-M04', world: 'taman-air', title: 'Dua Jalan untuk Air', sub: 'Taman Air', thumb: 'thumb-taman-air',
+      needs: ['pump_water'], vehicle: 'truk-air', bg: 'bg-w02-m04-dua-jalan',
+      reward: { key: 'reward:W02-M04', sticker: 'stiker-aliran', stickerName: 'Stiker Aliran' },
+      worldDelta: 'taman-air:kanal-bercabang',
+      steps: [
+        { id: 'kira', label: 'KIRA-KIRA', tool: 'kira', toolName: 'KIRA-KIRA', toolArt: 'tool-kira', icon: 'bulb',
+          instr: 'Ketuk wadah yang akan terisi.', wrong: 'Tebak dulu wadah mana yang terisi air.' },
+        { id: 'uji', label: 'UJI', tool: 'uji', toolName: 'POMPA', toolArt: 'tool-pompa', icon: 'drop',
+          instr: 'Tahan pompa. Lihat airnya.', wrong: 'Tebakanmu tersimpan. Tahan pompa untuk menguji.' },
+        { id: 'buka', label: 'BUKA', tool: 'buka', toolName: 'KATUP', toolArt: 'tool-katup', icon: 'valve',
+          instr: 'Putar katup, lalu tahan pompa.', wrong: 'Buka katup jalur yang tertutup.' }
+      ],
+      lines: {
+        start: 'Air punya dua jalan. Wadah mana yang akan terisi?',
+        guessed: 'Tebakan tersimpan. Sekarang uji dengan pompa!',
+        guessFirst: 'Tebak dulu: ketuk salah satu wadah.',
+        hit: 'Tebakanmu benar! Satu jalan tertutup.',
+        miss: 'Hampir! Satu jalan tertutup, jadi air hanya lewat jalan yang terbuka.',
+        openFirst: 'Putar katup yang menyala dulu.',
+        valveOpen: 'Terbuka! Tahan pompa lagi.',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Kedua wadah terisi air!'
+      },
+      hints: ['Dua wadah menyala. Ketuk salah satu.', 'Pintu yang tertutup menahan air.', 'Lihat tanganku. Putar katup seperti ini!']
+    },
+    'W02-M05': {
+      id: 'W02-M05', world: 'taman-air', title: 'Parade Air Ceria', sub: 'Taman Air', thumb: 'thumb-taman-air',
+      needs: ['pump_water'], vehicle: 'truk-air', bg: 'bg-w02-m05-parade-air',
+      reward: { key: 'reward:W02-M05', sticker: 'stiker-parade', stickerName: 'Stiker Parade', badge: 'lencana-w02', badgeName: 'Lencana Taman Air' },
+      worldDelta: 'taman-air:parade',
+      steps: [
+        { id: 'sambung', label: 'SAMBUNG', tool: 'sambung', toolName: 'SELANG', toolArt: 'tool-selang', icon: 'hose',
+          instr: 'Seret selang ke lubang kolam.', wrong: 'Sambungkan selang dulu ke kolam.' },
+        { id: 'isi', label: 'ISI', tool: 'isi', toolName: 'POMPA', toolArt: 'tool-pompa', icon: 'drop',
+          instr: 'Tahan pompa. Kolam terisi.', wrong: 'Selang sudah tersambung. Tahan pompa.' },
+        { id: 'pola', label: 'POLA', tool: 'pola', toolName: 'PANCURAN', toolArt: 'tool-pancuran', icon: 'drop',
+          instr: 'Seret dua pancuran ke kolam.', wrong: 'Kolam sudah penuh. Pasang dua pancuran.' }
+      ],
+      lines: {
+        start: 'Hari parade! Ayo hidupkan air mancur.',
+        hoseMiss: 'Belum sampai. Dekatkan ke lingkaran di tepi kolam.',
+        hoseFirst: 'Sambungkan selang dulu ya.',
+        dragJet: 'Seret pancurannya ke lingkaran.',
+        jetMiss: 'Belum pas. Taruh di lingkaran yang bergaris.',
+        moreJet: 'Bagus! Satu lagi.',
+        show: 'Lihat urutan pancuran pilihanmu!',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Parade air dimulai!'
+      },
+      hints: ['Ujung selang menyala. Seret ke lingkaran.', 'Pancuran A dan B bisa masuk lingkaran mana saja.', 'Lihat tanganku. Seret seperti ini!']
     }
   }
 
@@ -256,7 +308,9 @@
     { id: 'W01-M04', name: 'Stiker Jembatan', art: 'stiker-jembatan' },
     { id: 'W01-M05', name: 'Stiker Taman', art: 'stiker-taman' },
     { id: 'W02-M02', name: 'Stiker Sambungan', art: 'stiker-sambung' },
-    { id: 'W02-M03', name: 'Stiker Gerobak', art: 'stiker-gerobak' }
+    { id: 'W02-M03', name: 'Stiker Gerobak', art: 'stiker-gerobak' },
+    { id: 'W02-M04', name: 'Stiker Aliran', art: 'stiker-aliran' },
+    { id: 'W02-M05', name: 'Stiker Parade', art: 'stiker-parade' }
   ]
 
   var HUB_LINES = {

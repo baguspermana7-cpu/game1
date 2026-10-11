@@ -433,7 +433,7 @@
     bgslot(el, 'bg-peta')
     D.worlds.forEach(function (wd) {
       var done = worldDone(wd)
-      var key = (done && wd.artDone) ? wd.artDone : wd.art
+      var key = (done && wd.artDone) ? wd.artDone : ((wd.midArt && wd.mission && missionDone(wd.mission)) ? wd.midArt : wd.art)
       var b = wd.box
       // the picture is drawn larger than the hotspot box and centred on it, so it sits over the island the background already paints
       var ih = Math.round(b[3] * 1.5)
@@ -450,7 +450,7 @@
         isl.insertBefore(base, isl.firstChild)
         if (freshFlags.map === wd.id) { freshFlags.map = null; var top = isl.lastChild; if (top.animate && !(w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches)) top.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1100, delay: 350, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'backwards' }) }
       }
-      if (done && wd.id === 'taman-air') at(isl, 'mini-wheel', iw * 0.18, ih * 0.25, 86, 86).innerHTML = wheelSvg()
+      if (wd.id === 'taman-air' && wd.mission && missionDone(wd.mission)) at(isl, 'mini-wheel', iw * 0.18, ih * 0.25, 86, 86).innerHTML = wheelSvg()
     })
     D.worlds.forEach(function (wd) {
       var done = worldDone(wd)
