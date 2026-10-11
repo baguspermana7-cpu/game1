@@ -85,8 +85,17 @@
   PART2.forEach(function (k) { SHIPPED[k] = true })
   // W03 Eco Park (owner plates + eco-park pack crops, alpha-cut): vehicles, sorting things, bins, bales
   var PART3 = ['bg-w03-m01-pilah', 'bg-w03-m02-sapu', 'bg-w03-m03-roda-pemilah', 'bg-w03-m04-kotak-mainan', 'bg-w03-m05-eco-dibuka', 'lencana-w03', 'veh-recycling-truck', 'stiker-pilah',
-    'w3-kertas-remuk', 'w3-koran', 'w3-kardus', 'w3-gelas', 'w3-botol', 'w3-kaleng', 'w3-bin-kertas', 'w3-bin-plastik', 'w3-bin-logam', 'w3-bale-kertas', 'w3-bale-plastik', 'w3-bale-logam', 'veh-street-sweeper', 'stiker-sapu', 'w3-papan-lingkaran', 'w3-papan-segitiga', 'w3-daun', 'w3-gear-biru', 'w3-gear-merah', 'w3-gear-kuning', 'stiker-gear', 'w3-kaleng2', 'w3-tabung', 'stiker-reuse', 'stiker-eco', 'cast-child', 'cast-cat']
+    'w3-kertas-remuk', 'w3-koran', 'w3-kardus', 'w3-gelas', 'w3-botol', 'w3-kaleng', 'w3-bin-kertas', 'w3-bin-plastik', 'w3-bin-logam', 'w3-bale-kertas', 'w3-bale-plastik', 'w3-bale-logam', 'veh-street-sweeper', 'stiker-sapu', 'w3-papan-lingkaran', 'w3-papan-segitiga', 'w3-daun', 'w3-gear-biru', 'w3-gear-merah', 'w3-gear-kuning', 'stiker-gear', 'w3-kaleng2', 'w3-tabung', 'stiker-reuse', 'stiker-eco', 'cast-child', 'cast-cat', 'cast-guide', 'pulau-eco-park-selesai']
   PART3.forEach(function (k) { SHIPPED[k] = true })
+  // W04 Kebun Ceria (owner plates + farm pack crops, alpha-cut)
+  var PART4 = ['bg-w04-m01-baris-kebun', 'veh-farm-tractor', 'w4-trailer', 'w4-wortel', 'w4-tomat', 'w4-petak', 'stiker-kebun', 'bg-w04-m02-traktor', 'w4-kartu-kanan', 'w4-kartu-kiri', 'w4-kartu-atas', 'w4-kartu-bawah', 'w4-jerami', 'w4-kaleng', 'stiker-urutan']
+  PART4.forEach(function (k) { SHIPPED[k] = true })
+  // W05 Pelabuhan (owner plates + harbor ferry / crate crops)
+  ;['bg-w05-m01-ferry', 'bg-w05-m02-crane-peti', 'bg-w05-m03-muatan-miring', 'bg-w05-m04-jembatan-dermaga', 'bg-w05-m05-paket-pulau', 'veh-harbor-ferry', 'stiker-ferry', 'stiker-peti', 'w5-ponton', 'stiker-balance', 'stiker-dermaga', 'stiker-paket', 'pulau-pelabuhan-selesai', 'pc2-peti', 'lencana-w05', 'pulau-pelabuhan'].forEach(function (k) { SHIPPED[k] = true })
+
+  // W06 Wonder Lab (owner plates + monster truck / tyre-test crops)
+  var PART6 = ['bg-w06-m01-ban', 'bg-w06-m02-warna', 'bg-w06-m03-lintasan', 'bg-w06-m04-lampu', 'bg-w06-m05-festival', 'lencana-w06', 'veh-monster-truck', 'stiker-ban']
+  PART6.forEach(function (k) { SHIPPED[k] = true })
 
   var ROWS = [
     // backgrounds (opaque, full frame)
@@ -195,13 +204,6 @@
   // see data/blippi-approved.json. hub-meja-peta / hub-papan stay UNSHIPPED (bg-hub already paints them).
   // slots whose picture the shipped real background already paints: they stay as invisible hotspots (never doubled)
   var PAINTED = { 'hub-garasi': 'bg-hub', 'hub-meja-peta': 'bg-hub', 'hub-papan': 'bg-hub' }
-  // W05 Pelabuhan (owner plates + harbor ferry / crate crops)
-  ;['bg-w05-m01-ferry', 'bg-w05-m02-crane-peti', 'bg-w05-m03-muatan-miring', 'bg-w05-m04-jembatan-dermaga', 'bg-w05-m05-paket-pulau', 'veh-harbor-ferry', 'stiker-ferry', 'stiker-peti', 'pc2-peti', 'lencana-w05', 'pulau-pelabuhan'].forEach(function (k) { SHIPPED[k] = true })
-
-  // W04 Kebun Ceria (owner plates + farm pack crops, alpha-cut)
-  var PART4 = ['bg-w04-m01-baris-kebun', 'veh-farm-tractor', 'w4-trailer', 'w4-wortel', 'w4-tomat', 'w4-petak', 'stiker-kebun']
-  PART4.forEach(function (k) { SHIPPED[k] = true })
-
   function painted (key) { return !!(PAINTED[key] && SHIPPED[PAINTED[key]]) }
 
   // owner art for the bridge plank is still wrong in the pack, so the PAPAN tool shows the shared library's wooden bridge segment

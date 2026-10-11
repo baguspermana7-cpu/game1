@@ -35,10 +35,10 @@
   var WORLDS = [
     { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'], finale: 'W01-M05', art: 'pulau-kota-roda', artDone: 'pulau-kota-roda-selesai', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
     { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', missions: ['W02-M01', 'W02-M02', 'W02-M03', 'W02-M04', 'W02-M05'], art: 'pulau-taman-air', artDone: 'pulau-taman-air-selesai', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
-    { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01', 'W03-M02', 'W03-M03', 'W03-M04'], thumb: 'veh-recycling-truck', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
+    { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01', 'W03-M02', 'W03-M03', 'W03-M04', 'W03-M05'], finale: 'W03-M05', thumb: 'veh-recycling-truck', art: 'pulau-eco-park', artDone: 'pulau-eco-park-selesai', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
-    { id: 'wonder-lab', name: 'WONDER LAB', locked: 'Terbuka setelah pulau lain selesai.', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
+    { id: 'wonder-lab', name: 'WONDER LAB', mission: 'W06-M01', missions: ['W06-M01'], thumb: 'veh-monster-truck', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
   ]
 
   var MISSIONS = {
@@ -471,12 +471,44 @@
     hints: ['Kardus dan tabung yang berkilau bisa dipakai lagi.', 'Bayangan menunjukkan tempat tiap benda.', 'Lihat tanganku. Seret seperti ini!']
   }
   STICKERS.push({ id: 'W03-M04', name: 'Stiker Pakai Ulang', art: 'stiker-reuse' })
-
+  MISSIONS['W03-M05'] = {
+    id: 'W03-M05', world: 'eco-park', title: 'Eco Park Dibuka', sub: 'Eco Park', thumb: 'veh-recycling-truck',
+    needs: ['sort', 'sweep', 'build'], vehicle: 'recycling-truck', bg: 'bg-w03-m05-eco-dibuka',
+    reward: { key: 'reward:W03-M05', sticker: 'stiker-eco', stickerName: 'Stiker Eco Park', badge: 'lencana-w03', badgeName: 'Lencana Eco Park' },
+    worldDelta: 'eco-park:taman-hidup',
+    steps: [
+      { id: 'bagi', label: 'BAGI', tool: 'bagi', toolName: 'BAGI', toolArt: 'veh-street-sweeper', icon: 'wheel',
+        instr: 'Seret truk ke tugasnya.', wrong: 'Bagi tugas dulu: truk ke sampah, sapu ke daun.' },
+      { id: 'hias', label: 'HIAS', tool: 'hias', toolName: 'HIAS', toolArt: 'pc-swing', icon: 'plank',
+        instr: 'Seret mainan ke bayangan.', wrong: 'Tugas sudah selesai. Sekarang hias tamannya.' },
+      { id: 'buka', label: 'BUKA', tool: 'buka', toolName: 'BUKA', toolArt: 'lencana-w03', icon: 'hand',
+        instr: 'Ketuk pita, buka taman!', wrong: 'Taman sudah cantik. Ketuk pitanya.' }
+    ],
+    lines: {
+      start: 'Taman akan dibuka! Bagi tugasnya.',
+      dragVeh: 'Seret truk ke tugas yang berkilau.',
+      toJob: 'Bawa truk dekat ke tugasnya.',
+      truckLeaf: 'Truk daur ulang mengangkat sampah. Daun itu tugas truk sapu.',
+      sweepLitter: 'Truk sapu menyapu daun. Sampah itu tugas truk daur ulang.',
+      oneDone: 'Bagus! Satu tugas selesai. Satu lagi.',
+      bothDone: 'Semua bersih!',
+      more: 'Bagus! Pasang mainan yang lain.',
+      decorated: 'Tamannya cantik sekali!',
+      dragDecor: 'Seret mainan ke bayangan di batu.',
+      toPad: 'Taruh mainannya di bayangan.',
+      tapRibbon: 'Ketuk pitanya!',
+      cut: 'Eco Park dibuka! Selamat datang!',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Eco Park sudah dibuka untuk semua!'
+    },
+    hints: ['Truk daur ulang ke sampah. Truk sapu ke daun.', 'Taruh mainan di batu yang berkilau. Bebas pilih!', 'Lihat tanganku. Ketuk pitanya!']
+  }
+  STICKERS.push({ id: 'W03-M05', name: 'Stiker Eco Park', art: 'stiker-eco' })
 
   /* ---------- W05 Pelabuhan Penjelajah (added by the W05 build; each mission appends its own block here) ---------- */
   ;(function () {
     var pw = WORLDS.filter(function (x) { return x.id === 'pelabuhan' })[0]
-    if (pw) { delete pw.locked; pw.mission = 'W05-M01'; pw.missions = ['W05-M01', 'W05-M02']; pw.thumb = 'veh-harbor-ferry' }
+    if (pw) { delete pw.locked; pw.mission = 'W05-M01'; pw.missions = ['W05-M01', 'W05-M02', 'W05-M03', 'W05-M04', 'W05-M05']; pw.finale = 'W05-M05'; pw.artDone = 'pulau-pelabuhan-selesai'; pw.thumb = 'veh-harbor-ferry' }
   })()
   VEHICLES.push({ id: 'harbor-ferry', name: 'FERI PELABUHAN', art: 'veh-harbor-ferry', thumb: 'veh-harbor-ferry', tags: ['float', 'haul'],
     say: 'Ayo antar peti!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
@@ -541,9 +573,99 @@
     hints: ['Peti punya gambar bentuk. Cari garis bentuk yang sama.', 'Bentuk yang berkilau itu tempatnya.', 'Lihat tanganku. Seret kaitnya seperti ini!']
   }
   STICKERS.push({ id: 'W05-M02', name: 'Stiker Peti', art: 'stiker-peti' })
+  MISSIONS['W05-M03'] = {
+    id: 'W05-M03', world: 'pelabuhan', title: 'Muatan Miring', sub: 'Pelabuhan Penjelajah', thumb: 'veh-harbor-ferry',
+    needs: ['float'], vehicle: 'harbor-ferry', bg: 'bg-w05-m03-muatan-miring',
+    reward: { key: 'reward:W05-M03', sticker: 'stiker-balance', stickerName: 'Stiker Seimbang' },
+    worldDelta: 'pelabuhan:dek-uji',
+    steps: [
+      { id: 'tebak', label: 'TEBAK', tool: 'tebak', toolName: 'TEBAK', toolArt: 'veh-harbor-ferry', icon: 'hand',
+        instr: 'Tebak: kapal miring ke mana?', wrong: 'Tebak dulu ke mana kapal miring.' },
+      { id: 'sama', label: 'SAMA', tool: 'sama', toolName: 'SAMA', toolArt: 'pc2-peti', icon: 'box',
+        instr: 'Seret peti sampai sama.', wrong: 'Kapal sudah ditebak. Sekarang seimbangkan dengan peti.' },
+      { id: 'geser', label: 'GESER', tool: 'geser', toolName: 'GESER', toolArt: 'stiker-balance', icon: 'wheel',
+        instr: 'Geser peti. Buat sama.', wrong: 'Sudah seimbang. Sekarang geser peti dari satu sisi.' }
+    ],
+    lines: {
+      start: 'Muatannya di satu sisi. Kapal miring!',
+      lean: 'Lihat! Kapal miring ke sisi yang berat.',
+      dragCrate: 'Seret peti ke kapal.',
+      toShip: 'Taruh peti di atas kapal.',
+      leanLeft: 'Masih miring ke kiri. Tambah peti di kanan.',
+      leanRight: 'Sekarang miring ke kanan. Kurangi peti di kanan.',
+      level: 'Lurus! Kiri dan kanan sama berat.',
+      moveOne: 'Geser satu peti dari kiri ke kanan.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Kapal lurus. Dek uji sudah menyala!'
+    },
+    hints: ['Peti di kiri dan di kanan harus sama banyak.', 'Seret satu peti ke sisi kanan kapal.', 'Lihat tanganku. Seret seperti ini!']
+  }
+  STICKERS.push({ id: 'W05-M03', name: 'Stiker Seimbang', art: 'stiker-balance' })
+  MISSIONS['W05-M04'] = {
+    id: 'W05-M04', world: 'pelabuhan', title: 'Jembatan Antar-Dermaga', sub: 'Pelabuhan Penjelajah', thumb: 'veh-dump-truck',
+    needs: ['haul'], vehicle: 'dump-truck', bg: 'bg-w05-m04-jembatan-dermaga',
+    reward: { key: 'reward:W05-M04', sticker: 'stiker-dermaga', stickerName: 'Stiker Dermaga' },
+    worldDelta: 'pelabuhan:jembatan-pulau',
+    steps: [
+      { id: 'sambung', label: 'SAMBUNG', tool: 'sambung', toolName: 'SAMBUNG', toolArt: 'w5-ponton', icon: 'plank',
+        instr: 'Seret ponton ke celah.', wrong: 'Sambung dulu jembatannya dengan ponton.' },
+      { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'veh-dump-truck', icon: 'wheel',
+        instr: 'Tahan truk, seberangi.', wrong: 'Jembatan sudah jadi. Tahan truknya supaya melaju.' },
+      { id: 'urutan', label: 'URUTAN', tool: 'urutan', toolName: 'URUTAN', toolArt: 'pc2-peti', icon: 'hand',
+        instr: 'Ketuk peti sesuai nomor.', wrong: 'Truk sudah sampai. Ketuk petinya sesuai nomor.' }
+    ],
+    lines: {
+      start: 'Dua dermaga terpisah. Ayo sambung!',
+      dragPiece: 'Seret ponton ke celah.',
+      toGap: 'Taruh ponton di celah air.',
+      tooLong: 'Terlalu panjang! Pilih ponton yang lebih pendek.',
+      placed: 'Pas! Masih ada celah.',
+      built: 'Jembatan tersambung!',
+      holdMore: 'Tahan terus, truknya melaju.',
+      crossed: 'Sampai di dermaga seberang!',
+      order: 'Ikuti nomor: mulai dari 1.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Dua dermaga sudah tersambung!'
+    },
+    hints: ['Celahnya tiga petak. Ponton dua dan satu pas.', 'Ponton yang berkilau muat di celah.', 'Lihat tanganku. Seret seperti ini!']
+  }
+  STICKERS.push({ id: 'W05-M04', name: 'Stiker Dermaga', art: 'stiker-dermaga' })
+  MISSIONS['W05-M05'] = {
+    id: 'W05-M05', world: 'pelabuhan', title: 'Paket untuk Pulau', sub: 'Pelabuhan Penjelajah', thumb: 'veh-harbor-ferry',
+    needs: ['float'], vehicle: 'harbor-ferry', bg: 'bg-w05-m05-paket-pulau',
+    reward: { key: 'reward:W05-M05', sticker: 'stiker-paket', stickerName: 'Stiker Paket', badge: 'lencana-w05', badgeName: 'Lencana Pelabuhan' },
+    worldDelta: 'pelabuhan:pulau-piknik',
+    steps: [
+      { id: 'rute', label: 'RUTE', tool: 'rute', toolName: 'RUTE', toolArt: 'prop-bendera', icon: 'wheel',
+        instr: 'Gambar rute ke pulau bendera.', wrong: 'Gambar dulu rute kapal di atas air.' },
+      { id: 'muat', label: 'MUAT', tool: 'muat', toolName: 'MUAT', toolArt: 'pc2-peti', icon: 'box',
+        instr: 'Muat peti. Kiri kanan sama.', wrong: 'Rute sudah ada. Muat petinya dulu.' },
+      { id: 'antar', label: 'ANTAR', tool: 'antar', toolName: 'ANTAR', toolArt: 'veh-harbor-ferry', icon: 'hand',
+        instr: 'Tahan kapal, ikuti rute.', wrong: 'Peti sudah rata. Tahan kapalnya supaya berlayar.' }
+    ],
+    lines: {
+      start: 'Pulau bendera menunggu paket!',
+      startAtShip: 'Mulai gambar dari kapal ya.',
+      drawIt: 'Gambar rute dengan jarimu di atas air.',
+      wrongIsland: 'Pulau itu minta %n peti. Kita bawa 4. Cari bendera.',
+      onLand: 'Rute lewat daratan! Cari jalan di air.',
+      routeOk: 'Rute siap! Sekarang muat peti.',
+      dragCrate: 'Seret peti ke kapal.',
+      toShip: 'Taruh peti di atas kapal.',
+      leanLeft: 'Kapal miring ke kiri. Tambah di kanan.',
+      leanRight: 'Kapal miring ke kanan. Tambah di kiri.',
+      level: 'Lurus! Berlayar!',
+      holdMore: 'Tahan terus, kapalnya berlayar.',
+      arrived: 'Sampai di pulau! Peti turun satu per satu.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Pulau piknik menerima paketnya!'
+    },
+    hints: ['Pulau dengan bendera minta empat peti.', 'Gambar dari kapal sampai pulau bendera.', 'Lihat tanganku. Gambar seperti ini!']
+  }
+  STICKERS.push({ id: 'W05-M05', name: 'Stiker Paket', art: 'stiker-paket' })
 
   /* ---------- W04 Kebun Ceria (added by the W04 build; each mission appends its own block here) ---------- */
-  WORLDS.forEach(function (wd) { if (wd.id === 'kebun-ceria') { wd.mission = 'W04-M01'; wd.missions = ['W04-M01'] } })
+  WORLDS.forEach(function (wd) { if (wd.id === 'kebun-ceria') { wd.mission = 'W04-M01'; wd.missions = ['W04-M01', 'W04-M02'] } })
   VEHICLES.push({ id: 'farm-tractor', name: 'TRAKTOR', art: 'veh-farm-tractor', thumb: 'veh-farm-tractor', tags: ['haul', 'till'],
     say: 'Ayo olah kebunnya!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
   MISSIONS['W04-M01'] = {
@@ -580,6 +702,79 @@
     hints: ['Yang berkilau itu tujuannya.', 'Bibit dan tempatnya sama gambarnya.', 'Lihat tanganku. Ikuti caraku!']
   }
   STICKERS.push({ id: 'W04-M01', name: 'Stiker Kebun', art: 'stiker-kebun' })
+  MISSIONS['W04-M02'] = {
+    id: 'W04-M02', world: 'kebun-ceria', title: 'Traktor Ikut Rencanaku', sub: 'Kebun Ceria', thumb: 'veh-farm-tractor',
+    needs: ['haul'], vehicle: 'farm-tractor', bg: 'bg-w04-m02-traktor',
+    reward: { key: 'reward:W04-M02', sticker: 'stiker-urutan', stickerName: 'Stiker Urutan' },
+    worldDelta: 'kebun-ceria:lajur-air',
+    steps: [
+      { id: 'susun', label: 'SUSUN', tool: 'susun', toolName: 'SUSUN', toolArt: 'w4-kartu-kanan', icon: 'plank',
+        instr: 'Susun panah ke kotak.', wrong: 'Susun kartu panahnya dulu, lalu tekan JALAN.' },
+      { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'veh-farm-tractor', icon: 'wheel',
+        instr: 'Tekan JALAN, traktor ikut.', wrong: 'Tekan tombol JALAN supaya traktor mengikuti kartunya.' },
+      { id: 'siram', label: 'SIRAM', tool: 'siram', toolName: 'SIRAM', toolArt: 'w4-kaleng', icon: 'hand',
+        instr: 'Tahan traktor, air mengalir.', wrong: 'Traktor sudah sampai. Tahan traktornya untuk menyiram.' }
+    ],
+    lines: {
+      start: 'Antar air dari tangki ke kebun! Susun kartunya.',
+      tapCard: 'Ketuk atau seret panah ke kotak.',
+      full: 'Kotaknya penuh. Ketuk kartu untuk melepas.',
+      few: 'Susun minimal tiga kartu dulu.',
+      none: 'Susun kartu panah dulu ya.',
+      fence: 'Ups, ada pagar! Ganti kartu yang menyala.',
+      bale: 'Ups, ada jerami! Cari jalan lain.',
+      short: 'Belum sampai kebun. Ubah kartunya, coba lagi.',
+      arrived: 'Sampai! Traktor mengikuti rencanamu.',
+      holdMore: 'Tahan terus, airnya mengalir.',
+      tapTractor: 'Tahan traktornya.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Tanamannya minum air dan tumbuh!'
+    },
+    hints: ['Traktor mulai dari tangki. Jerami menghalangi jalan lurus.', 'Turun dulu, jalan ke kanan, lalu naik ke kebun.', 'Lihat tanganku. Seret panah ke kotak!']
+  }
+  STICKERS.push({ id: 'W04-M02', name: 'Stiker Urutan', art: 'stiker-urutan' })
+
+  /* ---------- W06 Wonder Lab (added by the W06 build; each mission appends its own block here) ---------- */
+  VEHICLES.push({ id: 'monster-truck', name: 'TRUK UJI MONSTER', art: 'veh-monster-truck', thumb: 'veh-monster-truck', tags: ['terrain', 'stunt'],
+    say: 'Ayo uji ban dan lompat!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
+  MISSIONS['W06-M01'] = {
+    id: 'W06-M01', world: 'wonder-lab', title: 'Ban untuk Petualangan', sub: 'Wonder Lab', thumb: 'veh-monster-truck',
+    needs: ['terrain', 'stunt'], vehicle: 'monster-truck', bg: 'bg-w06-m01-ban',
+    reward: { key: 'reward:W06-M01', sticker: 'stiker-ban', stickerName: 'Stiker Ban', vehicle: 'monster-truck' },
+    worldDelta: 'wonder-lab:jalur-terrain',
+    steps: [
+      { id: 'pasang', label: 'PASANG', tool: 'pasang', toolName: 'PASANG', toolArt: 'modul-ban-berpola', icon: 'wheel',
+        instr: 'Seret ban ke truk.', wrong: 'Pasang ban dulu di truk.' },
+      { id: 'uji', label: 'UJI', tool: 'uji', toolName: 'UJI', toolArt: 'veh-monster-truck', icon: 'wheel',
+        instr: 'Seret truk ke lintasan.', wrong: 'Ban sudah dipasang. Seret truk ke lintasan.' },
+      { id: 'lompat', label: 'LOMPAT', tool: 'lompat', toolName: 'LOMPAT', toolArt: 'prop-bendera', icon: 'hand',
+        instr: 'Ketuk truk tiga kali.', wrong: 'Sudah diuji. Ketuk truknya untuk melompat.' }
+    ],
+    lines: {
+      start: 'Ban mana yang kuat di lumpur?',
+      askFirst: 'Jawab dulu pertanyaannya ya.',
+      dragTire: 'Seret ban ke truk yang berkilau.',
+      toTruck: 'Taruh ban di truk.',
+      fitFirst: 'Pasang ban dulu di truk.',
+      smooth: 'Ban halus. Cepat di jalan kering.',
+      tread: 'Ban bergerigi. Mencengkeram lumpur.',
+      dragTruck: 'Seret truknya ke kaki lintasan.',
+      noLane: 'Bawa truk ke kaki lintasan.',
+      slip: 'Ban halus tergelincir di lumpur. Coba ban bergerigi!',
+      mudDone: 'Sampai di bendera lewat lumpur!',
+      woodDone: 'Lintasan kayu juga sampai!',
+      tryWood: 'Sekarang coba lintasan kayu.',
+      tryMud: 'Sekarang coba lintasan lumpur.',
+      tapTruck: 'Ketuk truknya tiga kali!',
+      bounce1: 'Satu! Suspensinya empuk.',
+      bounce2: 'Dua! Sekali lagi!',
+      jumped: 'Tiga! Lompatan besar!',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Truk monster siap berpetualang!'
+    },
+    hints: ['Ban dan truk berkilau. Seret ban ke truk.', 'Lumpur butuh ban bergerigi. Kayu cocok untuk semua ban.', 'Lihat tanganku. Ketuk truknya!']
+  }
+  STICKERS.push({ id: 'W06-M01', name: 'Stiker Ban', art: 'stiker-ban' })
 
   var HUB_LINES = {
     hub: 'Mau menjelajah?',

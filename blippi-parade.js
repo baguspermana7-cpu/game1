@@ -39,7 +39,11 @@
     var hand = K.hand(api)
     function save () { api.persist({ placed: placed, order: order }) }
 
-    api.art(sc, 'veh-truk-air-sisi', TRK.x, TRK.y, TRK.w, TRK.h, 'house')
+    var truck = api.at(sc, 'house', TRK.x, TRK.y, TRK.w, TRK.h)
+    truck.setAttribute('data-truck', '1')
+    truck.style.pointerEvents = 'none'
+    api.art(truck, 'veh-truk-air-sisi', 0, 0, TRK.w, TRK.h, '').setAttribute('data-veh', 'truk-air')
+    K.driver(truck, { x: 0.395, y: 0.25, w: 0.11, h: 0.2 })
     var svg = document.createElementNS(NS, 'svg')
     svg.setAttribute('viewBox', '0 0 1672 941')
     svg.setAttribute('width', '1672')
@@ -64,8 +68,10 @@
       level = Math.max(0, Math.min(1, v))
       pool.set(level)
     }
-    var ring = K.socket(api, sc, INLET.x - 44, INLET.y - 44, 88, 88, 'inlet')
-    ring.style.borderRadius = '50%'
+    var ring = api.at(sc, 'tring', INLET.x - 70, INLET.y - 34, 120, 80)
+    ring.setAttribute('data-socket', 'inlet')
+    ring.style.cssText += ';pointer-events:none;z-index:3'
+    K.ghost(api, ring, 'prop-selang-ujung', 0, 0, 120, 80, false, true)
     var hend = api.at(sc, 'hend', 0, 0, 120, 80)
     hend.setAttribute('data-hose-end', '1')
     hend.style.cssText += ';touch-action:none;cursor:grab;z-index:7'
@@ -107,7 +113,7 @@
       ring.style.display = 'none'
       api.sfx('ok')
       api.fx('check-burst', INLET.x, INLET.y, 200)
-      api.tween(E, { x: INLET.x - 10, y: INLET.y + 6 }, 200, setHose, function () { api.persist({}); api.later(function () { api.advance() }, 500) })
+      api.tween(E, { x: INLET.x - 10, y: INLET.y + 6 }, 200, setHose, function () { api.persist({}); api.later(function () { K.ask(api, { custom: { id: 'm25-water', prompt: 'Air itu warna apa?', choices: ['Biru', 'Merah', 'Hijau'], answer: 'Biru', hint1: 'Lihat kolam di layar.' }, done: function () { api.advance() } }) }, 500) })
     }
 
     // ---- step 2: hold the pump
@@ -117,7 +123,7 @@
         if (!holding || api.step() !== 1) return
         var dt = Math.min(50, t - last)
         last = t
-        if (!api.paused()) { hw.setAttribute('opacity', '1'); setLevel(level + dt / 3000); if (level >= 1) { holding = false; hw.setAttribute('opacity', '0'); api.sfx('ok'); api.fx('gold-star', POOL.x, POOL.y - 40, 240); api.later(function () { api.advance() }, 800); return } }
+        if (!api.paused()) { hw.setAttribute('opacity', '1'); setLevel(level + dt / 3000); if (level >= 1) { holding = false; hw.setAttribute('opacity', '0'); api.sfx('ok'); api.fx('gold-star', POOL.x, POOL.y - 40, 240); api.later(function () { K.ask(api, { context: 'gate', grade: 1, done: function () { api.advance() } }) }, 800); return } }
         raf = requestAnimationFrame(f)
       }
       raf = requestAnimationFrame(f)
@@ -140,9 +146,10 @@
     // ---- step 3: the two jet pieces
     var slotEls = {}
     ;['a', 'b'].forEach(function (k) {
-      var s = K.socket(api, sc, SLOT[k].x - 80, SLOT[k].y - 50, 160, 100, 'nozzle-' + k)
-      s.style.borderRadius = '50%'
-      s.style.display = 'none'
+      var s = api.at(sc, 'tring', SLOT[k].x - 80, SLOT[k].y - 50, 160, 100)
+      s.setAttribute('data-socket', 'nozzle-' + k)
+      s.style.cssText += ';pointer-events:none;z-index:3;display:none'
+      K.ghost(api, s, 'pc-jets-a', -20, -125, 200, 190, false, true)
       slotEls[k] = s
     })
     var srcEls = {}
@@ -214,7 +221,7 @@
         var s2 = shown[order[1]]
         api.later(function () { if (s1.animate && !api.reduced()) s1.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 600 }); api.fx('gold-star', SLOT[order[0]].x, SLOT[order[0]].y - 100, 200) }, 500)
         api.later(function () { if (s2.animate && !api.reduced()) s2.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 600 }); api.fx('gold-star', SLOT[order[1]].x, SLOT[order[1]].y - 100, 200) }, 1200)
-        api.later(function () { api.fx('confetti', 1000, 420, 380); busy = false; api.advance() }, 2000)
+        api.later(function () { api.fx('confetti', 1000, 420, 380); K.ask(api, { context: 'gate', grade: 1, done: function () { busy = false; api.advance() } }) }, 2000)
       } else api.warn(L.moreJet)
     }
 

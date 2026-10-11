@@ -24,15 +24,22 @@
     g.style.zIndex = '40'
     return {
       el: g,
+      // owner: the hand was easy to miss - it shows the gesture three times (a newer call replaces an older one)
       move: function (pts, ms, cb) {
-        g.style.opacity = '1'
+        var run = (g._run = (g._run || 0) + 1)
+        var loops = 3
         var i = 0
+        g.style.opacity = '1'
+        function start () { i = 0; g.style.transform = 'translate(' + pts[0].x + 'px,' + pts[0].y + 'px)'; leg() }
         function leg () {
-          if (i >= pts.length - 1) { g.style.opacity = '0'; if (cb) cb(); return }
-          api.tween(pts[i], pts[i + 1], ms, function (p) { g.style.transform = 'translate(' + p.x + 'px,' + p.y + 'px)' }, function () { i++; leg() })
+          if (run !== g._run) return
+          if (i >= pts.length - 1) {
+            if (--loops > 0) { api.later(start, 260); return }
+            g.style.opacity = '0'; if (cb) cb(); return
+          }
+          api.tween(pts[i], pts[i + 1], ms, function (p) { if (run === g._run) g.style.transform = 'translate(' + p.x + 'px,' + p.y + 'px)' }, function () { i++; leg() })
         }
-        g.style.transform = 'translate(' + pts[0].x + 'px,' + pts[0].y + 'px)'
-        leg()
+        start()
       }
     }
   }
@@ -205,7 +212,7 @@
       gs.forEach(function (g, gi) {
         if (gi > 0 && g.role !== 'leave') { var plus = document.createElement('b'); plus.textContent = '+'; plus.style.cssText = 'font:900 ' + Math.round(sz * 0.6) + 'px Nunito,sans-serif;color:#F4761A;margin:0 6px'; row2.appendChild(plus) }
         for (var j = 0; j < g.n; j++) {
-          var ic = new Image(); ic.alt = ''; ic.src = /^(w3-|veh-|pc2-)/.test(g.key) ? 'assets/blippi/' + g.key + '.webp' : LIB + g.key + '.webp'
+          var ic = new Image(); ic.alt = ''; ic.src = /^(w3-|veh-|pc2-|w5-|cast-|pc-|prop-)/.test(g.key) ? 'assets/blippi/' + g.key + '.webp' : LIB + g.key + '.webp'
           ic.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;object-fit:contain;flex:0 0 auto' + (g.role === 'leave' ? ';opacity:.35;filter:grayscale(1)' : '')
           row2.appendChild(ic)
         }

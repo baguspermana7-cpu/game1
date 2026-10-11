@@ -13,7 +13,7 @@
   }
   var BASIN = { L: { x: 395, y: 664, rx: 195, ry: 54 }, R: { x: 1318, y: 664, rx: 195, ry: 54 } }
   var DAM_AT = { L: 0.22, R: 0.22 }
-  var PUMP = { x: 470, y: 168, w: 170, h: 116 }
+  var PUMP = { x: 390, y: 205, w: 270, h: 176 }
 
   function path (pts) {
     // smooth: quadratic curves through the midpoints of the polyline
@@ -67,9 +67,13 @@
     ;['L', 'R'].forEach(function (k) { if (level[k] >= 1) prog[k] = 1; paint(k) })
 
     // ---- the pump (hold), valve wheels + dam gates (one per channel; only the closed one blocks), guess markers
-    var pump = api.art(sc, 'modul-pompa', PUMP.x, PUMP.y, PUMP.w, PUMP.h, 'pumpunit')
+    var pump = api.at(sc, 'pumpunit', PUMP.x, PUMP.y, PUMP.w, PUMP.h, 'button')
+    pump.type = 'button'
     pump.setAttribute('data-pump', '1')
-    pump.style.cssText += ';z-index:6;touch-action:none;cursor:pointer'
+    pump.setAttribute('aria-label', 'Truk air: tahan untuk memompa')
+    pump.style.cssText += ';background:none;border:0;padding:0;z-index:6;touch-action:none;cursor:pointer'
+    api.art(pump, 'veh-truk-air-sisi', 0, 0, PUMP.w, PUMP.h, '').setAttribute('data-veh', 'truk-air')
+    K.driver(pump, { x: 0.395, y: 0.25, w: 0.11, h: 0.2 })
     var damEls = {}
     var valveEls = {}
     ;['L', 'R'].forEach(function (k) {
@@ -103,8 +107,8 @@
       jets[k] = j
     })
     var mark = api.at(sc, 'guessmark', 0, 0, 70, 70)
-    mark.style.cssText += ';z-index:7;pointer-events:none;display:none;border-radius:50%;background:#FF8A1F;color:#fff;font:900 40px/70px Fredoka,Nunito,sans-serif;text-align:center;box-shadow:0 4px 8px rgba(0,0,0,.3)'
-    mark.textContent = '?'
+    mark.style.cssText += ';z-index:7;pointer-events:none;display:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))'
+    var mimg = new Image(); mimg.alt = ''; mimg.src = '../Dunia-Emosi/assets/db/lib/game/question-block.webp'; mimg.style.cssText = 'width:100%;height:100%;object-fit:contain'; mark.appendChild(mimg)
     function showMark () {
       if (!guess) { mark.style.display = 'none'; return }
       mark.style.display = 'block'
@@ -186,14 +190,14 @@
       api.fx('gold-star', BASIN[open].x, BASIN[open].y - 80, 220)
       K.glow(valveEls[closed], 4000)
       save()
-      api.later(function () { api.advance() }, 2200)
+      api.later(function () { K.ask(api, { context: 'gate', grade: 1, done: function () { api.advance() } }) }, 2200)
     }
     function allDone () {
       api.sfx('ok')
       ;['L', 'R'].forEach(function (k) { jets[k].style.opacity = '1'; if (jets[k].animate && !api.reduced()) jets[k].animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }], { duration: 600, easing: 'cubic-bezier(.23,1,.32,1)' }) })
       api.fx('confetti', 860, 400, 360)
       save()
-      api.later(function () { api.advance() }, 1200)
+      api.later(function () { K.ask(api, { custom: { id: 'm24-water', prompt: 'Air mengalir ke mana?', choices: ['Ke bawah', 'Ke atas'], answer: 'Ke bawah', hint1: 'Air turun dari air terjun.' }, done: function () { api.advance() } }) }, 1200)
     }
 
     // ---- step 3: turn the wheel of the closed channel
