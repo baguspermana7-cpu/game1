@@ -76,6 +76,43 @@
   ICON.drop2 = ICON.drop
 
   /* ---------- sound ---------- */
+  // background music (owner's Blippi theme): only on the hub, map, garage and panels -- never inside a mission or a
+  // run, where the game's own sounds speak. Quiet (BGM_VOL), faded in and out, paused while the tab is hidden, off with
+  // the sound toggle. Browsers allow playback only after a tap, so a refused play() waits for the next pointerdown.
+  var BGM_SCREENS = { hub: 1, map: 1, vehicles: 1, bengkel: 1, penemuan: 1 }
+  var BGM_VOL = 0.22
+  var bgm = null
+  var bgmFade = 0
+  function bgmWanted () { return !!(state && state.sound && BGM_SCREENS[cur] && !document.hidden) }
+  function bgmRamp (to, ms, done) {
+    clearInterval(bgmFade)
+    var from = bgm.volume
+    var t0 = Date.now()
+    bgmFade = setInterval(function () {
+      var k = Math.min(1, (Date.now() - t0) / ms)
+      bgm.volume = Math.max(0, Math.min(1, from + (to - from) * k))
+      if (k >= 1) { clearInterval(bgmFade); if (done) done() }
+    }, 40)
+  }
+  function bgmSync () {
+    if (!bgmWanted()) {
+      if (bgm && !bgm.paused) bgmRamp(0, 500, function () { bgm.pause() })
+      return
+    }
+    if (!bgm) {
+      bgm = new Audio('assets/audio/bgm-hub.m4a')
+      bgm.loop = true
+      bgm.preload = 'auto'
+      bgm.volume = 0
+    }
+    if (bgm.paused) {
+      var pr = bgm.play()
+      if (pr && pr.catch) pr.catch(function () { /* autoplay refused: the next tap retries */ })
+    }
+    bgmRamp(BGM_VOL, 900)
+  }
+  document.addEventListener('visibilitychange', function () { if (cur) bgmSync() })
+  w.addEventListener('pointerdown', function () { if (bgmWanted() && (!bgm || bgm.paused)) bgmSync() }, true)
   var actx = null
   var actxFailed = false
   function ctx () {
@@ -142,6 +179,7 @@
     mut(next)
     state = next
     save()
+    bgmSync()
   }
   // one idempotent transaction per reward key: true only the first time
   function grant (mission) {
@@ -224,6 +262,7 @@
     stage.setAttribute('data-screen', name)
     if (w.BlippiFX) w.BlippiFX.start(el)
     if (w.BlippiLife) w.BlippiLife.start(el)
+    bgmSync()
     A.spread(el)
   }
   function back () {
@@ -585,7 +624,7 @@
 
   w.Blippi = {
     D: D, A: A, stage: stage, W: W, H: H,
-    state: function () { return state }, commit: commit, grant: grant, reloadState: reloadState, resetAll: resetAll, save: save,
+    state: function () { return state }, bgm: function () { return bgm ? { playing: !bgm.paused, vol: Math.round(bgm.volume * 100) / 100 } : null }, commit: commit, grant: grant, reloadState: reloadState, resetAll: resetAll, save: save,
     missionDone: missionDone, fresh: freshFlags, recommended: recommended, vehicleById: vehicleById, fits: fits,
     at: at, art: art, bgslot: bgslot, btn: btn, txt: txt, circle: circle, ICON: ICON, nav: nav, topLeft: topLeft, topRight: topRight, logo: logo,
     bubble: bubble, say: say, modal: modal, closeModal: closeModal, sfx: sfx, toRef: toRef, wheelSvg: wheelSvg, titleCase: titleCase,
