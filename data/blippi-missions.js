@@ -28,7 +28,7 @@
 
   var WORLDS = [
     { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'], finale: 'W01-M05', art: 'pulau-kota-roda', artDone: 'pulau-kota-roda-selesai', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
-    { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', art: 'pulau-taman-air', artDone: 'pulau-taman-air-aktif', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
+    { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', missions: ['W02-M01', 'W02-M02', 'W02-M03'], art: 'pulau-taman-air', artDone: 'pulau-taman-air-aktif', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
     { id: 'eco-park', name: 'ECO PARK', locked: 'Terbuka setelah Taman Air.', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
@@ -46,10 +46,10 @@
           instr: 'Seret tiga papan ke jembatan.',
           wrong: 'Belum waktunya. Sekarang kita pasang papan dulu.' },
         { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'tool-jalan', icon: 'wheel',
-          instr: 'Tahan tombol JALAN agar buggy menyeberang.',
+          instr: 'Tahan tombol, buggy melaju.',
           wrong: 'Pasang papan dulu, baru buggy bisa jalan.' },
         { id: 'antar', label: 'ANTAR', tool: 'paket', toolName: 'PAKET', toolArt: 'tool-paket', icon: 'box',
-          instr: 'Ketuk paket untuk mengantar ke bendera.',
+          instr: 'Seret paket ke bendera.',
           wrong: 'Antar paketnya setelah sampai di bendera.' }
       ],
       lines: {
@@ -58,6 +58,8 @@
         board: 'Satu papan terpasang!',
         built: 'Jembatan jadi! Tahan JALAN untuk menyeberang.',
         arrive: 'Sampai! Ketuk paketnya untuk mengantar.',
+        dragParcel: 'Seret paketnya sampai ke bendera.',
+        parcelMiss: 'Belum sampai. Letakkan paket di bendera ya.',
         retryNear: 'Tidak apa-apa. Taruh papan di tempat yang bergaris ya.',
         wrongTool: 'Belum waktunya. Pakai alat yang menyala oranye ya.',
         win: 'Hore! Jalur taman pertama sudah jadi!'
@@ -75,7 +77,7 @@
         { id: 'gali', label: 'GALI', tool: 'gali', toolName: 'GALI', toolArt: 'tool-gali', icon: 'box',
           instr: 'Ketuk petak pasir yang cocok.', wrong: 'Pakai bucket untuk menggali petak pasir.' },
         { id: 'pasang', label: 'PASANG', tool: 'pasang', toolName: 'PASANG', toolArt: 'tool-pasang', icon: 'wheel',
-          instr: 'Antar benda ke gerbang.', wrong: 'Antar bendanya ke gerbang setelah semuanya ketemu.' }
+          instr: 'Seret benda ke gerbang.', wrong: 'Antar bendanya ke gerbang setelah semuanya ketemu.' }
       ],
       lines: {
         start: 'Ada tiga benda terkubur di pasir. Baca petunjuknya!',
@@ -95,17 +97,17 @@
       worldDelta: 'kota-roda:bukit-uji',
       steps: [
         { id: 'kira', label: 'KIRA-KIRA', tool: 'kira', toolName: 'KIRA-KIRA', toolArt: 'tool-kira', icon: 'bulb',
-          instr: 'Ramp mana lebih jauh?', wrong: 'Tebak dulu ramp yang lebih jauh. Uji nanti ya.' },
+          instr: 'Ketuk ramp yang lebih jauh.', wrong: 'Tebak dulu ramp yang lebih jauh. Uji nanti ya.' },
         { id: 'uji', label: 'UJI', tool: 'uji', toolName: 'UJI', toolArt: 'tool-uji', icon: 'wheel',
-          instr: 'Pilih UJI, lalu coba kedua ramp.', wrong: 'Tebakanmu sudah tersimpan. Sekarang saatnya menguji.' },
+          instr: 'Seret truk ke tiap ramp.', wrong: 'Tebakanmu sudah tersimpan. Sekarang saatnya menguji.' },
         { id: 'antar', label: 'ANTAR', tool: 'antar', toolName: 'ANTAR', toolArt: 'tool-antar', icon: 'box',
-          instr: 'Antar muatan ke garis biru.', wrong: 'Ujinya sudah selesai. Sekarang antar muatan.' }
+          instr: 'Seret truk ke ramp: garis biru!', wrong: 'Ujinya sudah selesai. Sekarang antar muatan.' }
       ],
       lines: {
         start: 'Satu ramp rendah, satu tinggi. Mana yang lebih jauh?',
         guess: 'Tebakan tersimpan. Ayo buktikan!',
         both: 'Ramp tinggi meluncur lebih jauh. Dua penanda tersimpan!',
-        short: 'Kurang jauh. Muatan berhenti di garis kuning. Coba ramp yang lain!',
+        short: 'Kurang jauh. Coba ramp yang lain!',
         wrongTool: 'Pakai alat yang menyala oranye ya.',
         win: 'Hore! Muatan sampai di garis biru!'
       },
@@ -117,24 +119,23 @@
       reward: { key: 'reward:W01-M04', sticker: 'stiker-jembatan', stickerName: 'Stiker Jembatan' },
       worldDelta: 'kota-roda:jembatan-akses',
       steps: [
-        { id: 'pilih', label: 'PILIH', tool: 'balok', toolName: 'BALOK', toolArt: 'tool-balok', icon: 'bulb',
-          instr: 'Pilih balok untuk sungai.', wrong: 'Pilih balok dulu. Memasang nanti ya.' },
-        { id: 'pasang', label: 'PASANG', tool: 'sambung', toolName: 'PASANG', toolArt: 'tool-sambung', icon: 'wheel',
-          instr: 'Seret ke garis oranye.', wrong: 'Balok sudah dipilih. Pasang di garis oranye.' },
-        { id: 'lewat', label: 'LEWATI', tool: 'lewat', toolName: 'LEWATI', toolArt: 'tool-jalan', icon: 'box',
-          instr: 'Ketuk truk untuk menyeberang.', wrong: 'Jembatan sudah jadi. Sekarang ketuk truk untuk menyeberang.' }
+        { id: 'pasang', label: 'PASANG', tool: 'balok', toolName: 'PASANG', toolArt: 'tool-balok', icon: 'wheel',
+          instr: 'Seret balok ke sungai.', wrong: 'Pasang jembatannya dulu. Truk menunggu.' },
+        { id: 'jalan', label: 'JALAN', tool: 'jalan', toolName: 'JALAN', toolArt: 'tool-jalan', icon: 'wheel',
+          instr: 'Tahan truk agar menyeberang.', wrong: 'Jembatan sudah jadi. Tahan truknya!' },
+        { id: 'antar', label: 'ANTAR', tool: 'paket', toolName: 'ANTAR', toolArt: 'tool-paket', icon: 'box',
+          instr: 'Seret paket ke taman.', wrong: 'Truk sudah sampai. Seret paketnya.' }
       ],
       lines: {
         start: 'Sungai memisahkan jalan dan taman. Ayo buat jembatan!',
-        short: 'Pendek belum sampai. Coba yang panjang, atau pakai tiang!',
-        postFirst: 'Tiang saja belum cukup. Pilih balok dulu ya.',
-        planLong: 'Balok panjang cukup untuk menjangkau sungai!',
-        planShort: 'Dua balok pendek dan satu tiang di tengah. Bisa juga!',
-        miss: 'Belum pas. Taruh di tempat yang bergaris ya.',
-        wrongSpot: 'Itu bukan tempat untuk bagian ini. Cari yang bentuknya cocok.',
+        short: 'Pendek belum sampai. Pasang tiang tengah!',
+        dragIt: 'Seret baloknya ke sungai.',
+        postWhere: 'Tiang berdiri di air, di tengah sungai.',
         placed: 'Terpasang!',
-        built: 'Jembatan jadi! Ketuk truk untuk menyeberang.',
-        wait: 'Jembatannya belum jadi. Truk menunggu di tepi sungai.',
+        built: 'Jembatan jadi! Tahan truk untuk menyeberang.',
+        wait: 'Jembatannya belum jadi. Truk menunggu di tepi.',
+        dragParcel: 'Seret paketnya ke taman.',
+        parcelMiss: 'Belum sampai. Letakkan di tempat yang bergaris.',
         wrongTool: 'Pakai alat yang menyala oranye ya.',
         win: 'Hore! Jembatan terbuka untuk semua!'
       },
@@ -146,24 +147,23 @@
       reward: { key: 'reward:W01-M05', sticker: 'stiker-taman', stickerName: 'Stiker Taman', badge: 'lencana-w01', badgeName: 'Lencana Kota Roda' },
       worldDelta: 'kota-roda:taman-buka',
       steps: [
-        { id: 'rencana', label: 'RENCANA', tool: 'rencana', toolName: 'RENCANA', toolArt: 'tool-rencana', icon: 'bulb',
-          instr: 'Ketuk tiga kartu berurutan.', wrong: 'Susun rencana dulu. Bekerja nanti ya.' },
-        { id: 'kerja', label: 'KERJA', tool: 'kerja', toolName: 'KERJA', toolArt: 'tool-pasang', icon: 'wheel',
-          instr: 'Ketuk tempat yang menyala.', wrong: 'Rencanamu sudah jadi. Sekarang kerjakan satu per satu.' },
+        { id: 'siapkan', label: 'SIAPKAN', tool: 'siapkan', toolName: 'SIAPKAN', toolArt: 'tool-siapkan', icon: 'wheel',
+          instr: 'Seret tiga benda ke tempatnya.', wrong: 'Siapkan tamannya dulu. Gerbang dibuka nanti.' },
         { id: 'buka', label: 'BUKA', tool: 'buka', toolName: 'BUKA', toolArt: 'tool-buka', icon: 'box',
           instr: 'Ketuk gerbang untuk membuka!', wrong: 'Semua siap. Sekarang buka gerbangnya.' }
       ],
       lines: {
-        start: 'Hari ini taman dibuka! Pilih mana yang dikerjakan dulu.',
-        planned: 'Rencana siap! Kerjakan satu per satu.',
-        toysFirst: 'Mainan butuh pasir dulu. Taruh PASIR lebih awal ya.',
-        turn: 'Sekarang giliran yang menyala, sesuai rencanamu.',
+        start: 'Hari ini taman dibuka! Kerjakan dalam urutan yang kamu mau.',
+        dragIt: 'Seret bendanya ke tempat yang bergaris.',
+        miss: 'Belum pas. Letakkan di tempat yang bergaris.',
+        moreSand: 'Satu lagi pasir!',
+        toysFirst: 'Mainan butuh pasir dulu. Taruh pasir ya.',
         done1: 'Selesai satu!',
-        ready: 'Semua siap! Ketuk gerbang untuk membuka taman.',
+        ready: 'Semua siap! Ketuk gerbang untuk membuka.',
         wrongTool: 'Pakai alat yang menyala oranye ya.',
         win: 'Hore! Taman Kota Roda resmi dibuka!'
       },
-      hints: ['Kartu yang menyala bisa diketuk berikutnya.', 'Pasir dulu, supaya mainan punya tempat berdiri.', 'Lihat tanganku. Ketuk di sini!']
+      hints: ['Benda yang menyala bisa diseret ke garis oranye.', 'Pasir dulu, supaya mainan punya tempat berdiri.', 'Lihat tanganku. Seret seperti ini!']
     },
     'W02-M01': {
       id: 'W02-M01', world: 'taman-air', title: 'Kincir yang Menunggu', sub: 'Taman Air', thumb: 'thumb-taman-air',
@@ -192,6 +192,59 @@
         win: 'Hore! Kincirnya berputar!'
       },
       hints: ['Ujung selang bercahaya. Seret ke lubang pipa.', 'Ikuti panah: dari ujung selang ke lubang pipa.', 'Lihat tanganku. Seret seperti ini!']
+    },
+    'W02-M02': {
+      id: 'W02-M02', world: 'taman-air', title: 'Ke Mana Airnya Pergi?', sub: 'Taman Air', thumb: 'thumb-taman-air',
+      needs: ['pump_water'], vehicle: 'truk-air', bg: 'bg-w02-m02-aliran',
+      reward: { key: 'reward:W02-M02', sticker: 'stiker-sambung', stickerName: 'Stiker Sambungan' },
+      worldDelta: 'taman-air:kolam-uji',
+      steps: [
+        { id: 'cari', label: 'CARI', tool: 'cari', toolName: 'POMPA', toolArt: 'tool-pompa', icon: 'drop',
+          instr: 'Tahan pompa. Lihat airnya.', wrong: 'Tahan pompanya dulu untuk melihat aliran air.' },
+        { id: 'sambung', label: 'SAMBUNG', tool: 'sambung', toolName: 'SAMBUNG', toolArt: 'tool-selang', icon: 'hose',
+          instr: 'Seret konektor bulat ke celah.', wrong: 'Pasang konektor di celah selang dulu.' },
+        { id: 'uji', label: 'UJI', tool: 'uji', toolName: 'UJI', toolArt: 'tool-pompa', icon: 'drop',
+          instr: 'Tahan pompa. Isi kolamnya.', wrong: 'Sudah tersambung. Tahan pompa untuk menguji.' }
+      ],
+      lines: {
+        start: 'Airnya tidak sampai ke kolam. Ayo cari sebabnya!',
+        found: 'Airnya berhenti di sini. Selangnya terputus!',
+        needPlug: 'Pasang konektor dulu, baru pompa.',
+        dragPlug: 'Seret konektor ke celah selang.',
+        wrongShape: 'Bentuknya belum pas. Cari yang bulat.',
+        fits: 'Pas! Selangnya tersambung.',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Kolam percobaan terisi air!'
+      },
+      hints: ['Pompa dan celah selang menyala. Mulai dari pompa.', 'Kartu bulat di selang: cari konektor yang sama.', 'Lihat tanganku. Seret seperti ini!']
+    },
+    'W02-M03': {
+      id: 'W02-M03', world: 'taman-air', title: 'Gerobak di Lumpur', sub: 'Taman Air', thumb: 'thumb-taman-air',
+      needs: ['drive_land'], vehicle: 'buggy', bg: 'bg-w02-m03-lumpur',
+      reward: { key: 'reward:W02-M03', sticker: 'stiker-gerobak', stickerName: 'Stiker Gerobak', vehicle: 'buggy' },
+      worldDelta: 'taman-air:jalur-kebun',
+      steps: [
+        { id: 'kait', label: 'KAIT', tool: 'kait', toolName: 'KAIT', toolArt: 'tool-kait', icon: 'wheel',
+          instr: 'Seret kait ke gerobak.', wrong: 'Pasang kaitnya dulu ke gerobak.' },
+        { id: 'ban', label: 'BAN', tool: 'ban', toolName: 'BAN', toolArt: 'tool-ban', icon: 'wheel',
+          instr: 'Seret ban ke buggy.', wrong: 'Kait sudah terpasang. Pilih ban untuk buggy.' },
+        { id: 'tarik', label: 'TARIK', tool: 'tarik', toolName: 'TARIK', toolArt: 'tool-jalan', icon: 'box',
+          instr: 'Seret buggy ke satu jalur.', wrong: 'Ban sudah dipilih. Pilih jalur untuk menarik gerobak.' }
+      ],
+      lines: {
+        start: 'Gerobaknya harus sampai ke gerbang taman air!',
+        dragHook: 'Seret kaitnya ke lingkaran di antara buggy dan gerobak.',
+        hookMiss: 'Belum pas. Taruh kait di lingkaran.',
+        hooked: 'Terkait! Sekarang pilih ban.',
+        dragTire: 'Seret ban ke buggy.',
+        tireSmooth: 'Ban halus. Cepat di jalan kering.',
+        tireTread: 'Ban berpola. Mencengkeram tanah licin.',
+        dragBuggy: 'Seret buggy ke salah satu lingkaran.',
+        slip: 'Ban halus tergelincir. Coba ban berpola!',
+        wrongTool: 'Pakai alat yang menyala oranye ya.',
+        win: 'Hore! Gerobak sampai di taman air!'
+      },
+      hints: ['Benda yang menyala bisa diseret ke lingkaran oranye.', 'Ban berpola mencengkeram lumpur lebih kuat.', 'Lihat tanganku. Seret seperti ini!']
     }
   }
 
@@ -201,7 +254,9 @@
     { id: 'W01-M02', name: 'Stiker Harta', art: 'stiker-harta' },
     { id: 'W01-M03', name: 'Stiker Bukit', art: 'stiker-bukit' },
     { id: 'W01-M04', name: 'Stiker Jembatan', art: 'stiker-jembatan' },
-    { id: 'W01-M05', name: 'Stiker Taman', art: 'stiker-taman' }
+    { id: 'W01-M05', name: 'Stiker Taman', art: 'stiker-taman' },
+    { id: 'W02-M02', name: 'Stiker Sambungan', art: 'stiker-sambung' },
+    { id: 'W02-M03', name: 'Stiker Gerobak', art: 'stiker-gerobak' }
   ]
 
   var HUB_LINES = {
@@ -218,7 +273,7 @@
     stickers: STICKERS,
     hubLines: HUB_LINES,
     firstMission: 'W01-M01',
-    order: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05', 'W02-M01'],
+    order: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05', 'W02-M01', 'W02-M02', 'W02-M03'],
     stickerTotal: 30
   }
 })(window)

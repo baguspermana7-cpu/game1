@@ -117,7 +117,7 @@
       open = true
       api.sfx('ok')
       renderPanel()
-      api.persist({ t: tg, found: found, dug: dug })
+      api.persist({ t: tg, found: found, dug: dug, carried: carried })
       api.warn(L.read)
       api.later(function () { api.advance() }, 600)
     }
@@ -146,6 +146,7 @@
       bucket.style.top = (y - 230) + 'px'
       bucket.style.opacity = '1'
       if (bucket.animate && !api.reduced()) bucket.animate([{ transform: 'translateY(-90px) rotate(-14deg)', opacity: 0 }, { transform: 'translateY(8px) rotate(0)', opacity: 1, offset: .45 }, { transform: 'translateY(-60px) rotate(8deg)', opacity: 0 }], { duration: 560, easing: 'cubic-bezier(.23,1,.32,1)' })
+      api.later(function () { bucket.style.opacity = '0' }, 600)
       api.sfx('bump')
       api.fx('dust', x, y, 190)
       mark(c, true)
@@ -157,12 +158,12 @@
           api.sfx('collect')
           api.warn(ITEMS[i].n + ' ' + L.found.toLowerCase())
           renderPanel()
-          api.persist({ t: tg, found: found, dug: dug })
+          api.persist({ t: tg, found: found, dug: dug, carried: carried })
           clearBands()
           if (nextTarget() < 0) { api.later(function () { api.warn(L.allFound); api.advance() }, 1300) }
         } else {
           empties++
-          api.persist({ t: tg, found: found, dug: dug })
+          api.persist({ t: tg, found: found, dug: dug, carried: carried })
           var nx = nextTarget()
           api.warn(L.empty + (nx >= 0 ? ' ' + ITEMS[nx].n + ' ada di ' + place(tg[nx]) + '.' : ''))
           if (empties % 2 === 0 && nx >= 0) { glowRow(nx) }
@@ -176,38 +177,75 @@
       setTimeout(function () { showBand(bRow, false) }, 2600)
     }
 
-    // gate delivery
-    var gate = api.at(sc, '', GATE.x, GATE.y, GATE.w, GATE.h, 'button')
-    gate.type = 'button'
+    // step 3: the three finds lie on the sand where they were dug; DRAG each one onto the garden gate (a tap does nothing, a miss floats back)
+    var gate = api.at(sc, '', GATE.x, GATE.y, GATE.w, GATE.h)
     gate.setAttribute('data-gate', '1')
-    gate.setAttribute('aria-label', 'Gerbang taman: antar benda')
-    gate.style.cssText += ';background:none;border:0;cursor:pointer;z-index:3;border-radius:30px;pointer-events:none'
-    var delivered = false
-    gate.addEventListener('click', function () { deliver() })
-    function deliver () {
-      if (delivered || api.step() !== 2) return
-      api.touch()
-      if (api.tool() !== 'pasang') { api.warn(L.wrongTool); api.shakeTool('pasang'); return }
-      delivered = true
-      api.sfx('ok')
+    gate.style.cssText += ';pointer-events:none;border-radius:30px;z-index:2;border:5px dashed #FF8A1F;background:rgba(255,196,64,.18);display:none'
+    var carried = saved.carried || []
+    var pieces = []
+    function pieceHome (i) { return { x: COLX[tg[i] % 3] - 45, y: ROWY[Math.floor(tg[i] / 3)] - 100 } }
+    function mkPieces () {
       ITEMS.forEach(function (it, i) {
-        var d = api.at(sc, '', COLX[tg[i] % 3] - 40, ROWY[Math.floor(tg[i] / 3)] - 80, 80, 80)
-        d.style.zIndex = '8'
-        d.style.pointerEvents = 'none'
-        pic(d, it, 80)
-        var from = { x: COLX[tg[i] % 3] - 40, y: ROWY[Math.floor(tg[i] / 3)] - 80 }
-        api.later(function () {
-          api.tween(from, { x: GATE.x + 70 + (i - 1) * 40, y: GATE.y + 150 }, 700, function (p) { d.style.transform = 'translate(' + (p.x - from.x) + 'px,' + (p.y - from.y - Math.sin(Math.min(1, (p.x - from.x) / Math.max(1, GATE.x + 70 - from.x)) * Math.PI) * 120) + 'px)' }, function () { api.fx('spark', GATE.x + 110, GATE.y + 140, 200); d.style.opacity = '0' })
-        }, i * 260)
+        if (carried.indexOf(i) >= 0 || pieces[i]) return
+        var d = api.at(sc, 'carry', 0, 0, 90, 90)
+        d.setAttribute('data-carry', String(i))
+        d.style.cssText += ';z-index:9;touch-action:none;cursor:grab'
+        pic(d, it, 90)
+        d.style.transform = 'translate(' + pieceHome(i).x + 'px,' + pieceHome(i).y + 'px)'
+        d.classList.add('glow')
+        wireCarry(d, i)
+        pieces[i] = d
       })
-      api.later(function () { api.fx('confetti', GATE.x + 110, GATE.y + 100, 320); api.persist({ t: tg, found: found, dug: dug }); api.advance() }, 1500)
     }
+    function wireCarry (d, i) {
+      var dr = null
+      d.addEventListener('pointerdown', function (ev) {
+        if (api.step() !== 2 || dr) return
+        api.touch()
+        dr = { id: ev.pointerId, moved: 0, x0: B.toRef(ev.clientX, ev.clientY) }
+        d.classList.remove('glow')
+        try { d.setPointerCapture(ev.pointerId) } catch (e) { /* synthetic */ }
+      })
+      d.addEventListener('pointermove', function (ev) {
+        if (!dr || ev.pointerId !== dr.id) return
+        var p = B.toRef(ev.clientX, ev.clientY)
+        dr.moved = Math.max(dr.moved, Math.abs(p.x - dr.x0.x) + Math.abs(p.y - dr.x0.y))
+        dr.p = p
+        d.style.transform = 'translate(' + (p.x - 45) + 'px,' + (p.y - 45) + 'px) scale(1.12)'
+      })
+      function end (ev, cancel) {
+        if (!dr || ev.pointerId !== dr.id) return
+        var cur = dr
+        dr = null
+        var p = cur.p
+        if (!cancel && p && cur.moved > 10 && p.x > GATE.x - 40 && p.x < GATE.x + GATE.w + 40 && p.y > GATE.y - 40 && p.y < GATE.y + GATE.h + 40) { give(i, p); return }
+        if (!cancel) api.warn(cur.moved < 10 ? 'Seret bendanya ke gerbang.' : 'Belum sampai. Bawa ke gerbang taman ya.')
+        gate.classList.add('glow'); setTimeout(function () { gate.classList.remove('glow') }, 2600)
+        var from = p ? { x: p.x - 45, y: p.y - 45 } : pieceHome(i)
+        api.tween(from, pieceHome(i), 300, function (q) { d.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)' })
+      }
+      d.addEventListener('pointerup', function (ev) { end(ev, false) })
+      d.addEventListener('pointercancel', function (ev) { end(ev, true) })
+      d.addEventListener('lostpointercapture', function (ev) { end(ev, true) })
+    }
+    function give (i, p) {
+      carried = carried.concat([i])
+      var d = pieces[i]
+      api.sfx('collect')
+      api.fx('spark', GATE.x + 110, GATE.y + 150, 200)
+      var from = p ? { x: p.x - 45, y: p.y - 45 } : pieceHome(i)
+      api.tween(from, { x: GATE.x + 60, y: GATE.y + 170 }, 240, function (q) { d.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px) scale(.8)' }, function () { d.style.opacity = '0'; d.style.pointerEvents = 'none' })
+      api.persist({ t: tg, found: found, dug: dug, carried: carried })
+      if (carried.length >= 3) api.later(function () { api.fx('confetti', GATE.x + 110, GATE.y + 100, 320); api.advance() }, 600)
+    }
+    function deliver () { var i; for (i = 0; i < 3; i++) if (carried.indexOf(i) < 0) { give(i, null); return } }
+    if (rs && rs.step >= 2) { mkPieces(); gate.style.display = 'block' }
 
     var ctl = {
       onStep: function (n) {
         panel.classList.toggle('glowpanel', n === 0)
-        gate.style.pointerEvents = n === 2 ? 'auto' : 'none'
-        if (n === 2) { gate.classList.add('glow') } else gate.classList.remove('glow')
+        gate.style.display = n === 2 ? 'block' : 'none'
+        if (n === 2) { mkPieces(); gate.classList.add('glow') } else gate.classList.remove('glow')
         if (n === 1) renderPanel()
       },
       demo: function (n) {
@@ -215,7 +253,8 @@
         var K = w.BlippiKit
         if (!K) return
         if (!hd) hd = K.hand(api)
-        var pt = n === 0 ? { x: 150, y: 470 } : (n === 1 ? { x: 220, y: 330 } : { x: GATE.x + 80, y: GATE.y + 120 })
+        if (n === 2) { var h0 = pieceHome(carried.length < 1 ? 0 : (carried.indexOf(1) < 0 ? 1 : 2)); hd.move([h0, { x: GATE.x + 60, y: GATE.y + 150 }], 1000); return }
+        var pt = n === 0 ? { x: 150, y: 470 } : { x: COLX[tg[nextTarget()] % 3] - 30, y: ROWY[Math.floor(tg[nextTarget()] / 3)] - 60 }
         hd.move([pt, { x: pt.x, y: pt.y - 16 }, pt], 420)
       },
       onTool: function () {},
@@ -242,8 +281,7 @@
       win: function () { api.sfx('ok') },
       destroy: function () {}
     }
-    if (rs && rs.step >= 2) { gate.style.pointerEvents = 'auto' }
-    api.persist({ t: tg, found: found, dug: dug })
+        api.persist({ t: tg, found: found, dug: dug, carried: carried })
     return ctl
   } }
   if (w.BlippiMissionRegister) w.BlippiMissionRegister('W01-M02', mod)

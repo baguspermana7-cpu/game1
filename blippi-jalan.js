@@ -88,7 +88,7 @@
     box.style.zIndex = '1'
     box.style.cursor = 'pointer'
     box.setAttribute('data-box', '1')
-    var go = api.at(sc, 'obtn bbtn', 686, 700, 300, 66, 'button')
+    var go = api.at(sc, 'obtn bbtn', 686, 664, 300, 66, 'button')
     go.type = 'button'
     go.textContent = 'TAHAN UNTUK JALAN'
     go.style.fontSize = '26px'
@@ -220,20 +220,54 @@
       el.addEventListener('lostpointercapture', stopHold)
     })
 
-    box.addEventListener('click', function () {
-      if (api.step() !== 2 || delivered) return
+    // step 3: drag the parcel from the buggy onto the flag (a tap only nudges the demo; the action is the drag)
+    var bd = null
+    box.style.touchAction = 'none'
+    function boxHome () { var pt = at(LEN.total); return { x: pt.x - 30, y: pt.y - 130 } }
+    box.addEventListener('pointerdown', function (ev) {
+      if (api.step() !== 2 || delivered || bd) return
       api.touch()
-      if (api.tool() !== 'paket') { api.warn(L.wrongTool); api.shakeTool('paket'); return }
-      deliver()
+      var p = B.toRef(ev.clientX, ev.clientY)
+      bd = { id: ev.pointerId, x0: p.x, y0: p.y, moved: 0 }
+      box.style.zIndex = '20'
+      box.classList.remove('glow')
+      try { box.setPointerCapture(ev.pointerId) } catch (e) { /* synthetic */ }
     })
-    function deliver () {
+    box.addEventListener('pointermove', function (ev) {
+      if (!bd || ev.pointerId !== bd.id) return
+      var p = B.toRef(ev.clientX, ev.clientY)
+      bd.moved = Math.max(bd.moved, Math.hypot(p.x - bd.x0, p.y - bd.y0))
+      bd.p = p
+      box.style.transform = 'translate(' + (p.x - 40) + 'px,' + (p.y - 40) + 'px) scale(1.1)'
+    })
+    function boxEnd (ev, cancel) {
+      if (!bd || ev.pointerId !== bd.id) return
+      var d = bd
+      bd = null
+      var p = d.p
+      if (!cancel && p && d.moved >= 10 && Math.hypot(p.x - FLAG.x, p.y - (FLAG.y - 40)) <= 160) { deliver(p); return }
+      var from = p ? { x: p.x - 40, y: p.y - 40 } : boxHome()
+      var home = boxHome()
+      if (!cancel && d.moved < 10) { api.warn(L.dragParcel); box.classList.add('glow'); return }
+      api.warn(L.parcelMiss)
+      flag.classList.add('glow'); setTimeout(function () { flag.classList.remove('glow') }, 2600)
+      api.tween(from, home, 320, function (q) { box.style.transform = 'translate(' + q.x + 'px,' + q.y + 'px)' })
+    }
+    box.addEventListener('pointerup', function (ev) { boxEnd(ev, false) })
+    box.addEventListener('pointercancel', function (ev) { boxEnd(ev, true) })
+    box.addEventListener('lostpointercapture', function (ev) { boxEnd(ev, true) })
+    function deliver (p0) {
       delivered = true
       api.sfx('ok')
-      var from = { x: PATH[3].x - 30, y: PATH[3].y - 105 }
-      api.tween(from, { x: FLAG.x - 30, y: FLAG.y + 20 }, 520, function (p) { box.style.transform = 'translate(' + p.x + 'px,' + (p.y - Math.sin(Math.min(1, (p.x - from.x) / Math.max(1, FLAG.x - 30 - from.x)) * Math.PI) * 70) + 'px)' }, function () {
-        api.fx('confetti', FLAG.x, FLAG.y, 260)
+      var from = p0 ? { x: p0.x - 40, y: p0.y - 40 } : boxHome()
+      var to = { x: FLAG.x - 40, y: FLAG.y - 10 }
+      api.tween(from, to, 380, function (p) { box.style.transform = 'translate(' + p.x + 'px,' + (p.y - Math.sin(Math.min(1, (p.x - from.x) / Math.max(1, to.x - from.x)) * Math.PI) * 50) + 'px)' }, function () {
+        api.sfx('bump')
+        api.fx('dust', FLAG.x, FLAG.y + 30, 150)
+        api.fx('confetti', FLAG.x, FLAG.y - 40, 280)
+        if (flag.animate && !api.reduced()) flag.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg)' }, { transform: 'rotate(8deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }], { duration: 900, easing: 'ease-out' })
         api.persist({ route: 'R' })
-        api.advance()
+        api.later(function () { api.advance() }, 700)
       })
     }
 
@@ -246,7 +280,8 @@
         pile.style.pointerEvents = n === 0 ? 'auto' : 'none'
         slotEls.forEach(function (e) { var ph = e.querySelector('.jslot-ph'); if (ph) ph.style.display = n === 0 ? 'block' : 'none' })
         box.style.pointerEvents = n === 2 ? 'auto' : 'none'
-        if (n === 2) { box.classList.add('glow') }
+        box.style.cursor = n === 2 ? 'grab' : 'default'
+        if (n === 2) { box.classList.add('glow'); flag.classList.add('glow') }
       },
       onTool: function () {},
       demo: function (n) {
@@ -255,8 +290,8 @@
         if (!K) return
         if (!hd) hd = K.hand(api)
         if (n === 0) hd.move([{ x: PILE.x - 30, y: PILE.y - 20 }, { x: SLOTS[0].x - 30, y: SLOTS[0].y - 50 }], 900)
-        else if (n === 1) hd.move([{ x: 700, y: 690 }, { x: 700, y: 676 }, { x: 700, y: 690 }], 420)
-        else hd.move([{ x: FLAG.x - 160, y: FLAG.y - 20 }, { x: FLAG.x - 160, y: FLAG.y - 36 }, { x: FLAG.x - 160, y: FLAG.y - 20 }], 420)
+        else if (n === 1) hd.move([{ x: 760, y: 660 }, { x: 760, y: 660 }], 1800)
+        else { var bh = boxHome(); hd.move([{ x: bh.x, y: bh.y }, { x: FLAG.x - 60, y: FLAG.y - 60 }], 1000) }
       },
       hint: function (lvl) {
         var s = api.step()
@@ -270,7 +305,7 @@
         } else {
           if (api.tool() !== 'paket') api.glowTool('paket', 3000)
           box.classList.add('glow')
-          if (lvl >= 4 && api.tool() === 'paket') deliver()
+          if (lvl >= 4 && api.tool() === 'paket') deliver(null)
         }
       },
       win: function () {

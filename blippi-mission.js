@@ -85,7 +85,7 @@
     renderSteps()
     renderTray()
     setInstr(steps[run.step].instr)
-    if (run.step === 0) { run.tool = steps[0].tool; renderTray() }
+    run.tool = steps[run.step].tool; renderTray()   // sync rule: the tray is progress, not a gate; the step's tool is always live (the action happens on the thing in the scene)
     if (run.ctl.onStep) run.ctl.onStep(run.step, true)
     run.idleT = setInterval(function () {
       if (run.paused || run.dead || run.winning) return
@@ -172,7 +172,7 @@
       t.className = 'tool' + (run.tool === s.tool ? ' sel' : '') + (i === run.step ? ' cur' : '') + (i < run.step ? ' done' : '')
       t.setAttribute('data-tool', s.tool)
       t.setAttribute('aria-pressed', run.tool === s.tool ? 'true' : 'false')
-      t.style.cssText = 'position:absolute;left:' + (12 + i * 245) + 'px;top:12px;width:232px;height:140px'
+      t.style.cssText = 'position:absolute;left:' + (376 - (steps.length * 245 - 13) / 2 + i * 245) + 'px;top:12px;width:232px;height:140px'
       var a = document.createElement('div')
       a.className = 'art'
       a.style.cssText = 'inset:6px 20px 52px 20px;width:auto;height:auto'
@@ -223,7 +223,7 @@
   function advance () {
     if (!run || run.winning) return
     run.step++
-    run.tool = null
+    run.tool = run.m.steps[run.step] ? run.m.steps[run.step].tool : null
     run.hint = 0
     run.idle = 0
     var id = run.m.id
