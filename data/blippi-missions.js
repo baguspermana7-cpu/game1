@@ -35,7 +35,7 @@
   var WORLDS = [
     { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'], finale: 'W01-M05', art: 'pulau-kota-roda', artDone: 'pulau-kota-roda-selesai', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
     { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', missions: ['W02-M01', 'W02-M02', 'W02-M03', 'W02-M04', 'W02-M05'], art: 'pulau-taman-air', artDone: 'pulau-taman-air-selesai', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
-    { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01', 'W03-M02', 'W03-M03'], thumb: 'veh-recycling-truck', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
+    { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01', 'W03-M02', 'W03-M03', 'W03-M04'], thumb: 'veh-recycling-truck', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
     { id: 'wonder-lab', name: 'WONDER LAB', locked: 'Terbuka setelah pulau lain selesai.', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
@@ -439,6 +439,38 @@
     hints: ['Gear yang berkilau cocok dengan satu bayangan.', 'Gear besar di tengah, gear kecil di samping.', 'Lihat tanganku. Seret seperti ini!']
   }
   STICKERS.push({ id: 'W03-M03', name: 'Stiker Gear', art: 'stiker-gear' })
+  MISSIONS['W03-M04'] = {
+    id: 'W03-M04', world: 'eco-park', title: 'Dari Kotak Menjadi Mainan', sub: 'Eco Park', thumb: 'veh-recycling-truck',
+    needs: ['sort', 'build'], vehicle: 'recycling-truck', bg: 'bg-w03-m04-kotak-mainan',
+    reward: { key: 'reward:W03-M04', sticker: 'stiker-reuse', stickerName: 'Stiker Pakai Ulang' },
+    worldDelta: 'eco-park:wahana-kotak',
+    steps: [
+      { id: 'pilih', label: 'PILIH', tool: 'pilih', toolName: 'PILIH', toolArt: 'w3-kardus', icon: 'box',
+        instr: 'Ketuk kardus dan tabung.', wrong: 'Pilih dulu benda yang bisa dipakai lagi.' },
+      { id: 'bangun', label: 'BANGUN', tool: 'bangun', toolName: 'BANGUN', toolArt: 'w3-tabung', icon: 'plank',
+        instr: 'Seret ke bayangannya.', wrong: 'Benda sudah dipilih. Sekarang bangun wahananya.' },
+      { id: 'main', label: 'MAIN', tool: 'main', toolName: 'MAIN', toolArt: 'cast-child', icon: 'hand',
+        instr: 'Ketuk anaknya, ayo main!', wrong: 'Wahana sudah jadi. Ketuk anaknya.' }
+    ],
+    lines: {
+      start: 'Benda bekas bisa jadi mainan!',
+      more: 'Bagus! Pilih yang lain.',
+      picked: 'Truk sudah membawa semuanya!',
+      chooseFirst: 'Pilih dulu: terowongan atau menara?',
+      dragPiece: 'Seret ke bayangan yang berkilau.',
+      toGhost: 'Taruh di bayangannya.',
+      boxSpot: 'Kardus itu cocok di bayangan kotak.',
+      tubeSpot: 'Tabung itu cocok di bayangan tabung.',
+      more2: 'Pas! Pasang yang lain.',
+      built: 'Wahananya jadi!',
+      tapGirl: 'Ketuk anaknya, ayo main!',
+      played: 'Asyik! Seru sekali!',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Kotak bekas jadi mainan taman!'
+    },
+    hints: ['Kardus dan tabung yang berkilau bisa dipakai lagi.', 'Bayangan menunjukkan tempat tiap benda.', 'Lihat tanganku. Seret seperti ini!']
+  }
+  STICKERS.push({ id: 'W03-M04', name: 'Stiker Pakai Ulang', art: 'stiker-reuse' })
 
 
   /* ---------- W05 Pelabuhan Penjelajah (added by the W05 build; each mission appends its own block here) ---------- */

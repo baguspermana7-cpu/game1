@@ -85,7 +85,7 @@
   PART2.forEach(function (k) { SHIPPED[k] = true })
   // W03 Eco Park (owner plates + eco-park pack crops, alpha-cut): vehicles, sorting things, bins, bales
   var PART3 = ['bg-w03-m01-pilah', 'bg-w03-m02-sapu', 'bg-w03-m03-roda-pemilah', 'bg-w03-m04-kotak-mainan', 'bg-w03-m05-eco-dibuka', 'lencana-w03', 'veh-recycling-truck', 'stiker-pilah',
-    'w3-kertas-remuk', 'w3-koran', 'w3-kardus', 'w3-gelas', 'w3-botol', 'w3-kaleng', 'w3-bin-kertas', 'w3-bin-plastik', 'w3-bin-logam', 'w3-bale-kertas', 'w3-bale-plastik', 'w3-bale-logam', 'veh-street-sweeper', 'stiker-sapu', 'w3-papan-lingkaran', 'w3-papan-segitiga', 'w3-daun', 'w3-gear-biru', 'w3-gear-merah', 'w3-gear-kuning', 'stiker-gear', 'w3-kaleng2']
+    'w3-kertas-remuk', 'w3-koran', 'w3-kardus', 'w3-gelas', 'w3-botol', 'w3-kaleng', 'w3-bin-kertas', 'w3-bin-plastik', 'w3-bin-logam', 'w3-bale-kertas', 'w3-bale-plastik', 'w3-bale-logam', 'veh-street-sweeper', 'stiker-sapu', 'w3-papan-lingkaran', 'w3-papan-segitiga', 'w3-daun', 'w3-gear-biru', 'w3-gear-merah', 'w3-gear-kuning', 'stiker-gear', 'w3-kaleng2', 'w3-tabung', 'stiker-reuse', 'stiker-eco', 'cast-child', 'cast-cat']
   PART3.forEach(function (k) { SHIPPED[k] = true })
 
   var ROWS = [
