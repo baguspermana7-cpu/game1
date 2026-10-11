@@ -225,8 +225,10 @@
       row3.style.cssText += ';display:flex;gap:10px;justify-content:center;align-items:center'
       q.row.forEach(function (key) {
         if (key === '+') { var pl = document.createElement('b'); pl.textContent = '+'; pl.style.cssText = 'font:900 ' + Math.round(rsz * 0.6) + 'px Nunito,sans-serif;color:#F4761A;margin:0 6px'; row3.appendChild(pl); return }
+        var fade = key.charAt(0) === '-'
+        if (fade) key = key.slice(1)
         var im3 = new Image(); im3.alt = ''; im3.src = 'assets/blippi/' + key + '.webp'
-        im3.style.cssText = 'width:' + rsz + 'px;height:' + rsz + 'px;object-fit:contain;flex:0 0 auto'
+        im3.style.cssText = 'width:' + rsz + 'px;height:' + rsz + 'px;object-fit:contain;flex:0 0 auto' + (fade ? ';opacity:.35;filter:grayscale(1)' : '')
         row3.appendChild(im3)
       })
       if (q.rowNoBox) { /* a sum: the choices are the answer */ } else {

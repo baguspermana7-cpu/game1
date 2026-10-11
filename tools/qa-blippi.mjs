@@ -1328,3 +1328,65 @@ await b.close();
 console.log(fails.map(f => 'FAIL ' + f).join('\n'));
 console.log(`qa-blippi: ${checks - fails.length}/${checks} checks passed, ${errors.length} page errors`);
 process.exit(fails.length ? 1 : 0);
+// ---------- W04-M04 three beds + W04-M05 picnic finale ----------
+{
+  const pp = await fresh(1280, 800);
+  const stepNow = () => pp.evaluate("document.querySelector('.step.on').getAttribute('data-step')");
+  const ansP = async (v) => { await waitFor(pp, "!!document.querySelector('[data-ask]')", 9000); await pp.evaluate(x => { const e = [...document.querySelectorAll('[data-choice]')].find(b => b.getAttribute('data-choice') === x); e && e.click(); }, v); await sleep(900); };
+  const dragP = async (from, to, steps = 8) => { const a = await center(pp, from); const t = typeof to === 'string' ? await center(pp, to) : to; await pp.mouse.move(a.x, a.y); await pp.mouse.down(); await pp.mouse.move(a.x + 20, a.y - 20, { steps: 3 }); await pp.mouse.move(t.x, t.y, { steps }); await pp.mouse.up(); };
+  const finishAsks = async () => { await waitFor(pp, "!!document.querySelector('[data-ask]')", 9000); for (let k = 0; k < 14 && (await pp.$('[data-ask]') || (k < 8 && await sleep(500) === undefined && await pp.$('[data-ask]'))); k++) { await pp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.getAttribute('data-choice') === 'Hortensia') || b.find(e => e.classList.contains('glow')) || b[0]; g && g.click(); }); await sleep(900); } };
+  const st = await pp.evaluate("(() => { const r = document.getElementById('stage').getBoundingClientRect(); return [r.left, r.top, r.width / 1672]; })()");
+  const X = (x, y) => ({ x: st[0] + x * st[2], y: st[1] + y * st[2] });
+  await pp.evaluate("Blippi.go('mission',{mission:'W04-M04',vehicle:'farm-tractor'})"); await sleep(700);
+  ok(await waitFor(pp, "!!document.querySelector('[data-tap]') && document.querySelectorAll('[data-need]').length === 3 && document.querySelectorAll('[data-gap]').length === 3 && !!document.querySelector('#m-scene .glow')", 4500), 'W04-M04: tap valve + three need chips + ghost flowers + glow missing at the start');
+  ok(await pp.evaluate("!!document.querySelector('[data-tractor] [data-art=veh-farm-tractor]') && !!document.querySelector('[data-tractor] [data-driver]') && !document.querySelector('#m-scene [data-socket]') && !/dashed/.test(document.getElementById('m-scene').innerHTML)"), 'W04-M04: tractor + Blippi missing or an orange ring is in the scene');
+  const tv = await center(pp, '[data-tap]'); await pp.mouse.click(tv.x, tv.y); await sleep(300);
+  ok(await stepNow() === '0' && await pp.evaluate("[...document.querySelectorAll('[data-can]')].every(c => c.style.display === 'none')"), 'W04-M04: a valve TAP filled cans (must be a hold)');
+  await pp.mouse.move(tv.x, tv.y); await pp.mouse.down(); await waitFor(pp, "!!document.querySelector('[data-ask]')", 9000); await pp.mouse.up();
+  ok(await pp.evaluate("[...document.querySelectorAll('[data-can]')].filter(c => c.style.display === 'block').length === 6"), 'W04-M04: holding the valve did not fill six cans');
+  await ansP('6'); await waitFor(pp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await stepNow() === '1', 'W04-M04: filling + question did not advance');
+  const tr = async (xs) => { const c = await center(pp, '[data-tractor]'); await pp.mouse.move(c.x, c.y); await pp.mouse.down(); await pp.mouse.move(c.x + 60, c.y, { steps: 4 }); await pp.mouse.move(X(xs, 700).x, c.y, { steps: 10 }); await pp.mouse.up(); await sleep(1700); };
+  await tr(300); await sleep(500);
+  ok(await pp.evaluate("document.querySelectorAll('[data-flower]').length === 3 && [...document.querySelectorAll('[data-flower]')].every(f => f.style.opacity === '0')"), 'W04-M04: a tractor drop away from any bed watered one');
+  await tr(570); await sleep(1000);
+  ok(await waitFor(pp, "!!document.querySelector('[data-ask]')", 4000) && await pp.evaluate("document.querySelectorAll('[data-ask-pics] img').length === 6"), 'W04-M04: no 6 - 2 question showing six cans after the first bed');
+  await ansP('4');
+  await tr(1150); await sleep(800); await tr(1500);
+  ok(await waitFor(pp, "!!document.querySelector('[data-ask]')", 6000), 'W04-M04: no sum question after the last bed');
+  await ansP('6'); await waitFor(pp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 5000);
+  ok(await stepNow() === '2' && await pp.evaluate("document.querySelectorAll('[data-num]').length === 3"), 'W04-M04: numbered beds missing at the bloom step');
+  await pp.click('[data-bed="0"]'); await sleep(500);
+  ok(await pp.evaluate("document.querySelectorAll('[data-flower][style*=\"scale(1)\"]').length === 0"), 'W04-M04: a wrong-order tap bloomed a bed');
+  for (const i of [1, 2, 0]) { await pp.click(`[data-bed="${i}"]`); await sleep(700); }
+  await finishAsks();
+  await waitFor(pp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await pp.$('[data-payoff=first]') !== null && await pp.evaluate("!!Blippi.state().rewards['reward:W04-M04'] && Blippi.state().world['kebun-ceria:kebun-berbunga'] === 1 && !!Blippi.missionDone('W04-M04')"), 'W04-M04: no payoff / reward / world change');
+  // ---- M05
+  await pp.evaluate("Blippi.go('mission',{mission:'W04-M05',vehicle:'farm-tractor'})"); await sleep(700);
+  ok(await waitFor(pp, "document.querySelectorAll('[data-pile]').length === 3 && !!document.querySelector('[data-tractor] [data-driver]') && !!document.querySelector('#m-scene .glow')", 4500), 'W04-M05: harvest piles + tractor + Blippi missing at the start');
+  ok(await pp.evaluate("!document.querySelector('#m-scene [data-socket]') && !/dashed/.test(document.getElementById('m-scene').innerHTML)"), 'W04-M05: an orange ring is in the scene');
+  for (const k of ['tomat', 'wortel', 'jagung']) { await pp.click(`[data-pile=${k}]`); await sleep(450); }
+  ok(await waitFor(pp, "!!document.querySelector('[data-ask]')", 4000) && await pp.evaluate("document.querySelectorAll('[data-ask-pics] img').length === 7"), 'W04-M05: no total question showing all seven fruits');
+  await ansP('7'); await waitFor(pp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  ok(await stepNow() === '1' && await pp.$('[data-goal][data-art=veh-farm-tractor]') !== null, 'W04-M05: no ghost tractor at the blanket');
+  const tc = await center(pp, '[data-tractor]'); await pp.mouse.click(tc.x, tc.y); await sleep(300);
+  ok(await pp.evaluate("document.querySelectorAll('[data-trailer] .cargo').length === 0"), 'W04-M05: a tractor TAP drove it (must be a hold)');
+  for (let i = 0; i < 3; i++) { const c = await center(pp, '[data-tractor]'); await pp.mouse.move(c.x, c.y); await pp.mouse.down(); await waitFor(pp, "document.querySelectorAll('[data-trailer] .cargo').length >= " + [2, 5, 7][i], 9000); await pp.mouse.up(); await sleep(1700); }
+  ok(await pp.evaluate("document.querySelectorAll('[data-trailer] .cargo').length === 7"), 'W04-M05: seven fruits are not on the trailer');
+  { const c = await center(pp, '[data-tractor]'); await pp.mouse.move(c.x, c.y); await pp.mouse.down(); await waitFor(pp, "!!document.querySelector('[data-ask]')", 12000); await pp.mouse.up(); }
+  await ansP('Tomat'); await waitFor(pp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 5000);
+  ok(await stepNow() === '2' && await pp.evaluate("document.querySelectorAll('[data-gap]').length === 7 && document.querySelectorAll('[data-src]').length === 3"), 'W04-M05: seven ghost places + three baskets missing at the serve step');
+  await sleep(1200);
+  await dragP('[data-src=tomat]', '[data-gap="wortel0"]'); await sleep(500);
+  ok(/wortel/i.test(await txt(pp, '[data-instr]')) && await pp.$('[data-placed]') === null, 'W04-M05: a wrong fruit gave no kind reason / was placed');
+  for (const [k, g] of [['wortel', 'wortel0'], ['wortel', 'wortel1'], ['tomat', 'tomat0'], ['jagung', 'jagung0'], ['wortel', 'wortel2'], ['tomat', 'tomat1'], ['jagung', 'jagung1']]) { await dragP(`[data-src=${k}]`, `[data-gap="${g}"]`); await sleep(650); }
+  ok(await pp.evaluate("document.querySelectorAll('[data-placed]').length === 7"), 'W04-M05: seven fruits are not on the blanket');
+  await finishAsks();
+  await waitFor(pp, "!!document.querySelector('[data-payoff=first]')", 9000);
+  ok(await pp.$('[data-payoff=first] [data-badge=lencana-w04]') !== null || await pp.$('[data-badge=lencana-w04]') !== null, 'W04-M05: no W04 badge on the payoff');
+  ok(await pp.evaluate("!!Blippi.state().rewards['reward:W04-M05'] && Blippi.state().world['kebun-ceria:piknik'] === 1 && !!Blippi.missionDone('W04-M05')"), 'W04-M05: no reward / world change / not marked done');
+  await pp.evaluate("Blippi.go('map',{world:'kebun-ceria'})"); await sleep(900);
+  ok(await pp.evaluate("!!document.querySelector('[data-world-label=kebun-ceria].dn') || !!document.querySelector('[data-world-label=kebun-ceria]')"), 'W04: the finished kebun-ceria island is not on the map');
+  await pp.close();
+}
