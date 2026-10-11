@@ -257,12 +257,15 @@
   }
 
   // K.ghost(api, parent, key, x, y, w, h): a translucent silhouette of the piece AT its place, gently pulsing (replaces every orange dashed ring)
-  function ghost (api, parent, key, x, y, w, h, flip) {
+  function ghost (api, parent, key, x, y, w, h, flip, strong) {
     var g = api.at(parent, 'ghostpiece', x, y, w, h)
     g.style.cssText += ';pointer-events:none;z-index:3;opacity:.5;filter:brightness(1.8) saturate(.4) drop-shadow(0 0 10px rgba(255,255,255,.9))'
     api.B.A.fill(g, key)
     if (flip && g.firstChild) g.firstChild.style.transform = 'scaleX(-1)'
-    if (g.animate && !api.reduced()) g.animate([{ opacity: 0.38, transform: 'scale(1)' }, { opacity: 0.62, transform: 'scale(1.04)' }, { opacity: 0.38, transform: 'scale(1)' }], { duration: 1500, iterations: Infinity, easing: 'ease-in-out' })
+    if (strong) g.style.cssText += ';opacity:.82;filter:brightness(1.35) saturate(.55) drop-shadow(0 0 3px #fff) drop-shadow(0 0 3px #fff) drop-shadow(0 0 12px rgba(255,255,255,.95))'
+    var lo = strong ? 0.7 : 0.38
+    var hi = strong ? 0.92 : 0.62
+    if (g.animate && !api.reduced()) g.animate([{ opacity: lo, transform: 'scale(1)' }, { opacity: hi, transform: 'scale(1.04)' }, { opacity: lo, transform: 'scale(1)' }], { duration: 1500, iterations: Infinity, easing: 'ease-in-out' })
     return g
   }
 

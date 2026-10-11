@@ -415,7 +415,8 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   await mp.evaluate("Blippi.go('mission',{mission:'W01-M02',vehicle:'excavator'})"); await sleep(500);
   ok(await mp.$('[data-excavator]') !== null, 'M02: the excavator is not in the scene');
   ok(await mp.evaluate("!!document.querySelector('[data-excavator][data-art=veh-excavator]')"), 'M02: the excavator art is not the veh-excavator picture');
-  await mp.click('[data-act=baca]'); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
+  const answerAsks = async () => { await waitFor(mp, "!!document.querySelector('[data-ask]')", 6000); for (let k = 0; k < 8 && await mp.$('[data-ask]'); k++) { await mp.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); } };
+  await mp.click('[data-act=baca]'); ok(await waitFor(mp, "!!document.querySelector('[data-ask-pics], [data-ask] .at')", 6000), 'M02: no counting question after reading the clue'); await answerAsks(); await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='1'", 5000);
   ok(await mp.$$eval('[data-clue]', e => e.length) === 3, 'M02: clue rows missing');
   ok(await mp.evaluate("![...document.querySelectorAll('[data-clue] [data-art]')].some(e => /katup|pipa|gear|selang|pompa/.test(e.getAttribute('data-art')))"), 'M02: water-truck parts in the clues');
   ok(await mp.evaluate("[...document.querySelectorAll('[data-clue]')].every(e => e.textContent.trim().length <= 12)"), 'M02: clue text is longer than a few words');
@@ -430,6 +431,7 @@ for (const [cat, lvl] of [['darat', 'darat-4'], ['udara', 'udara-4'], ['angkasa'
   ok(await mp.$('[data-hole]') !== null, 'M02: no hole where it dug');
   ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '1', 'M02: a wrong dig advanced');
   for (const t of tg) { cc = await center(mp, `[data-cell="${t}"]`); await mp.mouse.click(cc.x, cc.y); await sleep(3200); }
+  ok(await waitFor(mp, "!!document.querySelector('[data-ask]')", 8000), 'M02: no maths question after finding all three'); await answerAsks();
   await waitFor(mp, "document.querySelector('.step.on').getAttribute('data-step')==='2'", 6000);
   ok(await mp.evaluate("document.querySelector('.step.on').getAttribute('data-step')") === '2', 'M02: finding all three did not advance');
   { cc = await center(mp, '[data-carry="0"]'); await mp.mouse.click(cc.x, cc.y); await sleep(300);

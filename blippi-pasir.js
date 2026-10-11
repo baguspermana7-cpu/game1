@@ -119,7 +119,9 @@
       renderPanel()
       api.persist({ t: tg, found: found, dug: dug, carried: carried })
       api.warn(L.read)
-      api.later(function () { api.advance() }, 600)
+      api.later(function () {
+        K.ask(api, { custom: { id: 'm02-count', prompt: 'Ada berapa mainan yang terkubur?', count: { key: 'pc-sand-pile', n: 3 }, choices: ['2', '3', '4'], answer: '3', hint1: 'Hitung gambarnya satu-satu.' }, done: function () { api.advance() } })
+      }, 600)
     }
 
     // the EXCAVATOR (V02) stands in the sandbox scene, readable size; it does the digging
@@ -185,7 +187,7 @@
             renderPanel()
             api.persist({ t: tg, found: found, dug: dug, carried: carried })
             clearBands()
-            if (nextTarget() < 0) { api.later(function () { busy = false; api.warn(L.allFound); api.advance() }, 1300); return }
+            if (nextTarget() < 0) { api.later(function () { busy = false; api.warn(L.allFound); K.ask(api, { context: 'gate', grade: 1, done: function () { api.advance() } }) }, 1300); return }
           } else {
             empties++
             pebble(c)
@@ -213,7 +215,7 @@
       var z = api.at(sc, '', sl.x, sl.y, sl.w, sl.h)
       z.setAttribute('data-slot', 'park' + i)
       z.style.cssText += ';pointer-events:none;z-index:2;display:none'
-      K.ghost(api, z, it.key, 0, 0, sl.w, sl.h)
+      K.ghost(api, z, it.key, 0, 0, sl.w, sl.h, false, true)
       slots[i] = z
       if (carried.indexOf(i) >= 0) { z.style.display = 'block'; z.querySelector('div').style.display = 'none'; drawInstalled(i, false) }
     })

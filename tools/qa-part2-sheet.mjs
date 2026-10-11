@@ -86,11 +86,12 @@ if (WHICH === 'ALL' || WHICH === 'W02M05') {
 }
 if (WHICH === 'ALL' || WHICH === 'M02') {
   const p = await open('W01-M02', 'excavator'); const F = [];
-  F.push(await shot(p)); await p.click('[data-act=baca]'); await sleep(900); F.push(await shot(p));
+  const askAll = async () => { await p.waitForSelector('[data-ask]', { timeout: 9000 }); await sleep(400); F.push(await shot(p)); for (let k = 0; k < 8 && await p.$('[data-ask]'); k++) { await p.evaluate(() => { const b = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); const g = b.find(e => e.classList.contains('glow')); (g || b[0]) && (g || b[0]).click(); }); await sleep(900); } };
+  F.push(await shot(p)); await p.click('[data-act=baca]'); await askAll(); await sleep(600); F.push(await shot(p));
   const tg = await p.evaluate("Blippi.state().progress['W01-M02'].data.t");
   const wrong = [0, 1, 2, 3, 4, 5, 6, 7, 8].find(c => !tg.includes(c));
   for (const t of [wrong, ...tg]) { const c = await center(p, `[data-cell="${t}"]`); await p.mouse.click(c.x, c.y); await sleep(500); F.push(await shot(p)); await sleep(500); F.push(await shot(p)); await sleep(1900); if (t === tg[0]) F.push(await shot(p)); }
-  await sleep(2500); F.push(await shot(p));
+  await askAll(); await sleep(1200); F.push(await shot(p));
   await dg(p, '[data-carry="0"]', '[data-slot=park0]', 10, async () => { F.push(await shot(p)); }); await sleep(600); F.push(await shot(p));
   for (const k of [1, 2]) { await dg(p, `[data-carry="${k}"]`, `[data-slot=park${k}]`); await sleep(600); }
   await sleep(300); F.push(await shot(p)); await sleep(1600); F.push(await shot(p));
