@@ -83,6 +83,10 @@
   var PART2 = ['bg-w01-m04-jembatan', 'bg-w01-m05-pembukaan', 'pc-sand-flat', 'pc-sand-dug', 'pc-sand-pile', 'prop-jungkat', 'pc-swing', 'pc-slide', 'pc-beam-short', 'pc-beam-long', 'pc-post',
     'pc-gate-closed', 'pc-gate-open', 'pc-cart', 'pc-ramp-low', 'pc-ramp-high', 'pc-card-circle', 'bg-w02-m04-dua-jalan', 'bg-w02-m05-parade-air', 'stiker-aliran', 'lencana-w02', 'pulau-taman-air-selesai', 'pc2-tetes', 'pc-jets-a', 'pc-jets-b', 'stiker-parade', 'pc-mud', 'pc-hook', 'stiker-sambung', 'stiker-gerobak', 'bg-w02-m02-aliran', 'bg-w02-m03-lumpur', 'veh-dump-truck', 'veh-tow-truck', 'veh-mobile-crane', 'prop-kait', 'stiker-jembatan', 'stiker-taman', 'lencana-w01', 'pulau-kota-roda-selesai']
   PART2.forEach(function (k) { SHIPPED[k] = true })
+  // W03 Eco Park (owner plates + eco-park pack crops, alpha-cut): vehicles, sorting things, bins, bales
+  var PART3 = ['bg-w03-m01-pilah', 'bg-w03-m02-sapu', 'bg-w03-m03-roda-pemilah', 'bg-w03-m04-kotak-mainan', 'bg-w03-m05-eco-dibuka', 'lencana-w03', 'veh-recycling-truck', 'stiker-pilah',
+    'w3-kertas-remuk', 'w3-koran', 'w3-kardus', 'w3-gelas', 'w3-botol', 'w3-kaleng', 'w3-bin-kertas', 'w3-bin-plastik', 'w3-bin-logam', 'w3-bale-kertas', 'w3-bale-plastik', 'w3-bale-logam']
+  PART3.forEach(function (k) { SHIPPED[k] = true })
 
   var ROWS = [
     // backgrounds (opaque, full frame)

@@ -35,7 +35,7 @@
   var WORLDS = [
     { id: 'kota-roda', name: 'KOTA RODA', mission: 'W01-M01', missions: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05'], finale: 'W01-M05', art: 'pulau-kota-roda', artDone: 'pulau-kota-roda-selesai', box: [15, 70, 640, 250], label: [275, 293, 235, 50], thumb: 'thumb-jalan-pertamaku' },
     { id: 'taman-air', name: 'TAMAN AIR', locked: 'Terbuka setelah Kota Roda.', after: 'W01-M05', mission: 'W02-M01', missions: ['W02-M01', 'W02-M02', 'W02-M03', 'W02-M04', 'W02-M05'], art: 'pulau-taman-air', artDone: 'pulau-taman-air-selesai', box: [625, 150, 480, 215], label: [750, 322, 208, 48], thumb: 'thumb-taman-air' },
-    { id: 'eco-park', name: 'ECO PARK', locked: 'Terbuka setelah Taman Air.', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
+    { id: 'eco-park', name: 'ECO PARK', mission: 'W03-M01', missions: ['W03-M01'], thumb: 'veh-recycling-truck', art: 'pulau-eco-park', box: [1090, 95, 560, 300], label: [1248, 320, 215, 50] },
     { id: 'kebun-ceria', name: 'KEBUN CERIA', locked: 'Terbuka setelah Eco Park.', art: 'pulau-kebun-ceria', box: [155, 355, 560, 330], label: [307, 598, 220, 50] },
     { id: 'pelabuhan', name: 'PELABUHAN PENJELAJAH', locked: 'Terbuka setelah Kebun Ceria.', art: 'pulau-pelabuhan', box: [665, 385, 480, 300], label: [800, 606, 248, 66] },
     { id: 'wonder-lab', name: 'WONDER LAB', locked: 'Terbuka setelah pulau lain selesai.', art: 'pulau-wonder-lab', box: [1130, 395, 510, 310], label: [1303, 634, 218, 50] }
@@ -335,6 +335,41 @@
     { id: 'W02-M04', name: 'Stiker Aliran', art: 'stiker-aliran' },
     { id: 'W02-M05', name: 'Stiker Parade', art: 'stiker-parade' }
   ]
+
+  /* ---------- W03 Eco Park (added by the W03 build; each mission appends its own block here) ---------- */
+  VEHICLES.push({ id: 'recycling-truck', name: 'TRUK DAUR ULANG', art: 'veh-recycling-truck', thumb: 'veh-recycling-truck', tags: ['sort', 'haul'],
+    say: 'Ayo pilah dan angkut!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] })
+  MISSIONS['W03-M01'] = {
+    id: 'W03-M01', world: 'eco-park', title: 'Muatan Campur-Campur', sub: 'Eco Park', thumb: 'veh-recycling-truck',
+    needs: ['sort'], vehicle: 'recycling-truck', bg: 'bg-w03-m01-pilah',
+    reward: { key: 'reward:W03-M01', sticker: 'stiker-pilah', stickerName: 'Stiker Pilah', vehicle: 'recycling-truck' },
+    worldDelta: 'eco-park:stasiun-sortir',
+    steps: [
+      { id: 'pilah', label: 'PILAH', tool: 'pilah', toolName: 'PILAH', toolArt: 'w3-bin-kertas', icon: 'box',
+        instr: 'Seret sampah ke kotaknya.', wrong: 'Pilah sampahnya dulu ke tiga kotak.' },
+      { id: 'angkut', label: 'ANGKUT', tool: 'angkut', toolName: 'ANGKUT', toolArt: 'veh-recycling-truck', icon: 'wheel',
+        instr: 'Seret truk ke kotak.', wrong: 'Sampah sudah terpilah. Sekarang jemput kotaknya dengan truk.' },
+      { id: 'antar', label: 'ANTAR', tool: 'antar', toolName: 'ANTAR', toolArt: 'w3-bale-kertas', icon: 'hand',
+        instr: 'Tahan truk, antar ke rumah.', wrong: 'Kotak sudah diangkut. Tahan truknya supaya melaju.' }
+    ],
+    lines: {
+      start: 'Sampahnya campur-campur. Ayo pilah!',
+      more: 'Bagus! Pilah yang lain.',
+      sorted: 'Semua sudah terpilah!',
+      dragItem: 'Seret sampahnya ke kotak yang cocok.',
+      noBin: 'Taruh sampahnya di dalam kotak.',
+      sortFirst: 'Pilah dulu sampahnya ke kotak.',
+      dragTruck: 'Seret trukku ke kotak yang berkilau.',
+      noBinTruck: 'Dekatkan truk ke satu kotak.',
+      more2: 'Hore! Jemput kotak yang lain.',
+      loaded: 'Truk sudah penuh. Antar ke rumah daur ulang!',
+      holdMore: 'Tahan terus, truknya melaju.',
+      wrongTool: 'Pakai yang menyala ya.',
+      win: 'Hore! Sampah sudah sampai di rumah daur ulang!'
+    },
+    hints: ['Sampah yang berkilau cocok dengan satu kotak.', 'Kotak yang menyala itu tempatnya.', 'Lihat tanganku. Seret seperti ini!']
+  }
+  STICKERS.push({ id: 'W03-M01', name: 'Stiker Pilah', art: 'stiker-pilah' })
 
   var HUB_LINES = {
     hub: 'Mau menjelajah?',
