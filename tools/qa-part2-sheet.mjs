@@ -88,13 +88,25 @@ if (WHICH === 'ALL' || WHICH === 'M02') {
   await sleep(300); F.push(await shot(p)); await sleep(1600); F.push(await shot(p));
   await grid(F, path.join(OUT, `mission-m02-${VW}x${VH}.png`)); await p.close();
 }
+const ans = async (p, v) => { await p.waitForSelector('[data-ask]', { timeout: 8000 }); await sleep(300); await p.evaluate(x => { const b = [...document.querySelectorAll('[data-choice]')].find(e => e.getAttribute('data-choice') === x); b && b.click(); }, v); await sleep(900); };
+const askRight = async (p) => { await p.waitForSelector('[data-ask]', { timeout: 8000 }); await sleep(300); const a = await p.evaluate(() => { const q = document.querySelector('[data-ask-prompt]').textContent; return q; }); return a; };
 if (WHICH === 'ALL' || WHICH === 'M03') {
-  const p = await open('W01-M03', 'truk-air'); const F = [];
-  F.push(await shot(p)); await p.click('[data-ramp=high]'); await sleep(1100); F.push(await shot(p));
-  await dg(p, '[data-truck]', '[data-ramp=low]', 10, async () => { F.push(await shot(p)); }); await sleep(900); F.push(await shot(p)); await sleep(1800); F.push(await shot(p));
-  await dg(p, '[data-truck]', '[data-ramp=high]'); await sleep(1200); F.push(await shot(p)); await sleep(2800); F.push(await shot(p));
-  await sleep(1500); await dg(p, '[data-truck]', '[data-ramp=low]'); await sleep(3200); F.push(await shot(p)); await sleep(1600);
-  await dg(p, '[data-truck]', '[data-ramp=high]'); await sleep(2800); F.push(await shot(p)); await sleep(2500); F.push(await shot(p));
+  const p = await open('W01-M03', 'dump-truck'); const F = [];
+  F.push(await shot(p));
+  for (let i = 0; i < 4; i++) { await dg(p, `[data-crate="${i}"]`, '[data-truck]', 10, async () => { if (i === 0) F.push(await shot(p)); }); await sleep(700); if (i === 1) F.push(await shot(p)); }
+  await sleep(900); F.push(await shot(p)); await ans(p, '4'); await sleep(900);
+  F.push(await shot(p)); await ans(p, 'Rendah'); await sleep(300); F.push(await shot(p)); await ans(p, 'Tinggi'); await sleep(500); F.push(await shot(p));
+  await dg(p, '[data-truck]', '[data-ramp=low]', 10, async () => { F.push(await shot(p)); }); await sleep(1500); F.push(await shot(p)); await sleep(2600);
+  await dg(p, '[data-truck]', '[data-ramp=high]'); await sleep(1300); F.push(await shot(p)); await sleep(2800);
+  await sleep(1500); await p.waitForSelector('[data-ask]', { timeout: 8000 }); await sleep(300); F.push(await shot(p));
+  await p.evaluate(() => { const q = document.querySelector('[data-ask-prompt]'); }); const right = await p.evaluate(() => 0);
+  // answer the engine question by trying every choice until it closes
+  for (let k = 0; k < 4; k++) { const open = await p.$('[data-ask]'); if (!open) break; await p.evaluate(kk => { const bs = [...document.querySelectorAll('[data-choice]')].filter(e => !e.disabled); bs[0] && bs[0].click(); }, k); await sleep(500); }
+  await sleep(2200);
+  await dg(p, '[data-truck]', '[data-ramp=low]'); await sleep(3200); F.push(await shot(p)); await sleep(1800);
+  await dg(p, '[data-truck]', '[data-ramp=high]'); await sleep(3000); F.push(await shot(p));
+  const t = await center(p, '[data-truck]'); await p.mouse.move(t.x, t.y); await p.mouse.down(); await sleep(900); F.push(await shot(p)); await sleep(1100); F.push(await shot(p)); await p.mouse.up(); await sleep(1500); F.push(await shot(p));
+  await p.waitForFunction("!!document.querySelector('[data-payoff=first]')", { timeout: 9000 }).catch(() => {}); F.push(await shot(p));
   await grid(F, path.join(OUT, `mission-m03-${VW}x${VH}.png`)); await p.close();
 }
 if (WHICH === 'ALL' || WHICH === 'M04') {

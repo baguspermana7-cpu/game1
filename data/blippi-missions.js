@@ -23,7 +23,9 @@
       modules: [
         { id: 'bucket-sempit', name: 'BUCKET SEMPIT', art: 'modul-bucket-sempit', info: 'Bucket sempit. Cocok untuk parit kecil.' },
         { id: 'bucket-lebar', name: 'BUCKET LEBAR', art: 'modul-bucket-lebar', info: 'Bucket lebar. Sekali gali dapat banyak pasir.' }
-      ] }
+      ] },
+    { id: 'dump-truck', name: 'DUMP TRUCK', art: 'veh-dump-truck', thumb: 'veh-dump-truck', tags: ['haul', 'tip'],
+      say: 'Ayo muat dan tuang!', demo: { id: 'honk', label: 'COBA KLAKSON' }, modules: [] }
   ]
 
   var WORLDS = [
@@ -96,26 +98,35 @@
     },
     'W01-M03': {
       id: 'W01-M03', world: 'kota-roda', title: 'Bukit dan Muatan', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',
-      needs: ['haul'], vehicle: 'truk-air', bg: 'bg-w01-m03-bukit',
-      reward: { key: 'reward:W01-M03', sticker: 'stiker-bukit', stickerName: 'Stiker Bukit' },
+      needs: ['haul'], vehicle: 'dump-truck', bg: 'bg-w01-m03-bukit',
+      reward: { key: 'reward:W01-M03', sticker: 'stiker-bukit', stickerName: 'Stiker Bukit', vehicle: 'dump-truck' },
       worldDelta: 'kota-roda:bukit-uji',
       steps: [
-        { id: 'kira', label: 'KIRA-KIRA', tool: 'kira', toolName: 'KIRA-KIRA', toolArt: 'tool-kira', icon: 'bulb',
-          instr: 'Ketuk ramp yang lebih jauh.', wrong: 'Tebak dulu ramp yang lebih jauh. Uji nanti ya.' },
+        { id: 'muat', label: 'MUAT', tool: 'muat', toolName: 'MUAT', toolArt: 'tool-antar', icon: 'box',
+          instr: 'Seret 4 kotak ke truk.', wrong: 'Muat kotaknya dulu ke bak truk.' },
         { id: 'uji', label: 'UJI', tool: 'uji', toolName: 'UJI', toolArt: 'tool-uji', icon: 'wheel',
-          instr: 'Seret truk ke tiap ramp.', wrong: 'Tebakanmu sudah tersimpan. Sekarang saatnya menguji.' },
-        { id: 'antar', label: 'ANTAR', tool: 'antar', toolName: 'ANTAR', toolArt: 'tool-antar', icon: 'box',
-          instr: 'Seret truk ke ramp: garis biru!', wrong: 'Ujinya sudah selesai. Sekarang antar muatan.' }
+          instr: 'Seret truk ke tiap ramp.', wrong: 'Kotak sudah dimuat. Saatnya menguji ramp.' },
+        { id: 'antar', label: 'TUANG', tool: 'tuang', toolName: 'TUANG', toolArt: 'tool-tuang', icon: 'box',
+          instr: 'Ramp mana ke garis biru?', wrong: 'Ujinya sudah selesai. Antar muatan ke garis biru.' }
       ],
       lines: {
-        start: 'Satu ramp rendah, satu tinggi. Mana yang lebih jauh?',
-        guess: 'Tebakan tersimpan. Ayo buktikan!',
-        both: 'Ramp tinggi meluncur lebih jauh. Dua penanda tersimpan!',
+        start: 'Muat kotak, uji ramp, lalu tuang di garis biru!',
+        dragCrate: 'Seret kotaknya ke bak truk.',
+        crateMiss: 'Belum masuk. Lepas di atas bak truk ya.',
+        more: 'Satu kotak masuk!',
+        loaded: 'Muatan penuh! Sekarang uji ramp.',
+        loadFirst: 'Muat kotaknya dulu ya.',
+        guess: 'Tebakan tersimpan. Seret truk ke ramp untuk membuktikan!',
+        dragTruck: 'Seret trukmu ke salah satu ramp.',
+        noRamp: 'Belum di ramp. Taruh truk di atas ramp.',
+        both: 'Ramp tinggi meluncur lebih jauh. Dua bendera tersimpan!',
         short: 'Kurang jauh. Coba ramp yang lain!',
+        atBlue: 'Sampai di garis biru! Tahan truk untuk menuang.',
+        holdLonger: 'Tahan terus sampai kotaknya meluncur.',
         wrongTool: 'Pakai alat yang menyala oranye ya.',
         win: 'Hore! Muatan sampai di garis biru!'
       },
-      hints: ['Kartu ramp bercahaya. Ketuk salah satu.', 'Ramp yang lebih tinggi memberi dorongan lebih kuat.', 'Lihat tanganku. Ketuk ramp ini!']
+      hints: ['Kotak yang berkedip bisa diseret ke truk.', 'Ramp yang lebih tinggi memberi dorongan lebih kuat.', 'Lihat tanganku. Seret seperti ini!']
     },
     'W01-M04': {
       id: 'W01-M04', world: 'kota-roda', title: 'Jembatan untuk Semua', sub: 'Kota Roda', thumb: 'thumb-jalan-pertamaku',

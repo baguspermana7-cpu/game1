@@ -156,5 +156,114 @@
     setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e) }, 1000)
   }
 
-  w.BlippiKit = { glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land, waterPath: waterPath, waterBody: waterBody, ripple: ripple }
+  /* ---------- reset hooks (owner 2026-10-11) ---------- */
+  var LIB = '../Dunia-Emosi/assets/db/lib/'
+  var K = { glow: glow }
+  var stats = { asked: 0, correct: 0, log: [] }
+  function speak (api, t) {
+    try { if (api.B.state().sound && w.speechSynthesis) { w.speechSynthesis.cancel(); var u = new w.SpeechSynthesisUtterance(t); u.lang = 'id-ID'; u.rate = 0.9; w.speechSynthesis.speak(u) } } catch (e) { /* optional */ }
+  }
+  // K.ask(api, o): a question that is PART of the job, answered by tapping big picture/number cards.
+  //   o.custom = {prompt, choices[], answer, pic?, count?:{key,n}}  (a question about THIS scene, e.g. "Berapa kotak?")  OR  o.context/o.grade -> SoalEngine.pick({game:'blippi'})
+  //   o.done(ok) fires when answered (right, or after 2 kind tries the answer is shown and we go on: never a dead end).
+  function ask (api, o) {
+    var q = o.custom
+    if (!q) {
+      var SE = w.SoalEngine
+      var got = SE && SE.pick({ game: 'blippi', context: o.context || 'gate', avatar: 'auto', count: 1, grade: o.grade || 1, exclude: stats.log.slice(-40) })
+      q = got && got[0]
+      if (!q) { if (o.done) o.done(true); return null }
+    }
+    var id = q.id || ('c-' + q.prompt)
+    stats.log.push(id)
+    stats.asked++
+    var ov = api.at(api.scene, 'askov', 0, 0, 1672, 941)
+    ov.setAttribute('data-ask', '1')
+    ov.style.cssText += ';z-index:60;background:rgba(10,30,70,.45);pointer-events:none'
+    var card = api.at(ov, 'panel', 366, 150, 940, 560)
+    card.style.zIndex = '1'
+    card.style.pointerEvents = 'auto'
+    var pr = api.at(card, '', 30, 18, 880, 120)
+    pr.style.cssText += ';font:900 40px/1.15 Nunito,sans-serif;color:#13318A;text-align:center;display:flex;align-items:center;justify-content:center'
+    pr.textContent = q.prompt
+    pr.setAttribute('data-ask-prompt', '1')
+    // the picture of what is being counted / asked about
+    if (q.count) {
+      var row = api.at(card, '', 30, 140, 880, 110)
+      row.style.cssText += ';display:flex;gap:14px;justify-content:center;align-items:center'
+      var i
+      for (i = 0; i < q.count.n; i++) { var c = document.createElement('div'); c.style.cssText = 'position:relative;width:96px;height:96px;flex:0 0 auto'; api.B.A.fill(c, q.count.key); row.appendChild(c) }
+    } else if (q.pic) {
+      var pic = api.at(card, '', 390, 130, 160, 120)
+      var im = new Image(); im.alt = ''; im.src = LIB + q.pic + '.webp'; im.style.cssText = 'width:100%;height:100%;object-fit:contain'; pic.appendChild(im)
+    }
+    var n = q.choices.length
+    var cw = n > 3 ? 190 : 250
+    var gap = 22
+    var x0 = (940 - (cw * n + gap * (n - 1))) / 2
+    var tries = 0
+    var done = false
+    var btns = []
+    q.choices.forEach(function (ch, k) {
+      var b = api.at(card, 'obtn', x0 + k * (cw + gap), (q.count || q.pic) ? 290 : 250, cw, 190, 'button')
+      b.type = 'button'
+      b.setAttribute('data-choice', String(ch))
+      b.style.cssText += ';font:900 56px/1 Fredoka,Nunito,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0'
+      var cp = q.choicePics && q.choicePics[k]
+      if (cp) { var ci = new Image(); ci.alt = ''; ci.src = /^assets\//.test(cp) ? cp : LIB + cp + '.webp'; ci.style.cssText = 'height:90px;object-fit:contain'; b.appendChild(ci) }
+      var lb = document.createElement('span'); lb.textContent = String(ch); lb.style.cssText = 'font-size:' + (String(ch).length > 7 ? 30 : 52) + 'px'; b.appendChild(lb)
+      b.addEventListener('click', function () {
+        if (done) return
+        api.touch()
+        if (String(ch) === String(q.answer)) { finish(true, b) } else {
+          tries++
+          api.sfx('bad')
+          b.style.opacity = '.35'; b.disabled = true
+          if (b.animate && !api.reduced()) b.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }], { duration: 300 })
+          pr.textContent = (q.hint1 || q.explain || 'Coba lagi ya, pelan-pelan.')
+          if (tries >= 2) { var right = btns.filter(function (x) { return x.getAttribute('data-choice') === String(q.answer) })[0]; if (right) K.glow(right, 3000); pr.textContent = 'Jawabannya ' + q.answer + '. Ketuk yang menyala.' }
+        }
+      })
+      btns.push(b)
+    })
+    function finish (ok, b) {
+      done = true
+      stats.correct++
+      api.sfx('ok')
+      if (b) b.classList.add('bounce')
+      api.fx('gold-star', 836, 400, 240)
+      api.later(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); if (o.done) o.done(ok) }, 650)
+    }
+    // after two wrong tries the right card still has to be tapped (it glows) so the child always finishes by doing it
+    speak(api, q.prompt)
+    return ov
+  }
+
+  // K.ghost(api, parent, key, x, y, w, h): a translucent silhouette of the piece AT its place, gently pulsing (replaces every orange dashed ring)
+  function ghost (api, parent, key, x, y, w, h, flip) {
+    var g = api.at(parent, 'ghostpiece', x, y, w, h)
+    g.style.cssText += ';pointer-events:none;z-index:3;opacity:.5;filter:brightness(1.8) saturate(.4) drop-shadow(0 0 10px rgba(255,255,255,.9))'
+    api.B.A.fill(g, key)
+    if (flip && g.firstChild) g.firstChild.style.transform = 'scaleX(-1)'
+    if (g.animate && !api.reduced()) g.animate([{ opacity: 0.38, transform: 'scale(1)' }, { opacity: 0.62, transform: 'scale(1.04)' }, { opacity: 0.38, transform: 'scale(1)' }], { duration: 1500, iterations: Infinity, easing: 'ease-in-out' })
+    return g
+  }
+
+  // K.driver(vehicleEl, win): Blippi's head and shoulders in the cab window. win = {x,y,w,h} as FRACTIONS of the vehicle element (the window rectangle).
+  function driver (el, win, face) {
+    var d = document.createElement('div')
+    d.className = 'cabdriver'
+    d.style.cssText = 'position:absolute;left:' + (win.x * 100) + '%;top:' + (win.y * 100) + '%;width:' + (win.w * 100) + '%;height:' + (win.h * 100) + '%;overflow:hidden;border-radius:14%;pointer-events:none;z-index:1'
+    var im = new Image()
+    im.alt = ''
+    im.draggable = false
+    im.src = 'assets/blippi/driver-' + (face || 'three-quarter') + '.webp'
+    im.style.cssText = 'position:absolute;left:50%;bottom:-6%;width:118%;transform:translateX(-50%)'
+    d.appendChild(im)
+    d.setAttribute('data-driver', '1')
+    el.appendChild(d)
+    return d
+  }
+
+  w.BlippiKit = { glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land, waterPath: waterPath, waterBody: waterBody, ripple: ripple, ask: ask, ghost: ghost, driver: driver, stats: stats }
 })(window)
