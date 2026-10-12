@@ -19,16 +19,16 @@ window.BlippiRaceData = {
      198
     ],
     "front-three-quarter": [
-     223,
-     200
+     264,
+     206
     ],
     "side": [
-     251,
-     196
+     317,
+     197
     ],
     "rear-three-quarter": [
-     208,
-     200
+     246,
+     202
     ],
     "rear": [
      161,
@@ -124,19 +124,19 @@ window.BlippiRaceData = {
    "box": {
     "front": [
      182,
-     202
+     228
     ],
     "front-three-quarter": [
-     223,
-     209
+     266,
+     233
     ],
     "side": [
-     251,
-     184
+     310,
+     200
     ],
     "rear-three-quarter": [
-     208,
-     202
+     259,
+     222
     ],
     "rear": [
      167,
@@ -351,8 +351,8 @@ window.BlippiRaceData = {
      161
     ],
     "rear-three-quarter": [
-     212,
-     161
+     248,
+     179
     ],
     "rear": [
      190,
@@ -397,15 +397,15 @@ window.BlippiRaceData = {
      190
     ],
     "front-three-quarter": [
-     217,
+     260,
      199
     ],
     "side": [
-     251,
+     318,
      172
     ],
     "rear-three-quarter": [
-     203,
+     250,
      199
     ],
     "rear": [
@@ -455,8 +455,8 @@ window.BlippiRaceData = {
      251
     ],
     "side": [
-     238,
-     251
+     261,
+     286
     ],
     "rear-three-quarter": [
      185,
@@ -505,15 +505,15 @@ window.BlippiRaceData = {
      197
     ],
     "front-three-quarter": [
-     218,
+     261,
      192
     ],
     "side": [
-     251,
+     322,
      168
     ],
     "rear-three-quarter": [
-     204,
+     245,
      185
     ],
     "rear": [
@@ -559,16 +559,16 @@ window.BlippiRaceData = {
      189
     ],
     "front-three-quarter": [
-     232,
+     271,
      156
     ],
     "side": [
-     251,
-     124
+     304,
+     135
     ],
     "rear-three-quarter": [
-     195,
-     187
+     237,
+     192
     ],
     "rear": [
      184,
@@ -613,15 +613,15 @@ window.BlippiRaceData = {
      198
     ],
     "front-three-quarter": [
-     228,
+     247,
      203
     ],
     "side": [
-     251,
+     299,
      189
     ],
     "rear-three-quarter": [
-     191,
+     221,
      209
     ],
     "rear": [
@@ -667,16 +667,16 @@ window.BlippiRaceData = {
      237
     ],
     "front-three-quarter": [
-     251,
+     264,
      236
     ],
     "side": [
-     235,
-     208
+     284,
+     213
     ],
     "rear-three-quarter": [
-     195,
-     238
+     235,
+     240
     ],
     "rear": [
      185,
@@ -775,16 +775,16 @@ window.BlippiRaceData = {
      241
     ],
     "front-three-quarter": [
-     227,
-     241
+     241,
+     259
     ],
     "side": [
-     251,
-     213
+     316,
+     225
     ],
     "rear-three-quarter": [
-     190,
-     238
+     224,
+     259
     ],
     "rear": [
      196,

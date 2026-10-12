@@ -29,6 +29,8 @@
   function load (keys, cb) {
     var need = []
     var i
+    keys = keys.concat(keys.map(peekKey).filter(Boolean))   // a race vehicle brings its Blippi-peek twin (owner 2026-10-12)
+    peekT0 = 0
     for (i = 0; i < keys.length; i++) if (cache[keys[i]] === undefined && need.indexOf(keys[i]) < 0) need.push(keys[i])
     var left = need.length
     if (!left) { cb(); return }
@@ -88,7 +90,28 @@
 
   /* ---------- drawing helpers shared by every engine ---------- */
   // draw art centred at (x,y) fitted INSIDE (bw,bh) (contain). opt: rot (rad), alpha, flip, anchor 'bottom' (y = bottom edge), label
+  /* the Blippi peek (owner 2026-10-12: "tidak pakai gambar yang ada blippi yang nengok"): the player's race vehicle follows
+     the same contract as BALAPAN (data/blippi-race-data.js peek): start in `standard`, then each cycle 30% standard / 70%
+     Blippi leaning out, a short crossfade of the SAME view, an instant swap under reduced motion. */
+  var PK_FADE = 120, peekT0 = 0
+  function peekKey (k) { return /^race:[^/]+\/standard-/.test(String(k)) ? String(k).replace('/standard-', '/blippi_peek-') : null }
+  function peekBlend () {
+    var PK = (w.BlippiRaceData && w.BlippiRaceData.peek) || { default_cycle_ms: 6000, standard_ratio: 0.3 }   // data/blippi-race-data.js loads after this file
+    var now = Date.now(); if (!peekT0) peekT0 = now
+    var cyc = PK.default_cycle_ms, std = cyc * PK.standard_ratio, t = (now - peekT0) % cyc
+    if (reduced()) return t < std ? 0 : 1
+    return t < std ? (t > std - PK_FADE ? 1 - (std - t) / PK_FADE : (now - peekT0 >= cyc && t < PK_FADE ? 1 - t / PK_FADE : 0)) : 1
+  }
   function spr (c, key, x, y, bw, bh, opt) {
+    var pk = peekKey(key)
+    if (pk && cache[pk] && !(opt && opt.noPeek)) {
+      var b = peekBlend(), a = (opt && opt.alpha != null) ? opt.alpha : 1, o2 = {}, q
+      for (q in (opt || {})) o2[q] = opt[q]
+      o2.noPeek = true
+      if (b < 1) { o2.alpha = a * (1 - b); spr(c, key, x, y, bw, bh, o2) }
+      if (b > 0) { o2.alpha = a * b; spr(c, pk, x, y, bw, bh, o2) }
+      return
+    }
     var im = cache[key]
     opt = opt || {}
     if (im && !opt.rot && !opt.flip && opt.alpha == null) {
