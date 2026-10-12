@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """Race vehicle sprites are whole (owner 2026-10-12: the bus had "sisi potongan di sebelah kiri"). A sprite whose alpha runs
 along its left / right / top edge (> 15% of that edge; a straight tyre side reaches 13%) was cut at a sheet cell and lost its nose or tail. Fix with
-tools/recut-truncated-vehicles.py. KNOWN lists, BY NAME, the sprites whose vehicle touches a neighbour on the owner's sheet,
-so no clean alpha cut exists; they stay until the owner sends a separated view.   python3 tools/qa-race-crops.py"""
+tools/recut-truncated-vehicles.py. KNOWN would list, BY NAME, a sprite with no clean alpha cut on the owner's sheet.   python3 tools/qa-race-crops.py"""
 import glob, os, sys
 from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-KNOWN = {'ambulance/blippi_peek-front-three-quarter', 'ambulance/blippi_peek-side', 'police-suv/standard-front-three-quarter',
-         'police-suv/standard-side', 'submarine/blippi_peek-rear'}   # merged with the neighbouring vehicle on the sheet
+KNOWN = set()   # 2026-10-12: the last five (vehicles touching a neighbour on the sheet) were split at the thinnest alpha column/row
 fails = []; n = 0
 for f in sorted(glob.glob(os.path.join(ROOT, 'assets/race/*/*.webp'))):
     n += 1; key = os.path.relpath(f, os.path.join(ROOT, 'assets/race'))[:-5]
@@ -16,5 +14,5 @@ for f in sorted(glob.glob(os.path.join(ROOT, 'assets/race/*/*.webp'))):
     cut = [k for k, v in e.items() if v > 0.15]
     if cut and key not in KNOWN: fails.append('%s cut at the %s edge' % (key, '/'.join(cut)))
 for f in fails: print('FAIL', f)
-print('qa-race-crops: %d/%d sprites whole (%d known merged on the sheet)' % (n - len(fails), n, len(KNOWN)))
+print('qa-race-crops: %d/%d sprites whole' % (n - len(fails), n))
 sys.exit(1 if fails else 0)

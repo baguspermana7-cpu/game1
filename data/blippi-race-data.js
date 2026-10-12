@@ -343,12 +343,12 @@ window.BlippiRaceData = {
      174
     ],
     "front-three-quarter": [
-     251,
-     166
+     262,
+     184
     ],
     "side": [
-     251,
-     161
+     310,
+     170
     ],
     "rear-three-quarter": [
      248,
