@@ -173,6 +173,36 @@
   // K.ask(api, o): a question that is PART of the job, answered by tapping big picture/number cards.
   //   o.custom = {prompt, choices[], answer, pic?, count?:{key,n}}  (a question about THIS scene, e.g. "Berapa kotak?")  OR  o.context/o.grade -> SoalEngine.pick({game:'blippi'})
   //   o.done(ok) fires when answered (right, or after 2 kind tries the answer is shown and we go on: never a dead end).
+  // the clock face of the shared quiz (Dunia-Emosi games/tk-quiz.js clockSVG): same numerals, ticks and hands
+  function clockSVG (h, m) {
+    var ticks = '', nums = ''
+    for (var i = 1; i <= 12; i++) {
+      var a = i * Math.PI / 6
+      nums += '<text x="' + (50 + 33 * Math.sin(a)).toFixed(1) + '" y="' + (50 - 33 * Math.cos(a) + 5.3).toFixed(1) + '" text-anchor="middle" font-size="15" fill="#1F3B73" font-family="Fredoka One,system-ui">' + i + '</text>'
+      ticks += '<line x1="' + (50 + 43 * Math.sin(a)).toFixed(1) + '" y1="' + (50 - 43 * Math.cos(a)).toFixed(1) + '" x2="' + (50 + 46 * Math.sin(a)).toFixed(1) + '" y2="' + (50 - 46 * Math.cos(a)).toFixed(1) + '" stroke="#1F3B73" stroke-width="2"/>'
+    }
+    var ha = ((h % 12) + m / 60) * 30, ma = m * 6
+    return '<svg viewBox="0 0 100 100" role="img" aria-label="jam" style="width:100%;height:100%"><circle cx="50" cy="50" r="48" fill="#FFF8E8" stroke="#8A6A1E" stroke-width="4"/>' + ticks + nums +
+      '<line x1="50" y1="50" x2="50" y2="28" stroke="#1F3B73" stroke-width="5" stroke-linecap="round" transform="rotate(' + ha + ' 50 50)"/>' +
+      '<line x1="50" y1="50" x2="50" y2="14" stroke="#E53935" stroke-width="3.2" stroke-linecap="round" transform="rotate(' + ma + ' 50 50)"/><circle cx="50" cy="50" r="4" fill="#1F3B73"/></svg>'
+  }
+  // the picture key of a question's counting thing, from the engine's own Blippi profile (nouns: [[key, word], ...])
+  function nounKey (word) {
+    var p = w.SoalEngine && w.SoalEngine.profile && w.SoalEngine.profile('blippi'), ns = (p && p.nouns && (p.nouns._ || p.nouns)) || [], i
+    for (i = 0; i < ns.length; i++) if (ns[i][1] === word) return ns[i][0]
+    return (ns[0] && ns[0][0]) || 'mojo-chase/items/star'
+  }
+  // n counting things in rows of five (a ten-frame a child can read at a glance), with the number under them on a tile
+  function amount (n, key, wd, tile) {
+    var col = document.createElement('div'), rows = Math.max(1, Math.ceil(Math.min(n, 20) / 5)), sz = Math.floor(Math.min((wd - 20) / 5 - 4, (tile ? 80 : 136) / rows - 4, 56))
+    col.style.cssText = 'width:' + wd + 'px;display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto'
+    var grid = document.createElement('div')
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(' + Math.min(5, Math.max(1, n)) + ',' + sz + 'px);gap:4px;justify-content:center'
+    for (var i = 0; i < Math.min(n, 20); i++) { var ic = new Image(); ic.alt = ''; ic.src = LIB + key + '.webp'; ic.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;object-fit:contain'; grid.appendChild(ic) }
+    col.appendChild(grid)
+    if (tile) { var t = document.createElement('b'); t.textContent = String(n); t.style.cssText = 'min-width:84px;height:62px;padding:0 12px;border-radius:16px;background:#fff;border:5px solid #13318A;color:#13318A;font:900 48px/52px Fredoka,Nunito,sans-serif;text-align:center'; col.appendChild(t) }
+    return col
+  }
   function ask (api, o) {
     var q = o.custom
     if (!q) {
@@ -236,9 +266,30 @@
       qm.style.cssText = 'width:' + rsz + 'px;height:' + rsz + 'px;border-radius:18px;background:#FFF3C4;border:5px solid #13318A;color:#13318A;font:900 ' + Math.round(rsz * 0.6) + 'px/' + (rsz - 10) + 'px Fredoka,Nunito,sans-serif;text-align:center;flex:0 0 auto'
       row3.appendChild(qm)
       }
+    } else if (q.scene && q.scene.mode === 'clock') {
+      // owner 2026-10-12: "tanya ini jam berapa tapi nggak ada gambarnya" - the clock the question is about
+      var ck = api.at(card, '', 370, 124, 200, 160)
+      ck.setAttribute('data-ask-pics', 'clock')
+      ck.innerHTML = clockSVG(q.scene.h, q.scene.m || 0)
+    } else if (/^(biggest|smallest)$/.test(q.kind) || q.kind === 'pattern') {
+      // a numbers-only question still SHOWS the amounts: every number as that many of the game's own counting things
+      var nums = q.kind === 'pattern' ? (q.prompt.match(/\d+/g) || []) : q.choices
+      var key = nounKey(q.noun), slot = q.kind === 'pattern' ? 880 / (nums.length + 1) : 0
+      // biggest / smallest: each amount stands right above its own answer button (same width, gap and offset)
+      var n0 = q.choices.length, cw0 = n0 > 3 ? 190 : 250, x00 = (940 - (cw0 * n0 + 22 * (n0 - 1))) / 2
+      var row4 = slot ? api.at(card, '', 30, 126, 880, 150) : api.at(card, '', x00, 126, cw0 * n0 + 22 * (n0 - 1), 150)
+      row4.setAttribute('data-ask-pics', q.kind)
+      row4.style.cssText += ';display:flex;justify-content:' + (slot ? 'center' : 'flex-start') + ';align-items:flex-end;gap:' + (slot ? 12 : 22) + 'px'
+      nums.forEach(function (v) { row4.appendChild(amount(+v, key, slot ? Math.min(190, slot - 12) : cw0, q.kind === 'pattern')) })
+      if (q.kind === 'pattern') {
+        var qb = document.createElement('b'); qb.textContent = '?'
+        qb.style.cssText = 'width:96px;height:96px;margin-bottom:22px;border-radius:18px;background:#FFF3C4;border:5px solid #13318A;color:#13318A;font:900 58px/86px Fredoka,Nunito,sans-serif;text-align:center;flex:0 0 auto'
+        row4.appendChild(qb)
+      }
     } else if (q.pic) {
       var pic = api.at(card, '', 390, 130, 160, 120)
-      var im = new Image(); im.alt = ''; im.src = LIB + q.pic + '.webp'; im.style.cssText = 'width:100%;height:100%;object-fit:contain'; pic.appendChild(im)
+      var im = new Image(); im.alt = ''; im.src = /^assets\//.test(q.pic) ? q.pic + '.webp' : LIB + q.pic + '.webp'; im.style.cssText = 'width:100%;height:100%;object-fit:contain'; pic.appendChild(im)
+      pic.setAttribute('data-ask-pics', 'pic')
     }
     var n = q.choices.length
     var cw = n > 3 ? 190 : 250
@@ -247,6 +298,8 @@
     var tries = 0
     var done = false
     var btns = []
+    // one size for every choice of a question: a size picked per button made the answer stand out ("Pukul 9" big, "Pukul 10" small)
+    var fsz = q.choices.some(function (ch) { return String(ch).length > 7 }) ? 30 : 52
     q.choices.forEach(function (ch, k) {
       var b = api.at(card, 'obtn', x0 + k * (cw + gap), (q.count || q.pic || q.scene || q.row) ? 290 : 250, cw, 190, 'button')
       b.type = 'button'
@@ -254,7 +307,7 @@
       b.style.cssText += ';font:900 56px/1 Fredoka,Nunito,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0'
       var cp = q.choicePics && q.choicePics[k]
       if (cp) { var ci = new Image(); ci.alt = ''; ci.src = /^assets\//.test(cp) ? cp : LIB + cp + '.webp'; ci.style.cssText = 'height:90px;object-fit:contain'; b.appendChild(ci) }
-      var lb = document.createElement('span'); lb.textContent = String(ch); lb.style.cssText = 'font-size:' + (String(ch).length > 7 ? 30 : 52) + 'px'; b.appendChild(lb)
+      var lb = document.createElement('span'); lb.textContent = String(ch); lb.style.cssText = 'font-size:' + fsz + 'px'; b.appendChild(lb)
       b.addEventListener('click', function () {
         if (done) return
         api.touch()
