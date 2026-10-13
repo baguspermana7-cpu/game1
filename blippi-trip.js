@@ -22,6 +22,7 @@
     if (k.indexOf('lib:') === 0) return '../Dunia-Emosi/assets/db/lib/' + k.slice(4) + '.webp'
     if (k.indexOf('g:') === 0) return 'assets/blippi/' + k.slice(2) + '.webp'
     if (k.indexOf('race:') === 0) return 'assets/race/' + k.slice(5) + '.webp'
+    if (k.indexOf('sp:') === 0) return 'assets/space/' + k.slice(3) + '.webp'
     if (k.indexOf('fx:') === 0) return V[k.slice(3)] ? V[k.slice(3)].file : ''
     return k
   }
@@ -36,12 +37,43 @@
     if (!left) { cb(); return }
     need.forEach(function (k) {
       var im = new Image()
-      im.onload = function () { cache[k] = im; if (--left === 0) cb() }
+      // decoded BEFORE the run starts and drawn once off screen: a picture first decoded when it scrolls into view stalls
+      // that frame (a visible hitch the first time each crate, barrel, cloud or effect appears)
+      im.onload = function () {
+        var ready = function () { cache[k] = im; warm(im); if (--left === 0) cb() }
+        if (im.decode) im.decode().then(ready, ready); else ready()
+      }
       im.onerror = function () { cache[k] = false; if (--left === 0) cb() }
       im.src = url(k)
     })
   }
+  var warmC = null
+  function warm (im) {
+    try { if (!warmC) warmC = w.document.createElement('canvas').getContext('2d'); warmC.drawImage(im, 0, 0, 2, 2) } catch (e) { /* best effort */ }
+  }
   function img (key) { return cache[key] || null }
+  // the child's space craft (LUAR ANGKASA), saved per avatar; any id not in the catalog falls back to the first (the rocket)
+  function crafts () { return (w.BlippiSpace && w.BlippiSpace.craft) || [] }
+  function craft () {
+    var id = ((B().state().trip || {}).craft) || '', all = crafts(), i
+    for (i = 0; i < all.length; i++) if (all[i].id === id) return all[i]
+    return all[0] || null
+  }
+  function setCraft (id) {
+    B().commit(function (s) { s.trip = s.trip || { lv: {}, rw: {} }; s.trip.craft = id })
+  }
+  // one frame of an animated strip (frames side by side), fitted into bw x bh around (x, y)
+  function frameSpr (c, key, meta, t, x, y, bw, bh, alpha) {
+    var im = cache[key]
+    if (!im) return false
+    var fw = meta[0], fh = meta[1], n = meta[2]
+    var f = reduced() ? 0 : Math.floor(t * 1000 / (w.BlippiSpace.frameMs || 80)) % n
+    var k = Math.min(bw / fw, bh / fh)
+    if (alpha != null) c.globalAlpha = alpha
+    c.drawImage(im, f * fw, 0, fw, fh, x - fw * k / 2, y - fh * k / 2, fw * k, fh * k)
+    if (alpha != null) c.globalAlpha = 1
+    return true
+  }
   // pre-scaled copy of a loaded image (offscreen canvas), so big panoramas are blitted, not re-downscaled every frame
   var scc = {}
   var sccN = 0
@@ -86,7 +118,9 @@
   }
   function clamp (v, a, b) { return v < a ? a : v > b ? b : v }
   function lerp (a, b, t) { return a + (b - a) * t }
-  function reduced () { return !!(w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches) }
+  // one media query, read many times a frame (a new matchMedia per call allocated every frame)
+  var mqReduce = w.matchMedia ? w.matchMedia('(prefers-reduced-motion: reduce)') : null
+  function reduced () { return !!(mqReduce && mqReduce.matches) }
 
   /* ---------- drawing helpers shared by every engine ---------- */
   // draw art centred at (x,y) fitted INSIDE (bw,bh) (contain). opt: rot (rad), alpha, flip, anchor 'bottom' (y = bottom edge), label
@@ -185,7 +219,37 @@
     run.fxs.push({ k: 'fx:' + name, x: x, y: y, s: size || 120, t: 0, d: o.dur || 0.8, rise: o.rise || 0, blend: V[name].blend })
     if (cache['fx:' + name] === undefined) load(['fx:' + name], function () {})
   }
+  // a five-point star path (vector, so it needs no sprite in any journey)
+  function starPath (c, x, y, r) {
+    c.beginPath()
+    for (var q = 0; q < 10; q++) { var a = -Math.PI / 2 + q * Math.PI / 5, rr = q % 2 ? r * 0.45 : r; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr) }
+    c.closePath()
+  }
+  function drawFly (c, dt) {
+    if (!run.fly.length) return
+    var to = UI.scoreAt ? UI.scoreAt() : null
+    if (!to) { run.fly.length = 0; return }
+    var i
+    for (i = run.fly.length - 1; i >= 0; i--) {
+      var f = run.fly[i]
+      f.t += dt
+      var p = Math.min(1, f.t / f.d)
+      if (p >= 1) { run.fly.splice(i, 1); if (UI.pop) UI.pop(); continue }
+      var e = 1 - Math.pow(1 - p, 3)
+      var mx = (f.x + to.x) / 2, my = Math.min(f.y, to.y) - 120
+      var x = (1 - e) * (1 - e) * f.x + 2 * (1 - e) * e * mx + e * e * to.x
+      var y = (1 - e) * (1 - e) * f.y + 2 * (1 - e) * e * my + e * e * to.y
+      var r = (f.n > 1 ? 22 : 17) * (1 - 0.45 * e)
+      c.save()
+      c.translate(x, y); c.rotate(p * 5)
+      starPath(c, 0, 0, r)
+      c.fillStyle = '#FFC82E'; c.fill()
+      c.lineWidth = 2.5; c.strokeStyle = '#E5A300'; c.stroke()
+      c.restore()
+    }
+  }
   function drawFx (c, dt) {
+    drawFly(c, dt)
     var i
     for (i = run.fxs.length - 1; i >= 0; i--) {
       var f = run.fxs[i]
@@ -225,7 +289,7 @@
       lvl: lvl, E: E, cv: cv, c: cv.getContext('2d'), W: 0, H: 0, scale: 0.8, dpr: 1,
       rnd: rng(opts.seed || ((Date.now() & 0xffff) + 17)), len: lvl.len * (opts.len || 1),
       progress: 0, mul: 1, slowT: 0, boostT: 0, hitT: 0, rate: lvl.speed, t: 0,
-      stars: 0, starTotal: 0, bumps: 0, state: 'loading', fxs: [], gates: [], quiz: null, qlog: [], bonus: 0,
+      stars: 0, starTotal: 0, bumps: 0, state: 'loading', fxs: [], fly: [], gates: [], quiz: null, qlog: [], bonus: 0,
       in: { down: false, x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, moves: [], kx: 0, ky: 0 },
       work: [], slowFrames: 0, finishT: 0, say: say, fx: fx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
       collect: collect, bump: bump, boost: boost
@@ -423,6 +487,8 @@
     run.comboT = 3
     B().sfx('collect')
     fx('spark', x, y, 120)
+    // the star FLIES to the star counter (an arc, 0.55 s), which pops when it lands: the child sees where it went
+    if (!reduced() && run.fly.length < 12) run.fly.push({ x: x, y: y, t: 0, d: 0.55, n: big ? 2 : 1 })
     if (run.lvl.cat === 'air') fx('droplets', x, y + 10, 130)
     if (run.stars % 4 === 0) say(LINES_STAR[(run.stars / 4) % LINES_STAR.length | 0])
   }
@@ -557,7 +623,7 @@
   w.BlippiTrip = {
     engine: function (name, E) { engines[name] = E },
     setUI: function (u) { UI = u },
-    D: D, start: start, stop: stop, answer: answer, resumeFromQuiz: resumeFromQuiz, pauseRun: pauseRun, resumeRun: resumeRun,
+    D: D, craft: craft, crafts: crafts, setCraft: setCraft, frameSpr: frameSpr, start: start, stop: stop, answer: answer, resumeFromQuiz: resumeFromQuiz, pauseRun: pauseRun, resumeRun: resumeRun,
     scaled: scaled, levelState: levelState, unlocked: unlocked, catStars: catStars, url: url, load: load, img: img, spr: spr, rng: rng, clamp: clamp, lerp: lerp,
     running: function () { return !!run },
     // QA seam: read-only snapshot for the gate

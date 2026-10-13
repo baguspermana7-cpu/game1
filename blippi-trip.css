@@ -166,3 +166,44 @@ body.trip-on #stage{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.rcount{animation:none}}
 @media (max-height:460px){.rcard{min-height:0;padding:4px;gap:2px}.rcard .tstars{display:none}.rarenas{grid-template-columns:repeat(4,minmax(0,1fr))}.rprev{flex-basis:230px;gap:4px;padding:8px}.rbig.small,.rpname{display:none}.rmodes{gap:4px}.rmode{min-height:56px;padding:2px 12px}.rpre{gap:6px}.rtabs{padding:4px 0 0}}
 .tcombo{font:700 22px/1 Fredoka,sans-serif;color:#F4761A;min-width:0;margin-left:2px}.tcombo:empty{display:none}
+/* the star counter pops when a flying star lands in it */
+.tscore.pop{animation:tpop .32s cubic-bezier(.3,1.6,.5,1)}
+@keyframes tpop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.tscore.pop{animation:none}}
+/* ---------- space craft (LUAR ANGKASA): animated strips stepped by CSS, the bar on the level screen and the picker ---------- */
+.tanim{display:block;width:100%;max-height:100%;background-repeat:no-repeat;background-position:0 0;animation:tanim var(--d,2s) steps(var(--n,24),jump-none) infinite;filter:drop-shadow(0 4px 6px rgba(10,10,60,.45))}
+@keyframes tanim{from{background-position:0 0}to{background-position:100% 0}}
+.tlpic .tanim{width:auto;height:min(90px,80%);max-width:90%}
+.tmark .tanim{width:auto;height:46px;max-width:56px}
+.tcbar{flex:0 0 auto;display:flex;align-items:center;gap:clamp(10px,2vw,22px);margin-top:clamp(8px,1.4vh,14px);padding:10px clamp(12px,2vw,22px) 10px 10px;border-radius:30px;
+  background:radial-gradient(120% 140% at 15% 50%,#3B2A86 0,#1B1650 55%,#0E0B33 100%);border:5px solid #fff;box-shadow:0 8px 18px rgba(20,10,60,.35);color:#fff;position:relative;overflow:hidden}
+.tcbar::before{content:"";position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 12% 22%,#fff,transparent),radial-gradient(1px 1px at 38% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 62% 30%,#FFE9A8,transparent),radial-gradient(1px 1px at 84% 64%,#fff,transparent),radial-gradient(1.2px 1.2px at 92% 18%,#fff,transparent);opacity:.85;pointer-events:none}
+.tcbig{position:relative;flex:0 0 auto;width:clamp(92px,15vh,140px);height:clamp(92px,15vh,140px);display:flex;align-items:center;justify-content:center;border-radius:50%;
+  background:radial-gradient(circle at 50% 60%,rgba(140,200,255,.45),rgba(140,200,255,0) 68%);animation:tfloat 3.2s ease-in-out infinite}
+.tcbig .tanim{width:auto;height:88%;max-width:96%}
+.tctx{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tctx em{font:700 clamp(14px,1.8vw,18px)/1 Nunito,sans-serif;font-style:normal;color:#BFD8FF;letter-spacing:.04em;text-transform:uppercase}
+.tctx b{font:700 clamp(22px,3vw,34px)/1.05 Fredoka,Nunito,sans-serif;color:#FFE27A;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.tcgo{position:relative;flex:0 0 auto;min-width:0;min-height:58px;font-size:clamp(15px,1.9vw,21px)}
+@keyframes tfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.tcpick{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom));background:rgba(8,6,36,.62);animation:tfade .22s ease-out}
+.tcpcard{width:min(100%,1060px);max-height:100%;display:flex;flex-direction:column;gap:10px;padding:clamp(12px,2vh,22px) clamp(12px,2vw,24px);border-radius:32px;
+  background:radial-gradient(130% 100% at 50% 0,#33267A 0,#16124A 60%,#0B0930 100%);border:6px solid #fff;box-shadow:0 14px 34px rgba(0,0,0,.45);animation:tcin .3s cubic-bezier(.23,1,.32,1)}
+@keyframes tcin{from{transform:translateY(16px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.tcphd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tcphd h2{margin:0;font:700 clamp(22px,3vw,34px)/1 Fredoka,Nunito,sans-serif;color:#FFE27A;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+.tcgrid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(104px,15vw,150px),1fr));gap:clamp(8px,1.2vw,14px);padding:4px;overscroll-behavior:contain}
+.tct{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px 8px;border-radius:22px;border:4px solid rgba(255,255,255,.18);
+  background:radial-gradient(circle at 50% 42%,rgba(120,170,255,.28),rgba(30,24,90,.55) 70%);color:#fff;transition:transform .16s cubic-bezier(.23,1,.32,1),border-color .16s}
+.tct:active{transform:scale(.94)}
+.tct.on{border-color:#FFD34D;box-shadow:0 0 0 3px rgba(255,211,77,.35),0 0 22px rgba(255,211,77,.45)}
+.tct.chose{animation:tchose .42s cubic-bezier(.3,1.6,.5,1)}
+@keyframes tchose{40%{transform:scale(1.12)}}
+.tctpic{width:100%;height:clamp(70px,11vh,96px);display:flex;align-items:center;justify-content:center}
+.tctpic .tanim{width:auto;height:100%;max-width:100%}
+.tct i{font:700 clamp(12px,1.4vw,15px)/1.15 Nunito,sans-serif;font-style:normal;text-align:center}
+@media (hover:hover){.tct:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.5)}}
+@media (max-height:460px){.tcbar{padding:6px 12px 6px 6px;margin-top:6px}.tcbig{width:72px;height:72px}.tctx b{font-size:22px}.tcgo{min-height:50px}}
+@media (prefers-reduced-motion:reduce){.tanim,.tcbig,.tct.chose,.tcpcard{animation:none}}
+/* all 25 craft on one screen, like the owner's 5 x 5 sheet */
+@media (min-width:640px){.tcgrid{grid-template-columns:repeat(5,1fr)}.tct{padding:6px 4px 6px}.tctpic{height:clamp(46px,9.5vh,96px)}.tct i{font-size:clamp(11px,1.3vw,15px)}}

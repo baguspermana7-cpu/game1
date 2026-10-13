@@ -22,7 +22,12 @@
     if (skin === 'water') {
       a.push(lvl.veh)
       lvl.theme.deco.forEach(function (d) { a.push('lib:tk-world/' + d) })
-    } else a.push(ROCKET, 'g:veh-roket', 'lib:nature/moon-stars')
+    } else {
+      // the child's chosen animated craft (BlippiSpace); the old rocket art stays as the fallback
+      var cr = T.craft && T.craft()
+      a.push(ROCKET, 'lib:nature/moon-stars')
+      if (cr) a.push('sp:' + cr.id)
+    }
     return a
   }
 
@@ -48,6 +53,7 @@
     var gateZ = lvl.gates.map(function (f) { return f * run.len })
     function nearGate (z) { return gateZ.some(function (g) { return Math.abs(g - z) < 1.5 }) }
     var water = skin === 'water'
+    var craft = !water && T.craft ? T.craft() : null
     var obsKeys = water ? th.obs : ['asteroid']
     var z = 3
     var step = 2.5 - lvl.dens * 1.1
@@ -426,11 +432,23 @@
         }
         c.save(); c.translate(x, y); c.rotate(tilt * 0.35 + wob); c.globalAlpha = alpha
         var fl = (run.boostT > 0 ? 1.6 : 1) * (run.progress < 0.075 ? 1.7 : 1) * (0.85 + Math.sin(run.t * 40) * 0.15)
+        if (craft && T.img('sp:' + craft.id)) {
+          // the chosen craft, animated (its own micro movement), with a soft engine glow under it; only the rocket gets a flame
+          if (craft.id !== 'rocket') {
+            var eg = c.createRadialGradient(0, ps * 0.5, 2, 0, ps * 0.5, ps * 0.42 * fl)
+            eg.addColorStop(0, 'rgba(160,220,255,.75)'); eg.addColorStop(1, 'rgba(160,220,255,0)')
+            c.fillStyle = eg
+            c.beginPath(); c.ellipse(0, ps * 0.5, ps * 0.42 * fl, ps * 0.42 * fl, 0, 0, 6.3); c.fill()
+          }
+        }
+        var flame = !craft || craft.id === 'rocket' || !T.img('sp:' + craft.id)
+        if (flame) {
         var fg = c.createLinearGradient(0, ps * 0.2, 0, ps * (0.5 + 0.35 * fl))
         fg.addColorStop(0, 'rgba(255,240,170,.95)'); fg.addColorStop(0.5, 'rgba(255,170,90,.8)'); fg.addColorStop(1, 'rgba(255,170,90,0)')
         c.fillStyle = fg
         c.beginPath(); c.moveTo(-ps * 0.12, ps * 0.2); c.quadraticCurveTo(0, ps * (0.75 * fl), ps * 0.12, ps * 0.2); c.closePath(); c.fill()
-        if (T.img('g:veh-roket')) run.spr(c, 'g:veh-roket', 0, 0, ps * 0.9, ps * 1.1, {})
+        }
+        if (craft && T.frameSpr(c, 'sp:' + craft.id, craft.play, run.t, 0, 0, ps * 1.2, ps * 1.2)) { /* drawn */ } else if (T.img('g:veh-roket')) run.spr(c, 'g:veh-roket', 0, 0, ps * 0.9, ps * 1.1, {})
         else run.spr(c, ROCKET, 0, 0, ps * 1.25, ps * 1.25, { rot: -Math.PI / 4 })
         c.restore()
       }

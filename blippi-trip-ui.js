@@ -29,6 +29,19 @@
     if (parent) parent.appendChild(e)
     return e
   }
+  // an animated craft: its frame strip as a background stepped through by CSS (steps, jump-none: every frame exactly once)
+  function anim (parent, cr, big, cls) {
+    var meta = big ? cr.play : cr.pick
+    var sp = el('span', 'tanim' + (cls ? ' ' + cls : ''), parent)
+    sp.style.backgroundImage = 'url(assets/space/' + cr.id + (big ? '' : '-pick') + '.webp)'
+    sp.style.backgroundSize = (meta[2] * 100) + '% 100%'
+    sp.style.aspectRatio = meta[0] + ' / ' + meta[1]
+    sp.style.setProperty('--n', String(meta[2]))
+    sp.style.setProperty('--d', (meta[2] * (w.BlippiSpace.frameMs || 80) * (big ? 1 : 2)) + 'ms')
+    sp.setAttribute('role', 'img')
+    sp.setAttribute('aria-label', cr.name)
+    return sp
+  }
   function btn (cls, parent, label, fn) {
     var b = el('button', cls, parent)
     b.type = 'button'
@@ -114,6 +127,45 @@
   }
 
   /* ---------- level picker ---------- */
+  /* ---------- space craft: the child's own animated craft (owner 2026-10-14) ---------- */
+  function craftBar (parent) {
+    var cr = T.craft()
+    var bar = el('div', 'tcbar', parent)
+    var pic = el('span', 'tcbig', bar)
+    anim(pic, cr, true)
+    var tx = el('div', 'tctx', bar)
+    el('em', '', tx, 'Pesawatmu')
+    el('b', '', tx, cr.name)
+    var go = btn('tobtn blue tcgo', bar, 'Ganti pesawat', function () { craftPicker() })
+    go.textContent = 'GANTI PESAWAT'
+    go.setAttribute('data-act', 'ganti-pesawat')
+  }
+  function craftPicker () {
+    var cur = T.craft()
+    var ov = el('div', 'tcpick', $.lev)
+    ov.setAttribute('role', 'dialog')
+    ov.setAttribute('aria-modal', 'true')
+    ov.setAttribute('aria-label', 'Pilih pesawatmu')
+    var card = el('div', 'tcpcard', ov)
+    var hd = el('div', 'tcphd', card)
+    el('h2', '', hd, 'Pilih Pesawatmu')
+    btn('tcirc', hd, 'Tutup', function () { ov.remove() }).innerHTML = BACK
+    var grid = el('div', 'tcgrid', card)
+    T.crafts().forEach(function (cr) {
+      var b = btn('tct' + (cr.id === cur.id ? ' on' : ''), grid, cr.name, function () {
+        T.setCraft(cr.id)
+        w.Blippi.sfx('collect')
+        ;[].forEach.call(grid.querySelectorAll('.tct'), function (x) { x.classList.toggle('on', x === b) })
+        b.classList.add('chose')
+        setTimeout(function () { ov.remove(); showLevels('angkasa') }, 420)
+      })
+      b.setAttribute('data-craft', cr.id)
+      anim(el('span', 'tctpic', b), cr, false)
+      el('i', '', b, cr.name)
+    })
+    var on = grid.querySelector('.tct.on')
+    if (on) setTimeout(function () { on.scrollIntoView({ block: 'nearest' }); on.focus({ preventScroll: true }) }, 60)
+  }
   function showLevels (catId) {
     T.stop()
     build()
@@ -123,6 +175,7 @@
     $.lev.style.setProperty('--tint', cat.tint)
     $.lev.style.setProperty('--ink', cat.ink)
     header($.lev, cat.name, showPick, cat.ctl)
+    if (catId === 'angkasa' && T.craft && T.craft()) craftBar($.lev)
     var grid = el('div', 'tlvls', $.lev)
     D.levels.filter(function (l) { return l.cat === catId }).forEach(function (l, i) {
       var open = T.unlocked(l)
@@ -137,10 +190,12 @@
       var num = el('span', 'tnum', b, String(i + 1))
       void num
       var ph = el('span', 'tlpic', b)
-      imgEl(l.vui || (typeof l.veh === 'string' && l.veh.indexOf(':') > 0 ? l.veh : cat.icon), '', ph)
+      var cr = catId === 'angkasa' && T.craft ? T.craft() : null
+      if (cr) anim(ph, cr, false)
+      else imgEl(l.vui || (typeof l.veh === 'string' && l.veh.indexOf(':') > 0 ? l.veh : cat.icon), '', ph)
       var tx = el('span', 'tltx', b)
       el('b', '', tx, l.name)
-      el('em', '', tx, open ? l.vname : 'Selesaikan level sebelumnya')
+      el('em', '', tx, open ? (cr ? cr.name : l.vname) : 'Selesaikan level sebelumnya')
       if (open) starsRow(b, st ? st.stars : 0)
       else { var lk = el('span', 'tlock', b); lk.innerHTML = LOCK }
     })
@@ -188,7 +243,9 @@
     el('b', 'tflag', pg).style.left = '100%'
     var cat = D.cats.filter(function (c) { return c.id === run.lvl.cat })[0]
     $.mark = el('span', 'tmark', pg)
-    imgEl(run.lvl.vui || cat.icon, '', $.mark) // the vehicle this level drives, not the category icon
+    var mcr = run.lvl.cat === 'angkasa' && T.craft ? T.craft() : null
+    if (mcr) anim($.mark, mcr, false) // the child's own craft
+    else imgEl(run.lvl.vui || cat.icon, '', $.mark) // the vehicle this level drives, not the category icon
     var sc = el('div', 'tscore', wrap)
     sc.innerHTML = STAR
     $.score = el('u', '', sc, '0')
@@ -405,7 +462,18 @@
     B.go(B.current() || 'hub', null, true)
   }
 
-  T.setUI({ showRun: showRun, hud: hud, tick: tick, say: say, quiz: quiz, pause: pause, result: result })
+  // where the star counter is, in canvas CSS px (the flying stars land there), and its pop when one lands
+  function scoreAt () {
+    if (!$.score || !curRun || !curRun.cv) return null
+    var b = $.score.parentNode.getBoundingClientRect(), c = curRun.cv.getBoundingClientRect()
+    return { x: b.left + 26 - c.left, y: b.top + b.height / 2 - c.top }
+  }
+  function pop () {
+    var el2 = $.score && $.score.parentNode
+    if (!el2) return
+    el2.classList.remove('pop'); void el2.offsetWidth; el2.classList.add('pop')
+  }
+  T.setUI({ showRun: showRun, hud: hud, tick: tick, say: say, quiz: quiz, pause: pause, result: result, scoreAt: scoreAt, pop: pop })
   T.open = open
   T.close = close
   T.showLevels = showLevels
