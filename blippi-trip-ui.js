@@ -188,7 +188,7 @@
     el('b', 'tflag', pg).style.left = '100%'
     var cat = D.cats.filter(function (c) { return c.id === run.lvl.cat })[0]
     $.mark = el('span', 'tmark', pg)
-    imgEl(cat.icon, '', $.mark)
+    imgEl(run.lvl.vui || cat.icon, '', $.mark) // the vehicle this level drives, not the category icon
     var sc = el('div', 'tscore', wrap)
     sc.innerHTML = STAR
     $.score = el('u', '', sc, '0')
