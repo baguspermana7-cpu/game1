@@ -98,8 +98,11 @@
     function tiles () {
       if (water && !waves) {
         waves = tileCanvas(256, function (c, s) {
-          c.strokeStyle = 'rgba(255,255,255,.55)'
+          // broken, softer crests instead of six unbroken lines per tile (that read as wallpaper, not sea)
+          c.strokeStyle = 'rgba(255,255,255,.34)'
           c.lineWidth = 3
+          c.lineCap = 'round'
+          c.setLineDash([46, 38])
           var i
           for (i = 0; i < 6; i++) {
             c.beginPath()

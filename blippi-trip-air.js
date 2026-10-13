@@ -60,7 +60,8 @@
     }
     ents.sort(function (a, b) { return a.z - b.z })
     var ci
-    for (ci = 0; ci < 18; ci++) clouds.push({ x: r(), y: r() * 0.7, s: 0.4 + r() * 0.9, layer: ci % 3 })
+    // a calm sky: few clouds, so the stars, rings, birds and storm clouds the child steers around read at a glance
+    for (ci = 0; ci < 9; ci++) clouds.push({ x: r(), y: r() * 0.7, s: 0.4 + r() * 0.8, layer: ci % 3 })
     for (ci = 0; ci < 70; ci++) starsBg.push({ x: r(), y: r() * 0.85, s: 1 + r() * 2, ph: r() * 6 })
     run.starTotal = Math.round(collectibles * 0.5)
 
@@ -243,7 +244,7 @@
         var cx = ((cl.x * span - Z * G.pxu * f - run.t * 4 * (cl.layer + 1)) % span + span) % span - 130
         var cy = cl.y * H * 0.75 + camY * (0.2 + cl.layer * 0.25) - H * 0.02
         var sz = (60 + cl.layer * 55) * cl.s
-        run.spr(c, 'lib:nature/cloud', cx, cy, sz * 1.3, sz, { alpha: 0.5 + cl.layer * 0.15 })
+        run.spr(c, 'lib:nature/cloud', cx, cy, sz * 1.3, sz, { alpha: 0.32 + cl.layer * 0.14 })
       }
       // 5. water (the real one falls away on take-off; a distant strip of sea with islands stays below the clouds)
       drawSea(c, wlv)
@@ -295,9 +296,10 @@
         c.beginPath(); c.moveTo(bx - bs, by - bs * (0.4 + fl)); c.quadraticCurveTo(bx - bs * 0.4, by + bs * 0.2, bx, by); c.quadraticCurveTo(bx + bs * 0.4, by + bs * 0.2, bx + bs, by - bs * (0.4 + fl)); c.stroke()
       }
       var fc
-      for (fc = 0; fc < 3; fc++) {
-        var fxp = (((fc * 0.43 + 0.1) * (W + 500) - Z * G.pxu * 0.9 - run.t * 20) % (W + 500) + (W + 500)) % (W + 500) - 250
-        run.spr(c, 'lib:nature/cloud', fxp, H * (0.2 + fc * 0.28) + camY * 0.9, 340 + fc * 70, 220 + fc * 40, { alpha: 0.4 })
+      // one wide foreground wisp, faint and far apart: three of them sat on the plane like a bubble
+      for (fc = 0; fc < 1; fc++) {
+        var fxp = (((fc * 0.43 + 0.1) * (W * 2 + 500) - Z * G.pxu * 0.9 - run.t * 20) % (W * 2 + 500) + (W * 2 + 500)) % (W * 2 + 500) - 250
+        run.spr(c, 'lib:nature/cloud', fxp, H * 0.12 + camY * 0.9, 380, 230, { alpha: 0.22 })
       }
       // 8. foreground wisps
       c.globalAlpha = 0.35
