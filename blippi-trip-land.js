@@ -91,6 +91,11 @@
     }
     geo()
     function P (d) { return 1 / (1 + d / D0) }
+    // the road winds (owner 2026-10-13 "jauh lebih bagus, super smooth"): a slow sum of two sines of the world position bends
+    // the far road sideways; the near road (p ~ 1) stays under the vehicle, so steering is unchanged and the curve only reads
+    function bend (z) { return Math.sin(z * 0.05) * 0.7 + Math.sin(z * 0.13 + 1.3) * 0.3 }
+    var b0 = 0
+    function CX (p) { var f = Math.max(0, 1 - p); return G.cx + b0 * run.W * 0.75 * Math.pow(f, 1.6) }
     function Y (p) { return G.hy + (G.ny - G.hy) * p }
     var LS = function () { return G.rw * 0.62 }
 
@@ -126,11 +131,11 @@
     var ei0 = 0
     function sortFar (a, b2) { return b2.d - a.d }
 
-    function trap (path, cx, hwFar, hwNear, yFar, yNear) {
-      path.moveTo(cx - hwFar, yFar)
-      path.lineTo(cx + hwFar, yFar)
-      path.lineTo(cx + hwNear, yNear)
-      path.lineTo(cx - hwNear, yNear)
+    function trap (path, cxF, cxN, hwFar, hwNear, yFar, yNear) {
+      path.moveTo(cxF - hwFar, yFar)
+      path.lineTo(cxF + hwFar, yFar)
+      path.lineTo(cxN + hwNear, yNear)
+      path.lineTo(cxN - hwNear, yNear)
       path.closePath()
     }
 
@@ -138,7 +143,10 @@
       geo()
       var W = run.W
       var H = run.H
-      var shift = (lanePos - 1) * 26
+      // the bend ahead eases in, so a curve never jumps
+      var bt = bend(Z + 20) - bend(Z)
+      b0 += (bt - b0) * Math.min(1, dt * 3)
+      var shift = (lanePos - 1) * 26 - b0 * 60
       // sky + far panorama (opaque), cover so no seams; shifts a little with the lane
       var cf = 'lib:mojo-chase/cfar/' + th.far
       c.fillStyle = '#BFE6FF'
@@ -189,8 +197,10 @@
         var yn = Y(pn)
         var yf = Y(pf)
         if (even) gE.rect(0, yf, W, yn - yf + 1)
-        trap(even ? kA : kB, cx0, rw * 1.08 * pf, rw * 1.08 * pn, yf, yn)
-        trap(even ? rA : rB, cx0, rw * pf, rw * pn, yf, yn)
+        var cf0 = CX(pf)
+        var cn0 = CX(pn)
+        trap(even ? kA : kB, cf0, cn0, rw * 1.08 * pf, rw * 1.08 * pn, yf, yn)
+        trap(even ? rA : rB, cf0, cn0, rw * pf, rw * pn, yf, yn)
         if (even) {
           var da = Math.max(-2, start + b * BAND + 0.2)
           var db = Math.min(DMAX, start + (b + 1) * BAND - 0.2)
@@ -201,10 +211,12 @@
             var si
             for (si = 0; si < 2; si++) {
               var lx = xs[si] * rw
-              dd.moveTo(cx0 + lx * pb - 3 * pb, Y(pb))
-              dd.lineTo(cx0 + lx * pb + 3 * pb, Y(pb))
-              dd.lineTo(cx0 + lx * pa + 3 * pa, Y(pa))
-              dd.lineTo(cx0 + lx * pa - 3 * pa, Y(pa))
+              var cb = CX(pb)
+              var ca = CX(pa)
+              dd.moveTo(cb + lx * pb - 3 * pb, Y(pb))
+              dd.lineTo(cb + lx * pb + 3 * pb, Y(pb))
+              dd.lineTo(ca + lx * pa + 3 * pa, Y(pa))
+              dd.lineTo(ca + lx * pa - 3 * pa, Y(pa))
               dd.closePath()
             }
           }
@@ -263,10 +275,10 @@
       if (y > run.H + 120) return
       var o = it.o
       if (it.kind === 'prop') {
-        var px = G.cx + o.side * G.rw * o.off * p
+        var px = CX(p) + o.side * G.rw * o.off * p
         run.spr(c, o.k, px, y, G.rw * 0.9 * o.sc * p, G.rw * 1.0 * o.sc * p, { anchor: 'bottom' })
       } else if (it.kind === 'ent') {
-        var ex = G.cx + (o.lane - 1) * LS() * p
+        var ex = CX(p) + (o.lane - 1) * LS() * p
         var sz = G.rw * 0.46 * p
         if (o.st === 1) {
           // knocked away: tumble sideways and fade
@@ -285,10 +297,11 @@
         var hw = G.rw * 1.0 * p
         var h = G.rw * 0.95 * p
         var fin = it.kind === 'finish'
+        var gcx = CX(p)
         c.fillStyle = '#FFFFFF'
-        c.fillRect(G.cx - hw - 8 * p, y - h, 14 * p, h)
-        c.fillRect(G.cx + hw - 6 * p, y - h, 14 * p, h)
-        var bx = G.cx - hw
+        c.fillRect(gcx - hw - 8 * p, y - h, 14 * p, h)
+        c.fillRect(gcx + hw - 6 * p, y - h, 14 * p, h)
+        var bx = gcx - hw
         var by = y - h - 6 * p
         var bh = h * 0.34
         if (fin) {
@@ -304,10 +317,10 @@
           run.rrect(c, bx, by, hw * 2, bh, 12 * p)
           c.fill()
           c.fillStyle = '#13318A'
-          c.font = '700 ' + Math.max(8, 30 * p) + 'px Fredoka,Nunito,sans-serif'
+          c.font = '700 ' + Math.max(10, 52 * p) + 'px Fredoka,Nunito,sans-serif'
           c.textAlign = 'center'
           c.textBaseline = 'middle'
-          c.fillText('SOAL!', G.cx, by + bh / 2)
+          c.fillText('SOAL!', gcx, by + bh / 2)
         }
       }
     }
@@ -321,7 +334,8 @@
       c.ellipse(px, G.ny + 4, sz * 0.46, sz * 0.09, 0, 0, 6.3)
       c.fill()
       var alpha = run.hitT > 0 && !run.reduced() ? (Math.floor(run.t * 12) % 2 ? 0.45 : 1) : 1
-      run.spr(c, lvl.veh, px, G.ny + bob, sz, sz * 0.86, { anchor: 'bottom', rot: tilt, alpha: alpha })
+      // leans into the curve ahead a little, on top of the lane-change tilt
+      run.spr(c, lvl.veh, px, G.ny + bob, sz, sz * 0.86, { anchor: 'bottom', rot: tilt + b0 * 0.05, alpha: alpha })
       if (run.boostT > 0 && !run.reduced()) run.spr(c, 'fx:speed', px, G.ny - sz * 0.1, sz * 1.1, sz * 0.8, { alpha: 0.5 })
     }
 
