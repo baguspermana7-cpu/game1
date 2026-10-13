@@ -6,6 +6,9 @@ import puppeteer from 'puppeteer'
 const N = +(process.argv[2] || 400)
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
 const p = await b.newPage(); const errors = []
+// the journey quiz card (blippi-trip-ui.js) is the second place a question is shown (owner 2026-10-13 "Soal nggak ada gambarnya"):
+// catch its UI object as it registers so the gate can draw the same questions through it
+await p.evaluateOnNewDocument(() => { let bt; Object.defineProperty(window, 'BlippiTrip', { configurable: true, get: () => bt, set: v => { const o = v.setUI; v.setUI = u => { window.__tripUI = u; o(u) }; bt = v } }) })
 p.on('pageerror', e => errors.push(String(e)))
 await p.setViewport({ width: 1280, height: 720 })
 await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' })
@@ -28,6 +31,19 @@ const res = await p.evaluate(async (N) => {
     if (broken.length) out.fails.push('picture did not load: ' + k + ' ' + broken[0])
     if (q.scene && q.scene.mode === 'clock' && !clock) out.fails.push('clock question without the clock: "' + q.prompt + '"')
     if (ov) ov.remove()
+    // the same question on the journey quiz card
+    const UI = window.__tripUI
+    if (!UI) { out.fails.push('journey quiz UI not reachable'); continue }
+    if (!document.querySelector('.tscr.trun.on canvas, [data-trip=run] canvas')) UI.showRun(BlippiTrip.D.byId['darat-1'])
+    UI.quiz({ q, gate: 0 })
+    const tc = document.querySelector('.tquiz:last-of-type .tqcard')
+    const timgs = tc ? [...tc.querySelectorAll('img')].filter(im => !im.closest('.tqhd')) : []
+    await Promise.all(timgs.map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; setTimeout(r, 3000) })))
+    const tclock = !!(tc && tc.querySelector('svg[aria-label="jam"]')), tbroken = timgs.filter(im => !im.naturalWidth).map(im => im.getAttribute('src'))
+    if (!timgs.length && !tclock) out.fails.push('journey card, no picture: ' + k + ' "' + q.prompt + '"')
+    if (tbroken.length) out.fails.push('journey card, picture did not load: ' + k + ' ' + tbroken[0])
+    if (q.scene && q.scene.mode === 'clock' && !tclock) out.fails.push('journey card, clock question without the clock: "' + q.prompt + '"')
+    document.querySelectorAll('.tquiz').forEach(e => e.remove())
   }
   return out
 }, N).catch(e => ({ fails: ['evaluate: ' + e.message], kinds: {}, n: 0 }))

@@ -8,6 +8,10 @@
   var T = w.BlippiTrip
   var D0 = 7
   var DMAX = 48
+  // owner 2026-10-13 "superslow" + "object terlalu rapat": the world streams SPD world units per level-second (the run still
+  // lasts the same), and items are drawn only up to EMAX ahead, so the road reads fast and the horizon is not a pile of things
+  var SPD = 2.2
+  var EMAX = 30
   var BAND = 1.8
   var OBST = ['cone', 'crate', 'barrel', 'tyres-2']
   var KEYS = { coin: 'lib:mojo-chase/items/coin', star: 'lib:mojo-chase/items/star', boost: 'lib:mojo-chase/items/boost-pad' }
@@ -32,12 +36,12 @@
     var lanePos = 1
     var tilt = 0
     var Z = 0
-    var gateZ = lvl.gates.map(function (f) { return f * run.len })
+    var gateT = lvl.gates.map(function (f) { return f * run.len })
     var G = { hy: 0, ny: 0, rw: 0, cx: 0 }
 
-    function nearGate (z) { return gateZ.some(function (g) { return Math.abs(g - z) < 1.3 }) || Math.abs(run.len - z) < 1.3 }
+    function nearGate (z) { return gateT.some(function (g) { return Math.abs(g - z) < 1.6 }) || Math.abs(run.len - z) < 1.6 }
     // ----- level generation (deterministic from the run seed)
-    var step = 3.3 - 1.7 * lvl.dens
+    var step = 4.4 - 1.6 * lvl.dens
     var z = 3.5
     while (z < run.len - 2) {
       if (!nearGate(z)) {
@@ -46,7 +50,7 @@
           var kind = OBST[(r() * OBST.length) | 0]
           var l1 = (r() * 3) | 0
           ents.push({ z: z, lane: l1, type: kind, st: 0, t: 0 })
-          if (r() < lvl.dens * 0.4) {
+          if (r() < lvl.dens * 0.25) {
             var l2 = (l1 + 1 + ((r() * 2) | 0)) % 3
             ents.push({ z: z, lane: l2, type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
           }
@@ -65,13 +69,16 @@
       }
       z += step * (0.8 + r() * 0.5)
     }
+    ents.forEach(function (e) { e.z *= SPD })
     ents.sort(function (a, b) { return a.z - b.z })
+    var gateZ = gateT.map(function (g) { return g * SPD })
+    var endZ = run.len * SPD
     var pz = 1
-    while (pz < run.len + 6) {
+    while (pz < endZ + 6) {
       var key = th.props[(r() * th.props.length) | 0]
       props.push({ z: pz, side: -1, k: 'lib:mojo-chase/props/' + key, off: 1.35 + r() * 0.9, sc: 0.8 + r() * 0.5 })
       props.push({ z: pz + r() * 0.8, side: 1, k: 'lib:mojo-chase/props/' + th.props[(r() * th.props.length) | 0], off: 1.35 + r() * 0.9, sc: 0.8 + r() * 0.5 })
-      pz += 0.9 + r() * 0.7
+      pz += 1.5 + r() * 1.1
     }
     props.sort(function (a, b) { return a.z - b.z })
     run.starTotal = Math.round(collectibles * 0.55)
@@ -88,7 +95,7 @@
     var LS = function () { return G.rw * 0.62 }
 
     function update (dt) {
-      Z = run.progress * run.len
+      Z = run.progress * endZ
       var m = run.in.moves
       while (m.length) {
         var mv = m.shift()
@@ -223,8 +230,8 @@
       while (pi0 < props.length && props[pi0].z - Z < -1.2) pi0++
       for (i = pi0; i < props.length; i++) { var pr = props[i]; var dd2 = pr.z - Z; if (dd2 >= DMAX) break; drawList.push(item(dd2, 'prop', pr)) }
       while (ei0 < ents.length && ents[ei0].z - Z < -1.2) ei0++
-      for (i = ei0; i < ents.length; i++) { var en = ents[i]; var de = en.z - Z; if (de >= DMAX) break; if (en.st !== 2) drawList.push(item(de, 'ent', en)) }
-      for (i = 0; i < gateZ.length + 1; i++) { var gz = i < gateZ.length ? gateZ[i] : run.len; var dg = gz - Z; if (dg > -1.2 && dg < DMAX) drawList.push(item(dg, i < gateZ.length ? 'gate' : 'finish', { z: gz })) }
+      for (i = ei0; i < ents.length; i++) { var en = ents[i]; var de = en.z - Z; if (de >= EMAX) break; if (en.st !== 2) drawList.push(item(de, 'ent', en)) }
+      for (i = 0; i < gateZ.length + 1; i++) { var gz = i < gateZ.length ? gateZ[i] : endZ; var dg = gz - Z; if (dg > -1.2 && dg < DMAX) drawList.push(item(dg, i < gateZ.length ? 'gate' : 'finish', { z: gz })) }
       drawList.sort(sortFar)
       var playerDrawn = false
       for (i = 0; i < drawList.length; i++) {

@@ -378,5 +378,5 @@
     else if (kind === 'tick') { B.sfx('tap') }
   }
 
-  w.BlippiKit = { juice: juice, glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land, waterPath: waterPath, waterBody: waterBody, ripple: ripple, ask: ask, ghost: ghost, driver: driver, stats: stats }
+  w.BlippiKit = { juice: juice, glow: glow, socket: socket, hand: hand, dragCard: dragCard, within: within, land: land, waterPath: waterPath, waterBody: waterBody, ripple: ripple, ask: ask, clockSVG: clockSVG, nounKey: nounKey, amount: amount, ghost: ghost, driver: driver, stats: stats }
 })(window)

@@ -101,6 +101,11 @@ body.trip-on #stage{visibility:hidden}
 .tqg.leave{opacity:.45}
 .tqg img{width:clamp(24px,4.4vw,38px);height:clamp(24px,4.4vw,38px);object-fit:contain}
 .tplus{font:700 30px/1 Fredoka,sans-serif;color:#5B3FA8}
+.tqclock{width:clamp(110px,22vh,170px);height:clamp(110px,22vh,170px);flex:0 0 auto}
+.tqrow img{width:clamp(44px,8vh,72px);height:clamp(44px,8vh,72px);object-fit:contain}
+.tqrow img.leave{opacity:.35;filter:grayscale(1)}
+.tqq{display:inline-block;width:clamp(44px,8vh,72px);height:clamp(44px,8vh,72px);border-radius:16px;background:#FFF3C4;border:4px solid #13318A;color:#13318A;font:900 clamp(28px,5vh,44px)/clamp(36px,6.4vh,64px) Fredoka,Nunito,sans-serif;text-align:center}
+.tqamt{align-items:flex-end;transform-origin:top center}
 .tqfb{margin:0;min-height:2.6em;text-align:center;font:800 clamp(15px,2vw,21px)/1.3 Nunito,sans-serif;color:#B4510F}
 .tqch{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px}
 .tans{min-height:72px;padding:10px 14px;border-radius:26px;font:700 clamp(22px,3vw,34px)/1.1 Fredoka,Nunito,sans-serif;color:#13318A;background:linear-gradient(#FFFFFF,var(--sky));border:5px solid #fff;box-shadow:0 6px 0 #9CC0E8,0 10px 14px rgba(20,40,100,.25);transition:transform .12s}

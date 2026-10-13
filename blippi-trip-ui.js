@@ -236,21 +236,36 @@
   }
 
   /* ---------- question card ---------- */
+  // the picture of every question (owner 2026-10-13 "Soal nggak ada gambarnya"): the same pictures as BlippiKit.ask in the
+  // missions - the clock, the counted things, the pattern strip, the amounts of a number question, or the question's own picture
+  function src (key) { return /^assets\//.test(key) ? key + '.webp' : /^(w6-|w3-|veh-|pc2-|w5-|cast-|pc-|prop-)/.test(key) ? 'assets/blippi/' + key + '.webp' : T.url('lib:' + key) }
   function icons (parent, q) {
-    var sc = q.scene
-    if (!sc || !sc.groups || !sc.groups.length || sc.mode === 'none') {
-      if (q.pic) imgEl('lib:' + q.pic, 'tqpic', parent)
-      return
+    var K = w.BlippiKit || {}, sc = q.scene, box
+    if (sc && sc.mode === 'clock' && K.clockSVG) {
+      box = el('div', 'tqclock', parent); box.innerHTML = K.clockSVG(sc.h, sc.m || 0)
+    } else if (sc && sc.groups && sc.groups.length && sc.mode !== 'none') {
+      var row = el('div', 'tqicons', parent)
+      sc.groups.forEach(function (g, gi) {
+        if (gi > 0 && g.role !== 'leave') el('b', 'tplus', row, '+')
+        var grp = el('span', 'tqg' + (g.role === 'leave' ? ' leave' : ''), row)
+        for (var k = 0; k < Math.min(10, g.n || 0); k++) imgEl(src(g.key), '', grp)
+      })
+    } else if (q.row && q.row.length) {
+      box = el('div', 'tqicons tqrow', parent)
+      q.row.forEach(function (key) {
+        if (key === '+') { el('b', 'tplus', box, '+'); return }
+        var fade = key.charAt(0) === '-'
+        imgEl('assets/blippi/' + (fade ? key.slice(1) : key) + '.webp', fade ? 'leave' : '', box)
+      })
+      if (!q.rowNoBox) el('b', 'tqq', box, '?')
+    } else if ((/^(biggest|smallest)$/.test(q.kind) || q.kind === 'pattern') && K.amount && K.nounKey) {
+      var nums = q.kind === 'pattern' ? (q.prompt.match(/\d+/g) || []) : q.choices, key = K.nounKey(q.noun)
+      box = el('div', 'tqicons tqamt', parent)
+      nums.forEach(function (v) { box.appendChild(K.amount(+v, key, 130, true)) })
+      if (q.kind === 'pattern') el('b', 'tqq', box, '?')
+    } else if (q.pic) {
+      imgEl(src(q.pic), 'tqpic', parent)
     }
-    var row = el('div', 'tqicons', parent)
-    sc.groups.forEach(function (g, gi) {
-      if (gi > 0 && sc.mode === 'add') el('b', 'tplus', row, '+')
-      if (gi > 0 && sc.mode === 'sub') el('b', 'tplus', row, '−')
-      var grp = el('span', 'tqg' + (g.role === 'leave' ? ' leave' : ''), row)
-      var n = Math.min(10, g.n || 0)
-      var k
-      for (k = 0; k < n; k++) imgEl('lib:' + g.key, '', grp)
-    })
   }
   function quiz (qz) {
     var q = qz.q
