@@ -175,15 +175,16 @@ body.trip-on #stage{visibility:hidden}
 @keyframes tanim{from{background-position:0 0}to{background-position:100% 0}}
 .tlpic .tanim{width:auto;height:min(90px,80%);max-width:90%}
 .tmark .tanim{width:auto;height:46px;max-width:56px}
+.tcicon .tanim{width:auto;height:min(150px,100%);max-width:80%}
 .tcbar{flex:0 0 auto;display:flex;align-items:center;gap:clamp(10px,2vw,22px);margin-top:clamp(8px,1.4vh,14px);padding:10px clamp(12px,2vw,22px) 10px 10px;border-radius:30px;
   background:radial-gradient(120% 140% at 15% 50%,#3B2A86 0,#1B1650 55%,#0E0B33 100%);border:5px solid #fff;box-shadow:0 8px 18px rgba(20,10,60,.35);color:#fff;position:relative;overflow:hidden}
 .tcbar::before{content:"";position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 12% 22%,#fff,transparent),radial-gradient(1px 1px at 38% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 62% 30%,#FFE9A8,transparent),radial-gradient(1px 1px at 84% 64%,#fff,transparent),radial-gradient(1.2px 1.2px at 92% 18%,#fff,transparent);opacity:.85;pointer-events:none}
 .tcbig{position:relative;flex:0 0 auto;width:clamp(92px,15vh,140px);height:clamp(92px,15vh,140px);display:flex;align-items:center;justify-content:center;border-radius:50%;
   background:radial-gradient(circle at 50% 60%,rgba(140,200,255,.45),rgba(140,200,255,0) 68%);animation:tfloat 3.2s ease-in-out infinite}
 .tcbig .tanim{width:auto;height:88%;max-width:96%}
-.tctx{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.tctx em{font:700 clamp(14px,1.8vw,18px)/1 Nunito,sans-serif;font-style:normal;color:#BFD8FF;letter-spacing:.04em;text-transform:uppercase}
-.tctx b{font:700 clamp(22px,3vw,34px)/1.05 Fredoka,Nunito,sans-serif;color:#FFE27A;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.tcbar .tctx{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tcbar .tctx em{font:700 clamp(14px,1.8vw,18px)/1 Nunito,sans-serif;font-style:normal;color:#BFD8FF;letter-spacing:.04em;text-transform:uppercase}
+.tcbar .tctx b{font:700 clamp(22px,3vw,34px)/1.05 Fredoka,Nunito,sans-serif;color:#FFE27A;text-shadow:0 2px 0 rgba(0,0,0,.35)}
 .tcgo{position:relative;flex:0 0 auto;min-width:0;min-height:58px;font-size:clamp(15px,1.9vw,21px)}
 @keyframes tfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .tcpick{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom));background:rgba(8,6,36,.62);animation:tfade .22s ease-out}
@@ -203,7 +204,7 @@ body.trip-on #stage{visibility:hidden}
 .tctpic .tanim{width:auto;height:100%;max-width:100%}
 .tct i{font:700 clamp(12px,1.4vw,15px)/1.15 Nunito,sans-serif;font-style:normal;text-align:center}
 @media (hover:hover){.tct:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.5)}}
-@media (max-height:460px){.tcbar{padding:6px 12px 6px 6px;margin-top:6px}.tcbig{width:72px;height:72px}.tctx b{font-size:22px}.tcgo{min-height:50px}}
+@media (max-height:460px){.tcbar{padding:6px 12px 6px 6px;margin-top:6px}.tcbig{width:72px;height:72px}.tcbar .tctx b{font-size:22px}.tcgo{min-height:50px}}
 @media (prefers-reduced-motion:reduce){.tanim,.tcbig,.tct.chose,.tcpcard{animation:none}}
 /* all 25 craft on one screen, like the owner's 5 x 5 sheet */
 @media (min-width:640px){.tcgrid{grid-template-columns:repeat(5,1fr)}.tct{padding:6px 4px 6px}.tctpic{height:clamp(46px,9.5vh,96px)}.tct i{font-size:clamp(11px,1.3vw,15px)}}

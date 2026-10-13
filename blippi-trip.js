@@ -630,7 +630,7 @@
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [] } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }

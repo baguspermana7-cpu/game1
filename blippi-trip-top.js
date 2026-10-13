@@ -8,6 +8,11 @@
   'use strict'
   var T = w.BlippiTrip
   var ROCKET = 'lib:mojo-chase/items/rocket'
+  // owner art (Dunia gt/asteroid, white sticker ring removed): a dark cratered rock that reads as danger against the purple sky;
+  // the drawn lavender rock is the fallback
+  var ROCK = 'sp:asteroid'
+  // world units (about seconds at speed 1) at the start with no obstacles: the how-to chip shows for 3.6 s
+  var GRACE = 6.5
 
   function tileCanvas (size, fn) {
     var cv = w.document.createElement('canvas')
@@ -25,7 +30,7 @@
     } else {
       // the child's chosen animated craft (BlippiSpace); the old rocket art stays as the fallback
       var cr = T.craft && T.craft()
-      a.push(ROCKET, 'lib:nature/moon-stars')
+      a.push(ROCKET, 'lib:nature/moon-stars', ROCK)
       if (cr) a.push('sp:' + cr.id)
     }
     return a
@@ -60,6 +65,7 @@
     while (z < run.len - 2) {
       if (!nearGate(z)) {
         var roll = r()
+        if (z < GRACE) roll = 1 // the opening is a star trail only: the child learns to steer while the how-to chip is up
         if (roll < lvl.dens) {
           var x1 = 0.14 + r() * 0.72
           ents.push({ z: z, x: x1, type: obsKeys[(r() * obsKeys.length) | 0], st: 0, t: 0, ph: r() * 6, sc: 0.9 + r() * 0.5 })
@@ -521,13 +527,17 @@
         c.beginPath(); c.ellipse(W * 0.5, cy, rad * 1.6, rad * 0.4, -0.3, 0, 6.3); c.stroke()
       }
     }
+    // QA: where the first obstacle sits, in world units (the opening must stay clear while the how-to chip is up)
+    function firstObs () { var o = ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' })[0]; return o ? o.z : Infinity }
     function drawObs (c, e, x, y, sz, alpha, rot) {
       if (!water) {
-        c.save(); c.globalAlpha = alpha; c.translate(x, y); c.rotate(rot + e.ph + run.t * (0.5 + (e.ph % 1)) * (e.ph > 3 ? -1 : 1)); c.drawImage(rock, -sz / 2, -sz / 2, sz, sz); c.restore()
+        var ang = rot + e.ph + run.t * (0.5 + (e.ph % 1)) * (e.ph > 3 ? -1 : 1)
+        if (T.img(ROCK)) { run.spr(c, ROCK, x, y, sz * 1.15, sz * 1.15, { alpha: alpha, rot: ang }); return }
+        c.save(); c.globalAlpha = alpha; c.translate(x, y); c.rotate(ang); c.drawImage(rock, -sz / 2, -sz / 2, sz, sz); c.restore()
       } else run.spr(c, eSprite(e), x, y, sz, sz, { alpha: alpha, rot: rot })
     }
 
-    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null } }
+    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs() }
   }
   T.engine('water', { assets: function (l) { return assets(l, 'water') }, make: function (run) { return make(run, 'water') } })
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })

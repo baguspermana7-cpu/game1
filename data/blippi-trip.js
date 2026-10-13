@@ -6,7 +6,7 @@
   var CATS = [
     { id: 'darat', name: 'DARAT', sub: 'Tiga jalur, geser kiri dan kanan', tint: '#CDEFE0', ink: '#1F6B4E', icon: 'race:school-bus/blippi_peek-front-three-quarter', engine: 'land', ctl: 'Geser atau ketuk kiri-kanan' },
     { id: 'udara', name: 'UDARA', sub: 'Pesawat laut lepas landas ke langit', tint: '#CFE6FB', ink: '#1D5FD4', icon: 'race:floatplane/blippi_peek-front-three-quarter', engine: 'air', ctl: 'Seret naik-turun' },
-    { id: 'angkasa', name: 'LUAR ANGKASA', sub: 'Roket menyusuri bintang dan planet', tint: '#E3D7F7', ink: '#5B3FA8', icon: 'lib:mojo-chase/items/rocket', engine: 'space', ctl: 'Seret kiri-kanan' },
+    { id: 'angkasa', name: 'LUAR ANGKASA', sub: 'Pesawat angkasa menyusuri bintang dan planet', tint: '#E3D7F7', ink: '#5B3FA8', icon: 'lib:mojo-chase/items/rocket', engine: 'space', ctl: 'Seret kiri-kanan' },
     { id: 'air', name: 'AIR', sub: 'Berlayar di laut, pulau dan es', tint: '#FFDCCB', ink: '#B4510F', icon: 'race:tugboat/blippi_peek-front-three-quarter', engine: 'water', ctl: 'Seret kiri-kanan' }
   ]
   // theme: palette + scenery keys used by the engine; speed 1 = relaxed; dens = obstacle density 0..1

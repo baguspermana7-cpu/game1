@@ -114,7 +114,8 @@
       b.style.setProperty('--tint', c.tint)
       b.style.setProperty('--ink', c.ink)
       var ic = el('span', 'tcicon', b)
-      imgEl(c.icon, '', ic)
+      var ccr = c.id === 'angkasa' && T.craft ? T.craft() : null // the child's own craft, moving, instead of the stock rocket
+      if (ccr) anim(ic, ccr, false); else imgEl(c.icon, '', ic)
       var tx = el('span', 'tctx', b)
       el('b', '', tx, c.name)
       el('em', '', tx, c.sub)

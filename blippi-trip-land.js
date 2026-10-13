@@ -11,6 +11,8 @@
   // owner 2026-10-13 "superslow" + "object terlalu rapat": the world streams SPD world units per level-second (the run still
   // lasts the same), and items are drawn only up to EMAX ahead, so the road reads fast and the horizon is not a pile of things
   var SPD = 2.2
+  // world units (about seconds at speed 1) at the start with no obstacles: the how-to chip shows for 3.6 s
+  var GRACE = 6.5
   var EMAX = 30
   var BAND = 1.8
   var OBST = ['cone', 'crate', 'barrel', 'tyres-2']
@@ -46,6 +48,7 @@
     while (z < run.len - 2) {
       if (!nearGate(z)) {
         var roll = r()
+        if (z < GRACE) roll = 1 // the opening is a coin line only: the child learns the lanes while the how-to chip is up
         if (roll < lvl.dens) {
           var kind = OBST[(r() * OBST.length) | 0]
           var l1 = (r() * 3) | 0
@@ -407,7 +410,7 @@
       if (run.boostT > 0 && !run.reduced()) run.spr(c, 'fx:speed', px, G.ny - sz * 0.1, sz * 1.1, sz * 0.8, { alpha: 0.5 })
     }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, ents: ents }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, ents: ents, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
   }
   T.engine('land', { assets: assets, make: make })
 })(window)

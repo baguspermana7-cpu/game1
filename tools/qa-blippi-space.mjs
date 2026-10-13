@@ -18,6 +18,7 @@ for (const c of C) for (const [f, m] of [[`assets/space/${c.id}.webp`, c.play], 
   ok(fs.existsSync(f), `missing ${f}`)
   if (fs.existsSync(f)) ok(webpW(f) === m[0] * m[2], `${f} is ${webpW(f)} px wide, frames say ${m[0] * m[2]}`)
 }
+ok(fs.existsSync('assets/space/asteroid.webp'), 'missing assets/space/asteroid.webp')
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
 const errs = []
 for (const [w, h] of [[1280, 800], [844, 390]]) {
@@ -40,10 +41,40 @@ for (const [w, h] of [[1280, 800], [844, 390]]) {
   ok(await p.evaluate(() => Blippi.state().trip.craft) === last, `${w}: the choice was not saved`)
   await p.reload({ waitUntil: 'load' })
   ok(await p.evaluate(() => BlippiTrip.craft().id) === last, `${w}: the choice did not survive a reload`)
+  // the category screen: the space tile shows the chosen craft moving, and no craft-bar style leaks onto the tiles' text
+  // (2026-10-14: the bar's .tctx rules painted every tile title pale yellow on its pale tile)
+  await p.evaluate(() => BlippiTrip.open()); await sleep(500)
+  ok(await p.evaluate(id => { const e = document.querySelector('.tcat[data-cat=angkasa] .tanim'); return !!e && getComputedStyle(e).backgroundImage.includes(id) }, last), `${w}: the space tile does not show the chosen craft`)
+  const ink = await p.evaluate(() => [...document.querySelectorAll('.tcat')].map(t => { const c = document.createElement('i'); c.style.color = t.style.getPropertyValue('--ink'); document.body.appendChild(c); const want = getComputedStyle(c).color; c.remove(); return [t.getAttribute('data-cat'), getComputedStyle(t.querySelector('.tctx b')).color, want] }))
+  ink.forEach(([cat, got, want]) => ok(got === want, `${w}: ${cat} tile title is ${got}, its ink is ${want}`))
   await p.evaluate(() => { BlippiTrip.open('angkasa'); BlippiTrip.start('angkasa-1', { seed: 3 }) })
   await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
   ok(await p.evaluate(id => !!BlippiTrip.img('sp:' + id), last), `${w}: the run did not load the chosen craft`)
+  ok(await p.evaluate(() => !!BlippiTrip.img('sp:asteroid')), `${w}: the run did not load the asteroid art`)
+  if (w === 1280) {
+    // owner rule: no white sticker ring. Opaque pixels within 3 px of transparency must not be near-white.
+    const ring = await p.evaluate(() => { const im = BlippiTrip.img('sp:asteroid'); if (!im) return 1; const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data, W = c.width, H = c.height, A = (i, j) => i < 0 || j < 0 || i >= W || j >= H ? 0 : d[(j * W + i) * 4 + 3]; let n = 0, wh = 0
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = (j * W + i) * 4; if (d[k + 3] < 120) continue; let near = false; for (let dy = -3; dy <= 3 && !near; dy++) for (let dx = -3; dx <= 3; dx++) if (A(i + dx, j + dy) < 40) { near = true; break } if (!near) continue; n++; if (Math.min(d[k], d[k + 1], d[k + 2]) > 215) wh++ }
+      return wh / Math.max(1, n) })
+    ok(ring < 0.05, `asteroid art has a white ring (${(ring * 100).toFixed(1)}% of its rim is near-white)`)
+  }
   ok(await p.evaluate(id => getComputedStyle(document.querySelector('.tmark .tanim')).backgroundImage.includes(id), last), `${w}: the progress mark is not the chosen craft`)
+  await p.close()
+}
+// the opening of every road / space level is obstacle free while the how-to chip is up (2026-10-14: a crash 2.5 s in).
+// Checked on the generated level for 12 seeds each: the first obstacle sits at least 6 world units (about 6 s at speed 1) in.
+{
+  const p = await b.newPage(); await p.setViewport({ width: 844, height: 390 })
+  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' })
+  for (const id of ['darat-1', 'darat-4', 'air-1', 'air-4', 'angkasa-1', 'angkasa-4']) {
+    let worst = Infinity
+    for (let seed = 1; seed <= 12; seed++) {
+      await p.evaluate((id, seed) => { BlippiTrip.open(id.split('-')[0]); BlippiTrip.start(id, { seed }) }, id, seed)
+      await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().obs0 != null, { timeout: 30000 })
+      worst = Math.min(worst, await p.evaluate(() => BlippiTrip.qa().obs0))
+    }
+    ok(worst >= 6, `${id}: an obstacle ${worst.toFixed(1)} units in, before the child has learned to steer`)
+  }
   await p.close()
 }
 ok(!errs.length, 'page errors / failed loads: ' + errs.slice(0, 3).join(' | '))
