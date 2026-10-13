@@ -88,7 +88,6 @@
     run.starTotal = Math.round(collectibles * 0.5)
 
     // pre-rendered tiles
-    var pat = {}
     var nebBig = null
     var nebKey = ''
     var waves = null
@@ -163,7 +162,6 @@
       }
     }
     tiles()
-    function pt (c, k, tile) { return pat[k] || (pat[k] = c.createPattern(tile, 'repeat')) }
 
     function geo () {
       G.ps = Math.min(run.W * 0.24, run.H * 0.2)
@@ -247,30 +245,57 @@
       }
     }
 
+    // a wave band = its tile baked ONCE into a screen-plus-one-tile canvas, then blitted at the scrolled offset: one drawImage
+    // per band (a pattern fill under a moving transform cost ~100 ms a frame on a slow tablet: 4 fps, owner "superslow")
+    var bandCv = {}
+    var bgCv = null
     function band (c, key, tile, size, speed, dxk, extra) {
+      var k = run.dpr * run.scale
+      var bw = Math.ceil(run.W / size + 1) * size
+      var bh = Math.ceil(run.H / size + 1) * size
+      var id = key + bw + 'x' + bh + '@' + k
+      var bc = bandCv[key]
+      if (!bc || bc.id !== id) {
+        var cv = w.document.createElement('canvas')
+        cv.width = Math.ceil(bw * k)
+        cv.height = Math.ceil(bh * k)
+        var x = cv.getContext('2d')
+        x.scale(k, k)
+        x.fillStyle = x.createPattern(tile, 'repeat')
+        x.fillRect(0, 0, bw, bh)
+        bc = bandCv[key] = { id: id, cv: cv }
+      }
+      var tx = (((0.5 - px) * dxk) % size) + run.t * (extra ? 0 : speed * 4)
       var oy = (Z * G.pyu * speed + (extra || 0)) % size
-      c.save()
-      c.translate((((0.5 - px) * dxk) % size) + run.t * (extra ? 0 : speed * 4), oy)
-      c.fillStyle = pt(c, key, tile)
-      c.fillRect(-size * 2, -size * 2, run.W + size * 4, run.H + size * 4)
-      c.restore()
+      c.drawImage(bc.cv, ((tx % size) + size) % size - size, ((oy % size) + size) % size - size, bw, bh)
     }
     function drawBgWater (c) {
       var W = run.W
       var H = run.H
-      // 1 deep-to-shallow: far (top) is the bright shallow horizon, near (bottom) the deep water
-      run.grad(c, 0, H, th.water[0], th.water[1])
-      // 2 warm sky reflection (sunset level): a glow that fades down the screen over BLUE water
-      if (th.glow) {
-        var gg = c.createLinearGradient(0, 0, 0, H * 0.75)
-        gg.addColorStop(0, th.glow); gg.addColorStop(1, 'rgba(255,150,80,0)')
-        c.fillStyle = gg
-        c.fillRect(0, 0, W, H * 0.75)
-        var sg = c.createRadialGradient(W * 0.5, H * 0.04, 4, W * 0.5, H * 0.04, W * 0.4)
-        sg.addColorStop(0, 'rgba(255,230,170,.55)'); sg.addColorStop(1, 'rgba(255,230,170,0)')
-        c.fillStyle = sg
-        c.fillRect(0, 0, W, H * 0.5)
+      // 1 deep-to-shallow water + 2 the warm sky reflection of a sunset level: both static, baked once per size into one opaque
+      // canvas (a full-screen gradient fill every frame was the other big cost on a slow tablet)
+      var k = run.dpr * run.scale
+      var bid = W + 'x' + H + '@' + k
+      if (!bgCv || bgCv.id !== bid) {
+        var cv = w.document.createElement('canvas')
+        cv.width = Math.ceil(W * k)
+        cv.height = Math.ceil(H * k)
+        var x = cv.getContext('2d')
+        x.scale(k, k)
+        run.grad(x, 0, H, th.water[0], th.water[1])
+        if (th.glow) {
+          var gg = x.createLinearGradient(0, 0, 0, H * 0.75)
+          gg.addColorStop(0, th.glow); gg.addColorStop(1, 'rgba(255,150,80,0)')
+          x.fillStyle = gg
+          x.fillRect(0, 0, W, H * 0.75)
+          var sg = x.createRadialGradient(W * 0.5, H * 0.04, 4, W * 0.5, H * 0.04, W * 0.4)
+          sg.addColorStop(0, 'rgba(255,230,170,.55)'); sg.addColorStop(1, 'rgba(255,230,170,0)')
+          x.fillStyle = sg
+          x.fillRect(0, 0, W, H * 0.5)
+        }
+        bgCv = { id: bid, cv: cv }
       }
+      c.drawImage(bgCv.cv, 0, 0, W, H)
       // 3 three wave bands at three speeds (slow broad swell, mid ripples, fast glints)
       band(c, 'w3', waves3, 340, 0.55, 18)
       band(c, 'w1', waves, 256, 0.9, 30)
