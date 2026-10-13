@@ -87,7 +87,7 @@
       var water = wl() - G.ps * 0.3
       var target = water + (steer - water) * lift
       var prev = py
-      py += (target - py) * Math.min(1, dt * 7)
+      py += (target - py) * Math.min(1, dt * 11)
       rot += ((py - prev) * 0.012 * (lift > 0.3 ? 1 : 0) - rot) * Math.min(1, dt * 6)
       rot = Math.max(-0.35, Math.min(0.35, rot))
       wobble = Math.max(0, wobble - dt)

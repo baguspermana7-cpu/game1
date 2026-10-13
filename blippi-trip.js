@@ -357,7 +357,7 @@
         run.in.ty = clamp(p.y, 0.04, 0.96)
         var dx = p.px - sx
         moved = Math.max(moved, Math.abs(dx), Math.abs(p.py - sy))
-        if (Math.abs(dx) > 34) { run.in.moves.push(dx > 0 ? 1 : -1); sx = p.px; moved = 99 }
+        if (Math.abs(dx) > 26) { run.in.moves.push(dx > 0 ? 1 : -1); sx = p.px; moved = 99 }
       },
       pu: function (e) {
         if (!run) return
@@ -405,8 +405,8 @@
     // held keys steer the free target (swipe/tap lanes are handled by the land engine from i.moves)
     if (i.kx) i.tx = clamp(i.tx + i.kx * dt * 0.9, 0.04, 0.96)
     if (i.ky) i.ty = clamp(i.ty + i.ky * dt * 0.9, 0.04, 0.96)
-    // gentle ease so a finger jump never snaps the vehicle
-    var k = Math.min(1, dt * 9)
+    // a light ease (the engines ease the vehicle again): two slow eases stacked lagged ~0.25 s behind the finger
+    var k = Math.min(1, dt * 22)
     i.x += (i.tx - i.x) * k
     i.y += (i.ty - i.y) * k
   }

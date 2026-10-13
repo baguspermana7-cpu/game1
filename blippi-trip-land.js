@@ -95,6 +95,10 @@
     // the far road sideways; the near road (p ~ 1) stays under the vehicle, so steering is unchanged and the curve only reads
     function bend (z) { return Math.sin(z * 0.05) * 0.7 + Math.sin(z * 0.13 + 1.3) * 0.3 }
     var b0 = 0
+    var puffs = []
+    var hz = null
+    var hzKey = ''
+    var puffT = 0
     function CX (p) { var f = Math.max(0, 1 - p); return G.cx + b0 * run.W * 0.75 * Math.pow(f, 1.6) }
     function Y (p) { return G.hy + (G.ny - G.hy) * p }
     var LS = function () { return G.rw * 0.62 }
@@ -106,7 +110,7 @@
         var mv = m.shift()
         lane = Math.max(0, Math.min(2, lane + mv))
       }
-      lanePos += (lane - lanePos) * Math.min(1, dt * 11)
+      lanePos += (lane - lanePos) * Math.min(1, dt * 15)
       tilt = (lane - lanePos) * -0.22
       var i
       for (i = 0; i < ents.length; i++) {
@@ -139,7 +143,9 @@
       path.closePath()
     }
 
+    var lastDt = 0.016
     function draw (c, dt) {
+      lastDt = dt
       geo()
       var W = run.W
       var H = run.H
@@ -147,6 +153,10 @@
       var bt = bend(Z + 20) - bend(Z)
       b0 += (bt - b0) * Math.min(1, dt * 3)
       var shift = (lanePos - 1) * 26 - b0 * 60
+      // a short shake on a bump (never under reduced motion)
+      var shk = run.hitT > 0.5 && !run.reduced() ? (run.hitT - 0.5) * 9 : 0
+      c.save()
+      if (shk) c.translate(Math.sin(run.t * 61) * shk, Math.cos(run.t * 47) * shk * 0.6)
       // sky + far panorama (opaque), cover so no seams; shifts a little with the lane
       var cf = 'lib:mojo-chase/cfar/' + th.far
       c.fillStyle = '#BFE6FF'
@@ -234,6 +244,15 @@
       c.fill(rB)
       c.fillStyle = 'rgba(255,255,255,.8)'
       c.fill(dd)
+      // horizon haze: the far road and the land melt into the sky (depth), one gradient strip
+      if (hzKey !== G.hy + ':' + G.ny) {
+        hzKey = G.hy + ':' + G.ny
+        hz = c.createLinearGradient(0, G.hy - 4, 0, G.hy + (G.ny - G.hy) * 0.22)
+        hz.addColorStop(0, th.haze || 'rgba(255,255,255,.55)')
+        hz.addColorStop(1, 'rgba(255,255,255,0)')
+      }
+      c.fillStyle = hz
+      c.fillRect(0, G.hy - 4, W, (G.ny - G.hy) * 0.22 + 4)
       // world objects far -> near
       var drawList = DL
       drawList.length = 0
@@ -252,6 +271,8 @@
         drawItem(c, it)
       }
       if (!playerDrawn) drawPlayer(c)
+      speedStreaks(c, dt)
+      c.restore()
       // speed lines on boost
       if (run.boostT > 0 && !run.reduced()) {
         c.strokeStyle = 'rgba(255,255,255,.4)'
@@ -325,6 +346,52 @@
       }
     }
 
+    // light speed streaks along both road edges (always, faint), streaming toward the camera
+    function speedStreaks (c, dt) {
+      if (run.reduced()) return
+      var a = 0.16 + (run.boostT > 0 ? 0.2 : 0)
+      c.strokeStyle = 'rgba(255,255,255,' + a + ')'
+      c.lineWidth = 2
+      c.beginPath()
+      var q
+      for (q = 0; q < 6; q++) {
+        var ph = ((run.t * run.rate * 0.9 + q / 6) % 1)
+        var p = 0.35 + ph * 0.75
+        var y = Y(p)
+        var side = q % 2 ? 1 : -1
+        var x = CX(p) + side * G.rw * (1.18 + (q % 3) * 0.07) * p
+        var len = 26 * p * (run.boostT > 0 ? 1.8 : 1)
+        c.moveTo(x, y)
+        c.lineTo(x + side * len * 0.35, y + len)
+      }
+      c.stroke()
+    }
+    // dust puffs from the rear wheels: drift toward the camera, grow and fade (a small pool, no allocation per frame)
+    function dust (c, dt, px, sz) {
+      if (run.reduced()) return
+      puffT -= dt
+      if (puffT <= 0 && run.state === 'play') {
+        puffT = run.boostT > 0 ? 0.03 : 0.07
+        var q
+        for (q = -1; q <= 1; q += 2) {
+          var pf = puffs.length < 28 ? {} : puffs.shift()
+          pf.x = px + q * sz * 0.36 + (Math.random() - 0.5) * 6; pf.y = G.ny - 4; pf.t = 0; pf.vx = q * (8 + Math.random() * 14); pf.r = 4 + Math.random() * 4
+          puffs.push(pf)
+        }
+      }
+      c.fillStyle = th.dust || 'rgba(236,228,210,1)'
+      var i
+      for (i = 0; i < puffs.length; i++) {
+        var u = puffs[i]
+        u.t += dt
+        var k = u.t / 0.6
+        if (k >= 1) continue
+        c.globalAlpha = (1 - k) * 0.45
+        c.beginPath(); c.arc(u.x + u.vx * u.t, u.y + u.t * 38, u.r + k * 14, 0, 6.3); c.fill()
+      }
+      c.globalAlpha = 1
+    }
+
     function drawPlayer (c) {
       var bob = Math.sin(run.t * 16) * 1.6
       var px = G.cx + (lanePos - 1) * LS()
@@ -333,6 +400,7 @@
       c.beginPath()
       c.ellipse(px, G.ny + 4, sz * 0.46, sz * 0.09, 0, 0, 6.3)
       c.fill()
+      dust(c, lastDt, px, sz)
       var alpha = run.hitT > 0 && !run.reduced() ? (Math.floor(run.t * 12) % 2 ? 0.45 : 1) : 1
       // leans into the curve ahead a little, on top of the lane-change tilt
       run.spr(c, lvl.veh, px, G.ny + bob, sz, sz * 0.86, { anchor: 'bottom', rot: tilt + b0 * 0.05, alpha: alpha })

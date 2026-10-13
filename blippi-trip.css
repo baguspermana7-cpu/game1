@@ -85,7 +85,7 @@ body.trip-on #stage{visibility:hidden}
 .thow.gone{opacity:0}
 .tarrows{position:absolute;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;padding:0 max(18px,env(safe-area-inset-left));pointer-events:none}
 .tarr{pointer-events:auto;width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.95),rgba(255,246,226,.85));border:5px solid #fff;box-shadow:0 6px 14px rgba(10,30,90,.35);color:#1D5FD4;transition:transform .12s}
-.tarr:active{transform:scale(.92)}
+.tarr:active,.tarr.hit{transform:scale(.9);background:radial-gradient(circle at 35% 28%,#fff,#FFE29A)}
 .tarr svg{width:48%;height:48%;fill:none;stroke:#1D5FD4;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
 /* question card + pause + result */
 .tquiz{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 14px max(12px,env(safe-area-inset-bottom));background:rgba(60,50,110,.38);animation:tfade .25s ease-out}

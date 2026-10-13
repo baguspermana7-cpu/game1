@@ -203,12 +203,19 @@
     // lane arrows (land only): real buttons, same effect as a swipe
     if (run.lvl.cat === 'darat') {
       var ar = el('div', 'tarrows', $.run)
-      var bl = btn('tarr', ar, 'Geser ke kiri', function () { run.in.moves.push(-1) })
+      // the lane moves on the PRESS (a click fires only on release, ~100-200 ms late on a tablet); the click that follows a
+      // press is ignored, so a keyboard Enter / Space still works through the click
+      var pdT = 0
+      var lanes = function (dir) { return function () { if (Date.now() - pdT > 700) run.in.moves.push(dir) } }
+      var press = function (b, dir) { b.addEventListener('pointerdown', function (e) { pdT = Date.now(); run.in.moves.push(dir); b.classList.add('hit'); setTimeout(function () { b.classList.remove('hit') }, 140); e.preventDefault() }) }
+      var bl = btn('tarr', ar, 'Geser ke kiri', lanes(-1))
       bl.innerHTML = LARR
       bl.setAttribute('data-act', 'kiri')
-      var br = btn('tarr', ar, 'Geser ke kanan', function () { run.in.moves.push(1) })
+      press(bl, -1)
+      var br = btn('tarr', ar, 'Geser ke kanan', lanes(1))
       br.innerHTML = RARR
       br.setAttribute('data-act', 'kanan')
+      press(br, 1)
     }
     // how-to chip for the first seconds
     var how = el('div', 'thow', $.run, cat.ctl)

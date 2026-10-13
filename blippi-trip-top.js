@@ -175,7 +175,7 @@
       Z = run.progress * run.len
       var tx = run.in.x
       var prev = px
-      px += (Math.max(0.08, Math.min(0.92, tx)) - px) * Math.min(1, dt * 8)
+      px += (Math.max(0.08, Math.min(0.92, tx)) - px) * Math.min(1, dt * 12)
       tilt += ((px - prev) * 10 - tilt) * Math.min(1, dt * 8)
       tilt = Math.max(-0.4, Math.min(0.4, tilt))
       wobble = Math.max(0, wobble - dt)
