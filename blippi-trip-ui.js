@@ -255,8 +255,8 @@
     sc.innerHTML = STAR
     $.score = el('u', '', sc, '0')
     $.combo = el('b', 'tcombo', sc, '')
-    // race position (road): 4/4 at the start, the child races up the field
-    $.pos = run.lvl.cat === 'darat' ? el('div', 'tpos', wrap) : null
+    // race position (every journey with rivals): 4/4 at the start, the child races up the field
+    $.pos = run.eng && run.eng.rivals && run.eng.rivals.length ? el('div', 'tpos', wrap) : null
     $.posN = 0
     // Blippi's speech line
     var sp = el('div', 'tsay', $.run)
@@ -282,15 +282,15 @@
       br.setAttribute('data-act', 'kanan')
       press(br, 1)
     }
-    // TURBO (CTR): the start turbo on every journey (press just before GO); on the road it also fires the drift turbo in a
-    // corner when its ring is red. Moves on the PRESS like the arrows; the click after a press is ignored.
+    // TURBO (CTR): the start turbo on every journey (press just before GO); in a run it fires the meter turbo (a road corner,
+    // a wind stream, a current, a warp lane) when its ring is red. Moves on the PRESS like the arrows; the click after a press is ignored.
     var tbT = 0
     var tb = btn('tturbo', $.run, 'Turbo', function () { if (Date.now() - tbT > 700) run.press() })
     tb.setAttribute('data-act', 'turbo')
     tb.innerHTML = '<i class="tring"></i><b>TURBO</b>'
     tb.addEventListener('pointerdown', function (e) { tbT = Date.now(); run.press(); tb.classList.add('hit'); setTimeout(function () { tb.classList.remove('hit') }, 140); e.preventDefault() })
     $.turbo = tb
-    $.turboKeep = run.lvl.cat === 'darat'
+    $.turboKeep = !!(run.eng && run.eng.drift)
     // how-to chip for the first seconds
     var how = el('div', 'thow', $.run, cat.ctl)
     setTimeout(function () { if (how.parentNode) how.classList.add('gone') }, 3600)
@@ -455,6 +455,22 @@
     b3.textContent = 'KELUAR'
     b3.setAttribute('data-act', 'keluar')
   }
+  // the finishing order (CTR's podium): four chips, rivals by how far they got, the child at its place, own chip marked KAMU
+  function standings (parent, run, place) {
+    var rv = (run.eng && run.eng.rivals || []).slice().sort(function (a, b) { return b.z - a.z })
+    var mine = run.lvl.cat === 'angkasa' && T.craft ? { craft: T.craft(), me: true } : { key: run.lvl.vui || run.lvl.veh, me: true }
+    rv.splice(place - 1, 0, mine)
+    var row = el('ol', 'tstand', parent)
+    row.setAttribute('aria-label', 'Urutan finis')
+    rv.forEach(function (r, i) {
+      var li = el('li', r.me ? 'me' : '', row)
+      el('b', '', li, String(i + 1))
+      var pic = el('span', 'tsv', li)
+      if (r.craft) anim(pic, r.craft, false)
+      else imgEl(String(r.key).replace(/\/standard-[a-z-]+$/, '/standard-front-three-quarter'), '', pic)
+      if (r.me) el('i', '', li, 'KAMU')
+    })
+  }
   function result (run, stars, first, improved) {
     var place = run.pos && run.racers ? run.pos : 0
     var p = panel('tresult', place === 1 ? 'Juara 1! Kamu tercepat!' : place ? 'Finis posisi ' + place + '!' : 'Hore! Sampai di tujuan!')
@@ -464,6 +480,7 @@
     var bp = el('span', 'tprof small', bl)
     imgEl('g:blippi-profil', '', bp)
     el('b', '', bl, stars === 3 ? 'Blippi: Luar biasa! Kamu jagoan!' : stars === 2 ? 'Blippi: Bagus sekali! Sedikit lagi!' : 'Blippi: Hebat sudah sampai! Ayo coba lagi!')
+    if (place) standings(p.card, run, place)
     starsRow(p.card, stars, 'big')
     var okN = run.qlog.filter(function (x) { return x.ok }).length
     el('p', 'tqtext', p.card, 'Bintang terkumpul: ' + run.stars + '. Soal benar: ' + okN + ' dari ' + run.gates.length + '.')

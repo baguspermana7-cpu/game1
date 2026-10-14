@@ -118,9 +118,7 @@
     ents.sort(function (a, b) { return a.z - b.z })
     // rivals start ahead (the child starts last and races up the field); CTR-style rubber band keeps them near
     var rivals = rivalIds(lvl).slice(0, 3).map(function (v, i) { return { id: v, key: 'race:' + v + '/standard-rear', z: 2.6 + i * 2.8, lane: [0, 2, 1][i], lp: [0, 2, 1][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
-    var pos = rivals.length + 1
-    run.pos = pos
-    run.racers = pos
+    run.pos = run.racers = rivals.length + 1
     var hop = 0
     var hopMax = 0
     var pz = 1
@@ -156,11 +154,9 @@
       return k
     }
     var yaw = 0
-    // the CTR drift: per corner the meter fills over CTR.room s, its last CTR.red s are red; a press in the red is a turbo
-    // (more the closer to full), up to CTR.boosts per corner; a press in the green empties the meter; a full meter left
-    // alone is lost for this corner (CTR adds 3 attempts) - with a short grace for small fingers
-    var C = run.ctr
-    var drift = { on: false, idx: -1, meter: 0, red: false, boosts: 0, tries: 0, spent: false, full: 0, dir: 0, told: false }
+    // the CTR drift: the core turbo meter (run.meter) runs per corner
+    var drift = run.meter()
+    var told = false
     var sparks = []
     var b0 = 0
     var puffs = []
@@ -222,8 +218,7 @@
       for (i = 0; i < rivals.length; i++) {
         var rv = rivals[i]
         var gap = rv.z - Z
-        var band = gap > 16 ? 0.78 : gap > 9 ? 0.9 : gap < -10 ? 1.2 : 1
-        rv.z += base * rv.f * band * dt
+        rv.z += base * rv.f * run.band(gap / SPD) * dt
         rv.cool = Math.max(0, rv.cool - dt)
         if (rv.cool <= 0) {
           var block = ents.some(function (e) { return e.st === 0 && OBST.indexOf(e.type) >= 0 && e.lane === rv.lane && e.z > rv.z && e.z - rv.z < 3.5 })
@@ -237,52 +232,16 @@
         // touching a rival: a soft nudge, no crash (a child is never punished for racing close)
         if (hop <= 0 && nudgeT <= 0 && Math.abs(gap) < 0.7 && Math.abs(lanePos - rv.lp) < 0.5) { nudgeT = 1; run.mul *= 0.85; rv.z += 0.6; run.fx('dust', G.cx + (lanePos - 1) * LS(), G.ny - 20, 110) }
       }
-      var np = 1
-      for (i = 0; i < rivals.length; i++) if (rivals[i].z > Z) np++
-      if (np < pos && run.state === 'play') { run.say(np === 1 ? 'Salip! Kamu juara satu!' : 'Salip! Posisi ' + np + '!'); if (w.Blippi) w.Blippi.sfx('ok') }
-      pos = np
-      run.pos = pos
-      run.racers = rivals.length + 1
+      run.place(rivals, Z)
     }
     function stepDrift (dt) {
       var ci = cornerAt(Z)
       // Blippi announces the first corner once, before it starts
-      if (!drift.told && corners.length && corners[0].z0 - Z < 9 && corners[0].z0 > Z) { drift.told = true; run.say('Tikungan! Tekan TURBO saat lingkarannya merah!') }
-      if (ci !== drift.idx) {
-        drift.idx = ci
-        drift.on = ci >= 0
-        drift.meter = 0; drift.boosts = 0; drift.tries = 0; drift.spent = false; drift.full = 0; drift.red = false
-        drift.dir = ci >= 0 ? corners[ci].dir : 0
-      }
-      if (!drift.on || drift.spent) { drift.red = false; return }
-      var wasRed = drift.red
-      drift.meter = Math.min(1, drift.meter + dt / C.room)
-      drift.red = drift.meter >= 1 - C.red / C.room
-      if (drift.red && !wasRed && w.Blippi) w.Blippi.sfx('meter')
-      if (drift.meter >= 1) {
-        drift.full += dt
-        if (drift.full > 0.18) { drift.spent = true; drift.red = false; if (!drift.boosts) run.say('Ups, terlewat. Tekan saat merah, ya!') }
-      }
+      if (!told && corners.length && corners[0].z0 - Z < 9 && corners[0].z0 > Z) { told = true; run.say('Tikungan! Tekan TURBO saat lingkarannya merah!') }
+      drift.step(dt, ci, ci >= 0 ? corners[ci].dir : 0)
     }
     // TURBO press from the core: a drift turbo in the red, an emptied meter in the green, nothing outside a corner
-    function turbo () {
-      if (!drift.on || drift.spent) return
-      var px = G.cx + (lanePos - 1) * LS()
-      if (drift.red) {
-        var left = (1 - drift.meter) * C.room
-        var gain = C.fullGain + (C.minGain - C.fullGain) * Math.min(1, left / C.red)
-        var lines = ['Turbo!', 'Turbo dua!', 'TURBO TIGA! Hebat!']
-        run.turbo(gain, drift.boosts, px, G.ny + 14, lines[drift.boosts])
-        drift.boosts++
-        drift.meter = 0; drift.full = 0; drift.red = false
-        if (drift.boosts >= C.boosts) drift.spent = true
-      } else {
-        drift.meter = 0
-        drift.tries++
-        if (drift.tries === 1) run.say('Tunggu sampai merah, ya!')
-        if (drift.tries >= 4) drift.spent = true
-      }
-    }
+    function turbo () { drift.press(G.cx + (lanePos - 1) * LS(), G.ny + 14) }
     var DL = []
     var pool = []
     var poolN = 0
@@ -560,11 +519,10 @@
     }
 
     var dslide = 0
-    var FIRE = [['#FFF3B0', '#FFB347'], ['#FFE29A', '#FF7A1A'], ['#FFD1D1', '#FF3B30']]
     // CTR exhaust: a flame under the rear while turbo reserves last, bigger and hotter per fire level
     function exhaust (c, x, sz) {
       if (run.reserves <= 0 || run.reduced()) return
-      var f = FIRE[run.fire]
+      var f = run.FIRE[run.fire]
       var fl = (0.7 + run.fire * 0.25) * (0.85 + Math.sin(run.t * 47) * 0.15) * Math.min(1, run.reserves * 2)
       var q
       for (q = -1; q <= 1; q += 2) {
@@ -598,20 +556,6 @@
       }
       c.globalAlpha = 1
     }
-    // the turbo meter over the vehicle (the child looks at the vehicle, not the button): fills green, last part red
-    function meterBar (c, x, y, sz) {
-      var w = sz * 0.8
-      var h = Math.max(14, sz * 0.1)
-      var x0 = x - w / 2
-      c.fillStyle = 'rgba(19,49,138,.55)'
-      run.rrect(c, x0 - 3, y - 3, w + 6, h + 6, h); c.fill()
-      c.fillStyle = 'rgba(255,90,60,.35)'
-      c.fillRect(x0 + w * (1 - C.red / C.room), y, w * C.red / C.room, h)
-      c.fillStyle = drift.red ? '#FF3B30' : '#36C46B'
-      run.rrect(c, x0, y, Math.max(h, w * drift.meter), h, h / 2); c.fill()
-      var d
-      for (d = 0; d < drift.boosts; d++) { c.fillStyle = FIRE[d][1]; c.beginPath(); c.arc(x0 + w + 16 + d * 18, y + h / 2, 7, 0, 6.3); c.fill() }
-    }
     function drawPlayer (c) {
       var bob = Math.sin(run.t * 16) * 1.6
       var px = G.cx + (lanePos - 1) * LS()
@@ -637,10 +581,10 @@
       var hs = 1 + hy / sz * 0.18
       var sq = land > 0 && !run.reduced() ? Math.sin(land / 0.35 * Math.PI) * 0.08 : 0
       run.spr(c, lvl.veh, vx, G.ny + bob - hy, sz * hs * (1 + sq), sz * 0.86 * hs * (1 - sq), { anchor: 'bottom', rot: tilt + b0 * 0.05 + dslide * 0.14 - (hop > 0 ? 0.05 : 0), alpha: alpha })
-      if (drift.on && !drift.spent) meterBar(c, vx, G.ny - sz * 0.98, sz)
+      if (drift.on && !drift.spent) run.meterBar(c, drift, vx, G.ny - sz * 0.98, sz)
     }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return run.pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
   }
   T.engine('land', { assets: assets, make: make })
 })(window)

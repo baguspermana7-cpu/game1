@@ -5,6 +5,8 @@
 //            red is a turbo whose level climbs 1 -> 2 -> 3 (speed cap rises each time); a press in the green gives none
 //   jumps: ramps across the road, the vehicle is airborne over the obstacles behind (no bump) and lands with a turbo
 //   rivals: three rivals, the child starts last, positions change, the result names the place
+// The same meter, rivals and place on the other journeys (owner: the CTR feel everywhere): UDARA (tail-wind streams, three
+// aircraft), AIR (fast currents, three boats), LUAR ANGKASA (warp lanes, three space craft); the TURBO button stays in the run.
 // Server: ~/rz-work on port 8090.   node tools/qa-blippi-race-ctr.mjs
 import puppeteer from 'puppeteer'
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -28,6 +30,17 @@ const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'qu
     ok(s.cornerObs === 0, `${id}/${seed}: ${s.cornerObs} obstacles inside a corner`)
     ok(s.ramps >= 1, `${id}/${seed}: no jump ramp`)
     ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
+    ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
+  }
+  for (const cat of ['udara', 'air', 'angkasa']) for (const n of [1, 2, 3, 4]) for (const seed of [1, 2]) {
+    const id = cat + '-' + n
+    await p.evaluate((cat, id, seed) => { BlippiTrip.open(cat); BlippiTrip.start(id, { seed }) }, cat, id, seed)
+    await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'count', { timeout: 30000 })
+    const s = await q(p)
+    ok(s.corners >= 2, `${id}/${seed}: ${s.corners} turbo zones (need >= 2)`)
+    ok(s.cornerObs === 0, `${id}/${seed}: ${s.cornerObs} obstacles inside a turbo zone`)
+    ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
+    ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
   }
   await p.close()
 }
@@ -46,26 +59,27 @@ for (const [label, delay, want] of [['in time', 1950, true], ['too early', 900, 
   ok((s.turboN > 0) === want, `start press ${label}: start turbo ${s.turboN > 0 ? 'given' : 'not given'}`)
   await p.close()
 }
-// drift turbos climb 1 -> 2 -> 3; green press gives nothing; jump over obstacles; rivals overtaken; result place
-{
+// meter turbos climb 1 -> 2 -> 3; green press gives nothing; rivals overtaken; result place; on the road also the jump
+async function race (cat, id, seed) {
   const p = await page(844, 390)
-  await p.evaluate(() => { BlippiTrip.open('darat'); BlippiTrip.start('darat-2', { seed: 7 }) })
+  await p.evaluate((cat, id, seed) => { BlippiTrip.open(cat); BlippiTrip.start(id, { seed }) }, cat, id, seed)
   await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
-  let fires = [], greenTested = false, greenOk = null, sawAir = false, bumpsAtAir = -1, airTurbo = false, posSeen = new Set(), capMax = 0
+  let fires = [], greenTested = false, greenOk = null, greenWhy = "", sawAir = false, bumpsAtAir = -1, airTurbo = false, posSeen = new Set(), capMax = 0, gone = false
   const t0 = Date.now()
-  while (Date.now() - t0 < 140000) {
+  while (Date.now() - t0 < 150000) {
     if (await answerIfQuiz(p)) continue
     const s = await q(p)
     if (!s || s.state === 'done') break
     posSeen.add(s.pos)
     capMax = Math.max(capMax, s.mulNow)
+    if (s.state === 'play' && s.turboGone) gone = true
     if (s.air && !sawAir) { sawAir = true; bumpsAtAir = s.bumps }
     if (sawAir && !s.air && bumpsAtAir >= 0 && !airTurbo) { await sleep(150); const s2 = await q(p); airTurbo = s2.reserves > 0; ok(s2.bumps === bumpsAtAir, `jump: bumped an obstacle while airborne (${bumpsAtAir} -> ${s2.bumps})`) }
     const d = s.drift
     if (d && d.on && !d.spent) {
       if (!greenTested && !d.red && d.meter > 0.15 && d.meter < 0.4) {
-        greenTested = true; const n0 = s.turboN; await tapTurbo(p); await sleep(60)
-        const s2 = await q(p); greenOk = s2.turboN === n0 && s2.drift.meter < 0.2
+        greenTested = true; await tapTurbo(p); await sleep(60)
+        const s2 = await q(p); greenWhy = JSON.stringify([d, s2.drift, s2.state]); greenOk = s2.drift.idx === d.idx && s2.drift.boosts === d.boosts && s2.drift.tries === d.tries + 1
       } else if (d.red) {
         const n0 = s.turboN; await tapTurbo(p); await sleep(60)
         const s2 = await q(p); if (s2.turboN > n0) fires.push(s2.fire)
@@ -74,17 +88,38 @@ for (const [label, delay, want] of [['in time', 1950, true], ['too early', 900, 
     } else await sleep(60)
     if (s.progress > 0.999) break
   }
-  ok(greenOk === true, `a press in the green gave a turbo or did not empty the meter (${greenOk})`)
-  ok(fires.includes(1) && fires.includes(2), `drift turbos did not climb in level: ${JSON.stringify(fires)}`)
-  ok(capMax > 1.45, `speed never rose past the plain cap on stacked turbos (max ${capMax.toFixed(2)})`)
-  ok(sawAir, 'never airborne on a jump ramp')
-  ok(airTurbo, 'no turbo on landing (hang time)')
-  ok(posSeen.size >= 2, `the race position never changed: ${[...posSeen]}`)
+  ok(!gone, `${id}: the TURBO button left the run`)
+  ok(greenOk === true, `${id}: a press in the green gave a turbo or did not empty the meter (${greenOk} ${greenWhy})`)
+  ok(fires.includes(1) && fires.includes(2), `${id}: meter turbos did not climb in level: ${JSON.stringify(fires)}`)
+  ok(capMax > 1.45, `${id}: speed never rose past the plain cap on stacked turbos (max ${capMax.toFixed(2)})`)
+  if (cat === 'darat') {
+    ok(sawAir, 'never airborne on a jump ramp')
+    ok(airTurbo, 'no turbo on landing (hang time)')
+  }
+  ok(posSeen.size >= 2, `${id}: the race position never changed: ${[...posSeen]}`)
   for (let i = 0; i < 60 && !(await p.$('[data-trip=result]')); i++) await sleep(250)
   const place = await p.evaluate(() => { const e = document.querySelector('[data-place]'); return e ? +e.getAttribute('data-place') : 0 })
-  ok(place >= 1 && place <= 4, `result names no place (${place})`)
+  ok(place >= 1 && place <= 4, `${id}: result names no place (${place})`)
+  const st = await p.evaluate(() => { const li = [...document.querySelectorAll('.tstand li')]; return { n: li.length, me: li.findIndex(e => e.classList.contains('me')) + 1, pics: li.filter(e => { const i = e.querySelector('img'); return i ? i.complete && i.naturalWidth > 0 : !!e.querySelector('.tanim') }).length } })
+  ok(st.n === 4 && st.me === place && st.pics === 4, `${id}: finishing order ${JSON.stringify(st)} (want 4 chips with art, KAMU at ${place})`)
+  await p.screenshot({ path: '/tmp/claude-1000/qa-ctr-result-' + id + '.png' })
   await p.close()
 }
+// UDARA with no touch at all: after take-off the plane is on screen (it once sank with the falling water line, out of sight)
+{
+  const p = await page(390, 844)
+  await p.evaluate(() => { BlippiTrip.open('udara'); BlippiTrip.start('udara-1', { seed: 2 }) })
+  await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
+  await p.waitForFunction(() => { const s = BlippiTrip.qa(); return s.progress > 0.2 || s.state === 'quiz' }, { timeout: 60000 })
+  await sleep(800)
+  const s = await q(p)
+  ok(s.planeY > 0.1 && s.planeY < 0.65, `udara untouched: the plane sits at ${s.planeY && s.planeY.toFixed(2)} of the screen height (off screen)`)
+  await p.close()
+}
+await race('darat', 'darat-2', 7)
+await race('udara', 'udara-2', 7)
+await race('air', 'air-2', 7)
+await race('angkasa', 'angkasa-2', 7)
 ok(!errs.length, 'page errors: ' + errs.slice(0, 3).join(' | '))
 await b.close()
 console.log(`qa-blippi-race-ctr: ${pass}/${pass + fail} checks passed`)

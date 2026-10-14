@@ -298,7 +298,8 @@
       stars: 0, starTotal: 0, bumps: 0, state: 'loading', fxs: [], fly: [], gates: [], quiz: null, qlog: [], bonus: 0,
       in: { down: false, x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, moves: [], kx: 0, ky: 0 },
       work: [], slowFrames: 0, finishT: 0, say: say, fx: fx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
-      collect: collect, bump: bump, boost: boost, turbo: turbo, press: pressTurbo, ctr: CTR
+      collect: collect, bump: bump, boost: boost, turbo: turbo, press: pressTurbo, ctr: CTR,
+      meter: meter, meterBar: meterBar, zones: zones, zoneAt: zoneAt, band: band, place: place, FIRE: FIRE
     }
     run.gates = lvl.gates.map(function (f) { return { f: f, done: false } })
     resize()
@@ -536,6 +537,83 @@
     run.turboN = (run.turboN || 0) + 1
     if (line) say(line)
   }
+  // the CTR turbo meter, shared by every engine (a road corner, a wind stream, a sea current, a warp lane): inside a zone it
+  // fills over CTR.room s, its last CTR.red s are red; a press in the red is a turbo (more the closer to full), up to
+  // CTR.boosts per zone; a press in the green empties it; a full meter left alone is lost for this zone (CTR adds 3
+  // attempts) - with a short grace for small fingers
+  var FIRE = [['#FFF3B0', '#FFB347'], ['#FFE29A', '#FF7A1A'], ['#FFD1D1', '#FF3B30']]
+  function meter () {
+    var m = { on: false, idx: -1, meter: 0, red: false, boosts: 0, tries: 0, spent: false, full: 0, dir: 0 }
+    m.step = function (dt, zi, dir) {
+      if (zi !== m.idx) { m.idx = zi; m.on = zi >= 0; m.meter = 0; m.boosts = 0; m.tries = 0; m.spent = false; m.full = 0; m.red = false; m.dir = zi >= 0 ? dir : 0 }
+      if (!m.on || m.spent) { m.red = false; return }
+      var wasRed = m.red
+      m.meter = Math.min(1, m.meter + dt / CTR.room)
+      m.red = m.meter >= 1 - CTR.red / CTR.room
+      if (m.red && !wasRed) B().sfx('meter')
+      if (m.meter >= 1) {
+        m.full += dt
+        if (m.full > 0.18) { m.spent = true; m.red = false; if (!m.boosts) say('Ups, terlewat. Tekan saat merah, ya!') }
+      }
+    }
+    m.press = function (x, y) {
+      if (!m.on || m.spent) return
+      if (m.red) {
+        var left = (1 - m.meter) * CTR.room
+        var gain = CTR.fullGain + (CTR.minGain - CTR.fullGain) * Math.min(1, left / CTR.red)
+        turbo(gain, m.boosts, x, y, ['Turbo!', 'Turbo dua!', 'TURBO TIGA! Hebat!'][m.boosts])
+        m.boosts++
+        m.meter = 0; m.full = 0; m.red = false
+        if (m.boosts >= CTR.boosts) m.spent = true
+      } else {
+        m.meter = 0
+        m.tries++
+        if (m.tries === 1) say('Tunggu sampai merah, ya!')
+        if (m.tries >= 4) m.spent = true
+      }
+    }
+    return m
+  }
+  // the meter over the vehicle (the child looks at the vehicle, not the button): fills green, last part red, one dot per turbo
+  function meterBar (c, m, x, y, sz) {
+    var wd = sz * 0.8
+    var h = Math.max(14, sz * 0.1)
+    var x0 = x - wd / 2
+    c.fillStyle = 'rgba(19,49,138,.55)'
+    rrect(c, x0 - 3, y - 3, wd + 6, h + 6, h); c.fill()
+    c.fillStyle = 'rgba(255,90,60,.35)'
+    c.fillRect(x0 + wd * (1 - CTR.red / CTR.room), y, wd * CTR.red / CTR.room, h)
+    c.fillStyle = m.red ? '#FF3B30' : '#36C46B'
+    rrect(c, x0, y, Math.max(h, wd * m.meter), h, h / 2); c.fill()
+    var d
+    for (d = 0; d < m.boosts; d++) { c.fillStyle = FIRE[d][1]; c.beginPath(); c.arc(x0 + wd + 16 + d * 18, y + h / 2, 7, 0, 6.3); c.fill() }
+  }
+  // meter zones for the free-steering engines, in run.len units (3.4-4.5 s at speed 1, like a road corner), after the
+  // opening grace and clear of the question gates
+  function zones (gateZ, grace) {
+    var r = run.rnd
+    var out = []
+    var z = grace + 3.6
+    while (z < run.len - 7) {
+      var zl = 3.4 + r() * 1.1
+      var zz = z
+      if (gateZ.some(function (g) { return g > zz - 2.7 && g < zz + zl + 1.8 })) { z += 1.8; continue }
+      out.push({ z0: z, z1: z + zl, dir: r() < 0.5 ? -1 : 1 })
+      z += zl + 7.3 + r() * 5.5
+    }
+    return out
+  }
+  function zoneAt (zs, z) { for (var i = 0; i < zs.length; i++) if (z >= zs[i].z0 && z < zs[i].z1) return i; return -1 }
+  // CTR-style rubber band (gap = rival minus child, run.len units): far ahead a rival eases off, far behind it pushes
+  function band (gap) { return gap > 7.3 ? 0.78 : gap > 4.1 ? 0.9 : gap < -4.5 ? 1.2 : 1 }
+  // race position from the rivals' z against the child's (same units); Blippi cheers an overtake
+  function place (rivals, z) {
+    var np = 1
+    for (var i = 0; i < rivals.length; i++) if (rivals[i].z > z) np++
+    if (run.pos && np < run.pos && run.state === 'play') { say(np === 1 ? 'Salip! Kamu juara satu!' : 'Salip! Posisi ' + np + '!'); B().sfx('ok') }
+    run.pos = np
+    run.racers = rivals.length + 1
+  }
   // the TURBO button (or Space / ArrowUp): before GO it is the start turbo, in a run the engine decides (a drift meter)
   function pressTurbo () {
     if (!run) return
@@ -676,7 +754,7 @@
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), planeY: run.eng && run.eng.py != null ? run.eng.py : null, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }

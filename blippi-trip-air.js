@@ -13,10 +13,15 @@
 
   function sstep (a, b, v) { var t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t) }
 
+  // rivals (owner 2026-10-14 "balapan kurang seru", CTR): three other Blippi aircraft, side view, never the child's own
+  var RIVALS = ['biplane', 'light-plane', 'turboprop', 'floatplane']
+  function rivalIds (lvl) { var own = (/race:([^/]+)\//.exec(lvl.veh) || [])[1]; return RIVALS.filter(function (v) { return v !== own }).slice(0, 3) }
+
   function assets (lvl) {
     var a = [lvl.veh, 'lib:nature/cloud', 'lib:mojo-chase/cmid/' + lvl.theme.far, 'lib:game/hot-air-balloon', 'lib:animals/eagle',
       'lib:animals/parrot', 'lib:game/star', 'lib:nature/sun', 'lib:nature/moon-stars', 'lib:nature/rainbow', 'lib:tk-world/palm-island', 'lib:tk-world/lighthouse-island', 'lib:tk-world/storm-cloud',
       'fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:droplets', 'fx:ripple', 'fx:bubbles']
+    rivalIds(lvl).forEach(function (v) { a.push('race:' + v + '/standard-side') })
     return a
   }
 
@@ -35,6 +40,7 @@
     var wobble = 0
     var spray = 0
     var announced = false
+    var hold = -1 // the height (fraction of H) the plane keeps while no finger is down
     var collectibles = 0
     var gateZ = lvl.gates.map(function (f) { return f * run.len })
     function nearGate (z) { return gateZ.some(function (g) { return Math.abs(g - z) < 1.6 }) }
@@ -59,6 +65,21 @@
       z += 2.3 - lvl.dens * 0.9 + r() * 0.8
     }
     ents.sort(function (a, b) { return a.z - b.z })
+    // CTR turbo meter zones = tail-wind streams: no obstacles inside (the child watches the meter), a star line through it
+    var winds = run.zones(gateZ, run.len * 0.2)
+    function windAt (zz) { return run.zoneAt(winds, zz) }
+    ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'ring' || windAt(e.z) < 0 })
+    winds.forEach(function (wd) {
+      var q
+      for (q = wd.z0 + 0.6; q < wd.z1 - 0.3; q += 0.7) { ents.push({ z: q, y: 0.45 + Math.sin(q * 1.3) * 0.12, type: 'star', st: 0, t: 0, ph: q }); collectibles++ }
+    })
+    ents.sort(function (a, b) { return a.z - b.z })
+    var drift = run.meter()
+    var told = false
+    // rivals start ahead (the child starts last and flies up the field); CTR-style rubber band keeps them near
+    var rivals = rivalIds(lvl).map(function (v, i) { return { id: v, key: 'race:' + v + '/standard-side', z: 1.2 + i * 1.3, y: [0.3, 0.62, 0.46][i], ty: [0.3, 0.62, 0.46][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
+    run.pos = run.racers = rivals.length + 1
+    var nudgeT = 0
     var ci
     // a calm sky: few clouds, so the stars, rings, birds and storm clouds the child steers around read at a glance
     for (ci = 0; ci < 9; ci++) clouds.push({ x: r(), y: r() * 0.7, s: 0.4 + r() * 0.8, layer: ci % 3 })
@@ -84,7 +105,13 @@
       lift = liftAt(run.progress)
       var H = run.H
       var steer = Math.max(H * 0.17, Math.min(H * 0.74, run.in.y * H))
-      if (!run.in.down && !run.in.ky) steer = py < H * 0.17 ? H * 0.4 : py // hold position when the finger lifts
+      // hold position when the finger lifts; a plane never flown (still at the water line, which falls away below the screen
+      // on take-off) climbs to a cruise height instead of sinking out of sight with the water
+      if (run.in.down || run.in.ky) hold = -1
+      else {
+        if (hold < 0) hold = py < H * 0.17 || py > H * 0.74 ? 0.42 : py / H
+        steer = hold * H
+      }
       var water = wl() - G.ps * 0.3
       var target = water + (steer - water) * lift
       var prev = py
@@ -95,6 +122,8 @@
       spray = lift < 0.9 ? 1 : 0
       if (!announced && lift > 0.5) { announced = true; run.say('Lepas landas! Kita terbang tinggi!'); run.fx('droplets', G.px - 40, wl() - 10, 190); run.fx('ripple', G.px - 60, wl(), 220) }
       if (run.progress > LD0 + 0.02 && lift < 0.3 && announced === true) { announced = 'land'; run.say('Mendarat di air. Cipratannya seru!'); run.fx('ripple', G.px, wl() - 6, 260) }
+      stepWind(dt)
+      stepRivals(dt)
       var i
       for (i = 0; i < ents.length; i++) {
         var e = ents[i]
@@ -107,8 +136,97 @@
         var ey = e.y * H + (e.type === 'balloon' || e.type === 'storm' ? Math.sin(run.t * 1.5 + e.ph) * 8 : 0)
         var dx = ex - G.px
         var dy = ey - py
-        if (e.type === 'star' && Math.abs(dx) < G.ps * 0.45 && Math.abs(dy) < G.ps * 0.45) { e.st = 2; run.collect(ex, ey, false) } else if (e.type === 'ring' && Math.abs(dx) < G.ps * 0.3 && Math.abs(dy) < H * 0.085) { e.st = 2; run.collect(ex, ey, true); run.fx('check-burst', ex, ey, 160) } else if (e.type !== 'star' && e.type !== 'ring' && Math.abs(dx) < G.ps * 0.38 && Math.abs(dy) < G.ps * 0.3 && run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(G.px + G.ps * 0.4, py) }
+        if (e.type === 'star' && Math.abs(dx) < G.ps * 0.45 && Math.abs(dy) < G.ps * 0.45) { e.st = 2; run.collect(ex, ey, false) } else if (e.type === 'ring' && Math.abs(dx) < G.ps * 0.3 && Math.abs(dy) < H * 0.085) { e.st = 2; run.collect(ex, ey, true); run.fx('check-burst', ex, ey, 160); run.turbo(0.7, 0, ex, ey) /* a ring is CTR's turbo pad */ } else if (e.type !== 'star' && e.type !== 'ring' && Math.abs(dx) < G.ps * 0.38 && Math.abs(dy) < G.ps * 0.3 && run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(G.px + G.ps * 0.4, py) }
       }
+    }
+
+    function stepWind (dt) {
+      var wi = windAt(Z)
+      if (!told && winds.length && winds[0].z0 - Z < 4 && winds[0].z0 > Z) { told = true; run.say('Angin kencang! Tekan TURBO saat lingkarannya merah!') }
+      drift.step(dt, wi, 1)
+    }
+    function turbo () { drift.press(G.px - G.ps * 0.5, py) }
+    // rivals fly their own pace with the rubber band; each climbs or dives out of an obstacle ahead and, near the child, out
+    // of the child's height; touching one is a soft nudge, never a crash
+    function stepRivals (dt) {
+      nudgeT = Math.max(0, nudgeT - dt)
+      var H = run.H
+      var i
+      for (i = 0; i < rivals.length; i++) {
+        var rv = rivals[i]
+        var gap = rv.z - Z
+        rv.z += lvl.speed * rv.f * run.band(gap) * dt
+        rv.cool = Math.max(0, rv.cool - dt)
+        if (rv.cool <= 0) {
+          var near = function (yy) { return ents.some(function (e) { return e.st === 0 && e.type !== 'star' && e.type !== 'ring' && e.z > rv.z && e.z - rv.z < 1.6 && Math.abs(e.y - yy) < 0.14 }) }
+          var crowd = gap > 0 && gap < 1.2 && Math.abs(py / H - rv.ty) < 0.12
+          if (near(rv.ty) || crowd) {
+            var opts = [0.24, 0.38, 0.52, 0.66].filter(function (yy) { return Math.abs(yy - rv.ty) > 0.1 && !near(yy) && Math.abs(py / H - yy) > 0.12 })
+            if (opts.length) { rv.ty = opts[(Math.random() * opts.length) | 0]; rv.cool = 1.2 }
+          }
+        }
+        rv.y += (rv.ty - rv.y) * Math.min(1, dt * 2.5)
+        if (lift > 0.6 && nudgeT <= 0 && Math.abs(gap) < 0.35 && Math.abs(rvY(rv) - py) < G.ps * 0.35) { nudgeT = 1; run.mul *= 0.85; rv.z += 0.3; run.fx('cloud', G.px, py, 110) }
+      }
+      run.place(rivals, Z)
+    }
+    // a rival on the water before take-off, in the air after (the same lift curve as the child, at its own progress)
+    function rvY (rv) {
+      var l = liftAt(rv.z / run.len)
+      var water = G.wl0 + (run.H * 0.62) * lift - G.ps * 0.3
+      return water + (rv.y * run.H + Math.sin(run.t * 1.3 + rv.ph) * 6 - water) * l
+    }
+    // tail-wind streams: a soft band of moving chevrons across the sky between the zone ends
+    function drawWinds (c) {
+      var H = run.H
+      var i
+      for (i = 0; i < winds.length; i++) {
+        var x0 = G.px + (winds[i].z0 - Z) * G.pxu
+        var x1 = G.px + (winds[i].z1 - Z) * G.pxu
+        if (x1 < -40 || x0 > run.W + 40) continue
+        var top = H * 0.16
+        var bot = Math.min(wl(), H) - 10
+        var g = c.createLinearGradient(x0, 0, x1, 0)
+        g.addColorStop(0, 'rgba(160,240,200,0)'); g.addColorStop(0.15, 'rgba(160,240,200,.22)'); g.addColorStop(0.85, 'rgba(160,240,200,.22)'); g.addColorStop(1, 'rgba(160,240,200,0)')
+        c.fillStyle = g
+        c.fillRect(x0, top, x1 - x0, bot - top)
+        c.strokeStyle = 'rgba(255,255,255,.8)'
+        c.lineWidth = 5
+        c.lineCap = 'round'
+        var sp = 90
+        var off = run.reduced() ? 0 : (run.t * 160) % sp
+        var x
+        var row
+        for (row = 0; row < 4; row++) {
+          var yy = top + (bot - top) * (0.15 + row * 0.24)
+          for (x = x0 + off + (row % 2) * sp / 2; x < x1 - 10; x += sp) {
+            c.beginPath(); c.moveTo(x - 14, yy - 14); c.lineTo(x, yy); c.lineTo(x - 14, yy + 14); c.stroke()
+          }
+        }
+      }
+    }
+    function drawRivals (c) {
+      var i
+      for (i = 0; i < rivals.length; i++) {
+        var rv = rivals[i]
+        var x = G.px + (rv.z - Z) * G.pxu
+        if (x < -G.ps || x > run.W + G.ps) continue
+        var y = rvY(rv)
+        c.save(); c.translate(x, y); c.rotate(Math.sin(run.t * 1.3 + rv.ph) * 0.04)
+        run.spr(c, rv.key, 0, 0, G.ps * 1.15, G.ps * 0.85, { flip: true })
+        c.restore()
+      }
+    }
+    // CTR exhaust: a flame behind the tail while turbo reserves last, bigger and hotter per fire level
+    function exhaust (c) {
+      if (run.reserves <= 0 || run.reduced()) return
+      var f = run.FIRE[run.fire]
+      var fl = (0.7 + run.fire * 0.25) * (0.85 + Math.sin(run.t * 47) * 0.15) * Math.min(1, run.reserves * 2)
+      var x = G.px - G.ps * 0.55
+      var g = c.createLinearGradient(x, 0, x - G.ps * 0.6 * fl, 0)
+      g.addColorStop(0, f[0]); g.addColorStop(0.45, f[1]); g.addColorStop(1, 'rgba(255,120,40,0)')
+      c.fillStyle = g
+      c.beginPath(); c.moveTo(x, py - G.ps * 0.09); c.quadraticCurveTo(x - G.ps * 0.7 * fl, py, x, py + G.ps * 0.09); c.closePath(); c.fill()
     }
 
     function portal (c, x, label, fin) {
@@ -256,6 +374,7 @@
         run.spr(c, 'lib:tk-world/lighthouse-island', ((W * 0.5 - (Z * G.pxu * 0.07) % (W * 1.8)) + W * 1.8) % (W * 1.8) - 60, fy + 8, G.ps * 0.6, G.ps * 0.6, { anchor: 'bottom' })
         c.globalAlpha = 1
       }
+      drawWinds(c)
       // entities and gates
       var gl = gateZ.concat([run.len])
       for (i = 0; i < ents.length; i++) {
@@ -281,7 +400,10 @@
         var gx = G.px + (gl[i] - Z) * G.pxu
         if (gx > -80 && gx < W + 80) portal(c, gx, 'SOAL!', i === gl.length - 1)
       }
+      drawRivals(c)
+      exhaust(c)
       drawPlane(c)
+      if (drift.on && !drift.spent) run.meterBar(c, drift, G.px, py - G.ps * 0.78, G.ps)
       // 7. birds (three flocks at different depths) and foreground clouds that pass IN FRONT of the plane
       c.lineCap = 'round'
       var bf
@@ -313,7 +435,7 @@
     }
     function eKey (t) { return t === 'balloon' ? 'lib:game/hot-air-balloon' : t === 'eagle' ? 'lib:animals/eagle' : t === 'parrot' ? 'lib:animals/parrot' : 'lib:tk-world/storm-cloud' }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'sun-rays', 'horizon', 'clouds-far', 'clouds-mid', 'clouds-near', 'sea', 'birds', 'clouds-front', 'plane'], get lane () { return null }, get lift () { return lift } }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'sun-rays', 'horizon', 'clouds-far', 'clouds-mid', 'clouds-near', 'sea', 'birds', 'clouds-front', 'plane'], get lane () { return null }, get lift () { return lift }, get py () { return py / run.H }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: winds, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'ring' && windAt(e.z) >= 0 }).length } }
   }
   T.engine('air', { assets: assets, make: make })
 })(window)

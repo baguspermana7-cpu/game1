@@ -22,6 +22,16 @@
     return cv
   }
 
+  // rivals (owner 2026-10-14 "balapan kurang seru", CTR): three other boats (rear view) or three other space craft
+  var BOATS = ['tugboat', 'speedboat', 'workboat', 'sailboat']
+  function rivalKeys (lvl, skin) {
+    if (skin === 'water') { var own = (/race:([^/]+)\//.exec(lvl.veh) || [])[1]; return BOATS.filter(function (v) { return v !== own }).slice(0, 3).map(function (v) { return { key: 'race:' + v + '/standard-rear' } }) }
+    var cr = T.craft && T.craft()
+    var all = (T.crafts ? T.crafts() : []).filter(function (k) { return !cr || k.id !== cr.id })
+    var n = all.length
+    return n ? [0, Math.floor(n / 3), Math.floor(n * 2 / 3)].map(function (i) { return { key: 'sp:' + all[i].id, craft: all[i] } }) : []
+  }
+
   function assets (lvl, skin) {
     var a = ['lib:nature/cloud', 'fx:splash', 'fx:ripple', 'fx:bubbles', 'lib:game/star', 'lib:game/lifebuoy', 'lib:game/gem-blue', 'lib:game/barrel', 'lib:tk-world/iceberg-2', 'fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:droplets', 'fx:ripple', 'fx:bubbles']
     if (skin === 'water') {
@@ -33,6 +43,7 @@
       a.push(ROCKET, 'lib:nature/moon-stars', ROCK)
       if (cr) a.push('sp:' + cr.id)
     }
+    rivalKeys(lvl, skin).forEach(function (k) { a.push(k.key) })
     return a
   }
 
@@ -85,6 +96,21 @@
       z += step * (0.8 + r() * 0.5)
     }
     ents.sort(function (a, b) { return a.z - b.z })
+    // CTR turbo meter zones = a fast current (water) or a warp lane (space): no obstacles inside, a star line down it
+    var lanes = run.zones(gateZ, GRACE)
+    function laneAt (zz) { return run.zoneAt(lanes, zz) }
+    ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'big' || laneAt(e.z) < 0 })
+    lanes.forEach(function (ln) {
+      var q
+      for (q = ln.z0 + 0.6; q < ln.z1 - 0.3; q += 0.95) { ents.push({ z: q, x: 0.5 + Math.sin(q * 1.4) * 0.16, type: 'star', st: 0, t: 0, ph: q }); collectibles++ }
+    })
+    ents.sort(function (a, b) { return a.z - b.z })
+    var drift = run.meter()
+    var told = false
+    // rivals start ahead (the child starts last); CTR-style rubber band keeps them near
+    var rivals = rivalKeys(lvl, skin).map(function (k, i) { return { key: k.key, craft: k.craft, z: 1.2 + i * 1.3, x: [0.3, 0.7, 0.5][i], tx: [0.3, 0.7, 0.5][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
+    run.pos = run.racers = rivals.length + 1
+    var nudgeT = 0
     var dz = 0
     while (dz < run.len + 8) {
       if (water) deco.push({ z: dz, side: r() < 0.5 ? -1 : 1, k: 'lib:tk-world/' + th.deco[(r() * th.deco.length) | 0], off: 0.04 + r() * 0.1, sc: 0.8 + r() * 0.6 })
@@ -200,6 +226,8 @@
       for (i = 0; i < wake.length; i++) wake[i].t += dt
       for (i = 0; i < trail.length; i++) trail[i].t += dt
       var W = run.W
+      stepLane(dt)
+      stepRivals(dt)
       for (i = 0; i < ents.length; i++) {
         var e = ents[i]
         if (e.st === 1) { e.t += dt; continue }
@@ -217,6 +245,90 @@
           if (small) { e.st = 2; run.collect(ex, ey, e.type === 'big') } else if (run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(ex, ey) }
         }
       }
+    }
+
+    function stepLane (dt) {
+      var li = laneAt(Z)
+      if (!told && lanes.length && lanes[0].z0 - Z < 4 && lanes[0].z0 > Z) { told = true; run.say(water ? 'Arus deras! Tekan TURBO saat lingkarannya merah!' : 'Jalur warp! Tekan TURBO saat lingkarannya merah!') }
+      drift.step(dt, li, 1)
+    }
+    function turbo () { drift.press(px * run.W, G.py + G.ps * 0.5) }
+    // rivals: their own pace with the rubber band; each steers out of an obstacle ahead and, near the child, out of the
+    // child's line; touching one is a soft nudge, never a crash
+    function stepRivals (dt) {
+      nudgeT = Math.max(0, nudgeT - dt)
+      var i
+      for (i = 0; i < rivals.length; i++) {
+        var rv = rivals[i]
+        var gap = rv.z - Z
+        rv.z += lvl.speed * rv.f * run.band(gap) * dt
+        rv.cool = Math.max(0, rv.cool - dt)
+        if (rv.cool <= 0) {
+          var near = function (xx) { return ents.some(function (e) { return e.st === 0 && e.type !== 'star' && e.type !== 'big' && e.z > rv.z && e.z - rv.z < 1.8 && Math.abs(e.x - xx) < 0.17 }) }
+          var crowd = gap > 0 && gap < 1.2 && Math.abs(px - rv.tx) < 0.15
+          if (near(rv.tx) || crowd) {
+            var opts = [0.2, 0.4, 0.6, 0.8].filter(function (xx) { return Math.abs(xx - rv.tx) > 0.1 && !near(xx) && Math.abs(px - xx) > 0.15 })
+            if (opts.length) { rv.tx = opts[(Math.random() * opts.length) | 0]; rv.cool = 1.2 }
+          }
+        }
+        rv.x += (rv.tx - rv.x) * Math.min(1, dt * 2.5)
+        if (nudgeT <= 0 && Math.abs(gap) * G.pyu < G.ps * 0.6 && Math.abs(rv.x - px) * run.W < G.ps * 0.5) { nudgeT = 1; run.mul *= 0.85; rv.z += 0.3; run.fx(water ? 'splash' : 'spark', px * run.W, G.py, 110) }
+      }
+      run.place(rivals, Z)
+    }
+    // the current / warp lane: a soft full-width band of chevrons flowing forward between the zone ends
+    function drawLanes (c) {
+      var i
+      for (i = 0; i < lanes.length; i++) {
+        var yb = G.py - (lanes[i].z0 - Z) * G.pyu
+        var yt = G.py - (lanes[i].z1 - Z) * G.pyu
+        if (yb < -40 || yt > run.H + 40) continue
+        var col = water ? '255,255,255' : '200,170,255'
+        var g = c.createLinearGradient(0, yt, 0, yb)
+        g.addColorStop(0, 'rgba(' + col + ',0)'); g.addColorStop(0.15, 'rgba(' + col + ',.2)'); g.addColorStop(0.85, 'rgba(' + col + ',.2)'); g.addColorStop(1, 'rgba(' + col + ',0)')
+        c.fillStyle = g
+        c.fillRect(0, yt, run.W, yb - yt)
+        c.strokeStyle = 'rgba(' + col + ',.85)'
+        c.lineWidth = 5
+        c.lineCap = 'round'
+        var sp = 90
+        var off = run.reduced() ? 0 : (run.t * 160) % sp
+        var col2
+        for (col2 = 0; col2 < 4; col2++) {
+          var xx = run.W * (0.14 + col2 * 0.24)
+          var y
+          for (y = yb - off - (col2 % 2) * sp / 2; y > yt + 10; y -= sp) { c.beginPath(); c.moveTo(xx - 14, y + 14); c.lineTo(xx, y); c.lineTo(xx + 14, y + 14); c.stroke() }
+        }
+      }
+    }
+    function drawRivals (c) {
+      var i
+      for (i = 0; i < rivals.length; i++) {
+        var rv = rivals[i]
+        var y = G.py - (rv.z - Z) * G.pyu
+        if (y < -G.ps || y > run.H + G.ps) continue
+        var x = rv.x * run.W
+        var ps = G.ps * 0.92
+        if (water) {
+          c.fillStyle = th.foam
+          c.globalAlpha = 0.5
+          c.beginPath(); c.ellipse(x, y + ps * 0.75, ps * 0.22, ps * 0.08, 0, 0, 6.3); c.fill()
+          c.globalAlpha = 1
+          run.spr(c, rv.key, x, y + Math.sin(run.t * 2.4 + rv.ph) * 3, ps * 1.25, ps * 1.5, {})
+        } else if (!(rv.craft && T.frameSpr(c, rv.key, rv.craft.play, run.t + rv.ph, x, y, ps * 1.2, ps * 1.2))) run.spr(c, ROCKET, x, y, ps, ps, { rot: -Math.PI / 4 })
+      }
+    }
+    // CTR exhaust: a flame behind the vehicle while turbo reserves last, bigger and hotter per fire level
+    function exhaust (c) {
+      if (run.reserves <= 0 || run.reduced()) return
+      var f = run.FIRE[run.fire]
+      var fl = (0.7 + run.fire * 0.25) * (0.85 + Math.sin(run.t * 47) * 0.15) * Math.min(1, run.reserves * 2)
+      var x = px * run.W
+      var y = G.py + G.ps * (water ? 0.62 : 0.45)
+      var g = c.createLinearGradient(0, y, 0, y + G.ps * 0.6 * fl)
+      g.addColorStop(0, f[0]); g.addColorStop(0.45, f[1]); g.addColorStop(1, 'rgba(255,120,40,0)')
+      c.fillStyle = g
+      c.beginPath(); c.moveTo(x - G.ps * 0.1, y); c.quadraticCurveTo(x, y + G.ps * 0.7 * fl, x + G.ps * 0.1, y); c.closePath(); c.fill()
     }
 
     function eSprite (e) {
@@ -463,6 +575,7 @@
     function draw (c, dt) {
       geo()
       if (water) drawBgWater(c); else drawBgSpace(c)
+      drawLanes(c)
       var W = run.W
       var H = run.H
       var i
@@ -486,7 +599,10 @@
       var gl = gateZ.concat([run.len])
       for (i = 0; i < gl.length; i++) drawGate(c, gl[i], i === gl.length - 1)
       if (!water) drawIntroOutro(c)
+      drawRivals(c)
+      exhaust(c)
       drawPlayer(c)
+      if (drift.on && !drift.spent) run.meterBar(c, drift, px * run.W, G.py - G.ps * 0.98, G.ps)
       if (run.boostT > 0 && !run.reduced()) {
         c.strokeStyle = 'rgba(255,255,255,.35)'
         c.lineWidth = 3
@@ -537,7 +653,7 @@
       } else run.spr(c, eSprite(e), x, y, sz, sz, { alpha: alpha, rot: rot })
     }
 
-    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs() }
+    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
   }
   T.engine('water', { assets: function (l) { return assets(l, 'water') }, make: function (run) { return make(run, 'water') } })
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })
