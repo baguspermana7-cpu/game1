@@ -6,356 +6,356 @@
  *   <id>-pick.webp  picker strip, every 2nd  [frameW, frameH, frames]   a CSS steps() animation on the selection tile
  * Order = the sheet, row by row. */
 window.BlippiSpace = {
-  frameMs: 80,
+  frameMs: 50,
   craft: [
  {
   "id": "rocket",
   "name": "Roket Merah",
   "play": [
-   80,
-   117,
-   48
+   83,
+   126,
+   60
   ],
   "pick": [
-   66,
-   93,
-   24
+   68,
+   101,
+   30
   ]
  },
  {
   "id": "ufo",
   "name": "Piring Terbang",
   "play": [
-   116,
-   77,
-   48
+   109,
+   124,
+   60
   ],
   "pick": [
-   92,
-   64,
-   24
+   88,
+   100,
+   30
   ]
  },
  {
   "id": "space-station",
   "name": "Stasiun Angkasa",
   "play": [
-   117,
-   117,
-   48
+   120,
+   124,
+   60
   ],
   "pick": [
-   93,
-   93,
-   24
+   96,
+   100,
+   30
   ]
  },
  {
   "id": "cargo-hauler",
   "name": "Kapal Kargo",
   "play": [
-   116,
-   99,
-   48
+   88,
+   124,
+   60
   ],
   "pick": [
-   92,
-   80,
-   24
+   72,
+   100,
+   30
   ]
  },
  {
   "id": "star-jet",
   "name": "Jet Bintang",
   "play": [
-   116,
-   106,
-   48
+   103,
+   124,
+   60
   ],
   "pick": [
-   92,
-   85,
-   24
+   84,
+   100,
+   30
   ]
  },
  {
   "id": "moon-lander",
   "name": "Pendarat Bulan",
   "play": [
-   116,
-   116,
-   48
+   103,
+   125,
+   60
   ],
   "pick": [
-   92,
-   92,
-   24
+   84,
+   100,
+   30
   ]
  },
  {
   "id": "manta-ship",
   "name": "Kapal Pari",
   "play": [
-   116,
-   112,
-   48
+   118,
+   123,
+   60
   ],
   "pick": [
-   92,
-   90,
-   24
+   95,
+   99,
+   30
   ]
  },
  {
   "id": "space-shuttle",
   "name": "Pesawat Ulang-alik",
   "play": [
-   117,
    103,
-   48
+   126,
+   60
   ],
   "pick": [
-   93,
-   83,
-   24
+   84,
+   101,
+   30
   ]
  },
  {
   "id": "probe",
   "name": "Probe Bola",
   "play": [
-   112,
-   119,
-   48
+   104,
+   124,
+   60
   ],
   "pick": [
-   90,
-   94,
-   24
+   84,
+   100,
+   30
   ]
  },
  {
   "id": "drill-ship",
   "name": "Kapal Bor",
   "play": [
-   116,
-   94,
-   48
+   77,
+   123,
+   60
   ],
   "pick": [
-   92,
-   76,
-   24
+   63,
+   99,
+   30
   ]
  },
  {
   "id": "ring-station",
   "name": "Stasiun Cincin",
   "play": [
-   117,
-   106,
-   48
+   110,
+   123,
+   60
   ],
   "pick": [
-   93,
-   85,
-   24
+   89,
+   99,
+   30
   ]
  },
  {
   "id": "red-cruiser",
   "name": "Kapal Merah",
   "play": [
-   117,
-   97,
-   48
+   79,
+   125,
+   60
   ],
   "pick": [
-   93,
-   78,
-   24
+   65,
+   100,
+   30
   ]
  },
  {
   "id": "jelly-ship",
   "name": "Kapal Ubur-ubur",
   "play": [
-   98,
+   101,
    118,
-   48
+   60
   ],
   "pick": [
-   80,
-   94,
-   24
+   82,
+   95,
+   30
   ]
  },
  {
   "id": "satellite",
   "name": "Satelit",
   "play": [
-   117,
-   87,
-   48
+   123,
+   113,
+   60
   ],
   "pick": [
-   93,
-   71,
-   24
+   99,
+   92,
+   30
   ]
  },
  {
   "id": "crescent-ship",
   "name": "Kapal Sabit",
   "play": [
-   116,
-   104,
-   48
+   112,
+   118,
+   60
   ],
   "pick": [
-   92,
-   84,
-   24
+   90,
+   95,
+   30
   ]
  },
  {
   "id": "nautilus-ship",
   "name": "Kapal Siput",
   "play": [
-   116,
-   104,
-   48
+   99,
+   124,
+   60
   ],
   "pick": [
-   92,
-   84,
-   24
+   80,
+   100,
+   30
   ]
  },
  {
   "id": "dragonfly-ship",
   "name": "Kapal Capung",
   "play": [
-   117,
-   95,
-   48
+   123,
+   120,
+   60
   ],
   "pick": [
-   93,
-   77,
-   24
+   99,
+   97,
+   30
   ]
  },
  {
   "id": "bubble-pod",
   "name": "Pod Merah",
   "play": [
-   116,
-   107,
-   48
+   120,
+   123,
+   60
   ],
   "pick": [
-   92,
-   86,
-   24
+   96,
+   99,
+   30
   ]
  },
  {
   "id": "twin-pod",
   "name": "Kapal Kembar",
   "play": [
-   116,
-   94,
-   48
+   95,
+   124,
+   60
   ],
   "pick": [
-   92,
-   76,
-   24
+   78,
+   100,
+   30
   ]
  },
  {
   "id": "solar-sail",
   "name": "Layar Surya",
   "play": [
-   111,
-   121,
-   48
+   113,
+   125,
+   60
   ],
   "pick": [
-   89,
-   96,
-   24
+   91,
+   100,
+   30
   ]
  },
  {
   "id": "donut-ship",
   "name": "Kapal Donat",
   "play": [
-   117,
-   88,
-   48
+   105,
+   126,
+   60
   ],
   "pick": [
-   93,
-   72,
-   24
+   85,
+   101,
+   30
   ]
  },
  {
   "id": "asteroid-miner",
   "name": "Penambang Asteroid",
   "play": [
-   116,
-   92,
-   48
+   85,
+   126,
+   60
   ],
   "pick": [
-   92,
-   75,
-   24
+   70,
+   101,
+   30
   ]
  },
  {
   "id": "space-sub",
   "name": "Kapal Selam Angkasa",
   "play": [
-   117,
-   113,
-   48
+   96,
+   125,
+   60
   ],
   "pick": [
-   93,
-   90,
-   24
+   79,
+   100,
+   30
   ]
  },
  {
   "id": "freighter",
   "name": "Kapal Barang",
   "play": [
-   117,
-   91,
-   48
+   99,
+   126,
+   60
   ],
   "pick": [
-   93,
-   74,
-   24
+   80,
+   101,
+   30
   ]
  },
  {
   "id": "glass-pod",
   "name": "Pod Kaca",
   "play": [
-   114,
-   101,
-   48
+   117,
+   125,
+   60
   ],
   "pick": [
-   91,
-   81,
-   24
+   95,
+   100,
+   30
   ]
  }
 ]

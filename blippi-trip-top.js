@@ -25,6 +25,8 @@
   // rivals (owner 2026-10-14 "balapan kurang seru", CTR): three other boats (rear view) or three other space craft
   var BOATS = ['tugboat', 'speedboat', 'workboat', 'sailboat']
   function rivalKeys (lvl, skin) {
+    var fl = skin === 'water' && T.ride && T.ride('air')
+    if (fl) return T.rideRivals('air', lvl.id).map(function (x) { return { key: x.key, ride: x } })
     if (skin === 'water') { var own = (/race:([^/]+)\//.exec(lvl.veh) || [])[1]; return BOATS.filter(function (v) { return v !== own }).slice(0, 3).map(function (v) { return { key: 'race:' + v + '/standard-rear' } }) }
     var cr = T.craft && T.craft()
     var all = (T.crafts ? T.crafts() : []).filter(function (k) { return !cr || k.id !== cr.id })
@@ -35,7 +37,9 @@
   function assets (lvl, skin) {
     var a = ['lib:nature/cloud', 'fx:splash', 'fx:ripple', 'fx:bubbles', 'lib:game/star', 'lib:game/lifebuoy', 'lib:game/gem-blue', 'lib:game/barrel', 'lib:tk-world/iceberg-2', 'fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:droplets', 'fx:ripple', 'fx:bubbles']
     if (skin === 'water') {
-      a.push(lvl.veh)
+      // the child's own animated boat (25-boat pack, owner 2026-10-15); the level boat still is the fallback
+      var me = T.ride && T.ride('air')
+      a.push(me ? me.key : lvl.veh)
       lvl.theme.deco.forEach(function (d) { a.push('lib:tk-world/' + d) })
     } else {
       // the child's chosen animated craft (BlippiSpace); the old rocket art stays as the fallback
@@ -70,6 +74,7 @@
     function nearGate (z) { return gateZ.some(function (g) { return Math.abs(g - z) < 1.5 }) }
     var water = skin === 'water'
     var craft = !water && T.craft ? T.craft() : null
+    var myBoat = water && T.ride ? T.ride('air') : null
     var obsKeys = water ? th.obs : ['asteroid']
     var z = 3
     var step = 2.5 - lvl.dens * 1.1
@@ -106,14 +111,14 @@
     })
     // gift boxes in open water / space, clear of the lanes and gates, with the stretch around them kept free of obstacles
     run.giftSpots(function (zz) { return laneAt(zz) >= 0 || laneAt(zz + 1) >= 0 || nearGate(zz) || zz < GRACE }).forEach(function (zz) {
-      ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'big' || Math.abs(e.z - zz) > 1.2 })
+      ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'big' || Math.abs(e.z - zz) > 1.2 || Math.abs(e.x - 0.5) > 0.22 })
       ents.push({ z: zz, x: 0.5, type: 'gift', st: 0, t: 0, ph: 0 })
     })
     ents.sort(function (a, b) { return a.z - b.z })
     var drift = run.meter()
     var told = false
     // rivals start ahead (the child starts last); CTR-style rubber band keeps them near
-    var rivals = rivalKeys(lvl, skin).map(function (k, i) { return { key: k.key, craft: k.craft, z: 1.2 + i * 1.3, x: [0.3, 0.7, 0.5][i], tx: [0.3, 0.7, 0.5][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
+    var rivals = rivalKeys(lvl, skin).map(function (k, i) { return { key: k.key, craft: k.craft, ride: k.ride, z: 1.2 + i * 1.3, x: [0.3, 0.7, 0.5][i], tx: [0.3, 0.7, 0.5][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
     run.pos = run.racers = rivals.length + 1
     var nudgeT = 0
     var dz = 0
@@ -321,7 +326,7 @@
           c.globalAlpha = 0.5
           c.beginPath(); c.ellipse(x, y + ps * 0.75, ps * 0.22, ps * 0.08, 0, 0, 6.3); c.fill()
           c.globalAlpha = 1
-          run.spr(c, rv.key, x, y + Math.sin(run.t * 2.4 + rv.ph) * 3, ps * 1.25, ps * 1.5, {})
+          if (!(rv.ride && T.frameSpr(c, rv.key, rv.ride.meta, run.t + rv.ph, x, y, ps * 1.25, ps * 1.5))) run.spr(c, rv.key, x, y + Math.sin(run.t * 2.4 + rv.ph) * 3, ps * 1.25, ps * 1.5, {})
         } else if (!(rv.craft && T.frameSpr(c, rv.key, rv.craft.play, run.t + rv.ph, x, y, ps * 1.2, ps * 1.2))) run.spr(c, ROCKET, x, y, ps, ps, { rot: -Math.PI / 4 })
       }
     }
@@ -540,7 +545,7 @@
         c.fillStyle = 'rgba(10,50,90,.1)'
         c.beginPath(); c.ellipse(x + 5, y + 8 + bob, ps * 0.4, ps * 0.8, 0, 0, 6.3); c.fill()
         c.save(); c.translate(x, y + bob); c.rotate(tilt * 0.5 + wob + roll); c.globalAlpha = alpha
-        run.spr(c, lvl.veh, 0, 0, ps * 1.25, ps * 1.5, {})
+        if (!(myBoat && T.frameSpr(c, myBoat.key, myBoat.meta, run.t, 0, 0, ps * 1.25, ps * 1.5))) run.spr(c, lvl.veh, 0, 0, ps * 1.25, ps * 1.5, {})
         c.restore()
         // bow splash
         c.fillStyle = th.foam
@@ -661,7 +666,7 @@
       } else run.spr(c, eSprite(e), x, y, sz, sz, { alpha: alpha, rot: rot })
     }
 
-    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: px * run.W, y: G.py, s: G.ps * 1.15 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
+    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), obsN: ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: px * run.W, y: G.py, s: G.ps * 1.15 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
   }
   T.engine('water', { assets: function (l) { return assets(l, 'water') }, make: function (run) { return make(run, 'water') } })
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })

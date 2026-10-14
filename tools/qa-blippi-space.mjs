@@ -118,8 +118,8 @@ for (const [w, h] of [[1280, 800], [844, 390]]) {
     let worst = Infinity
     for (let seed = 1; seed <= 12; seed++) {
       await p.evaluate((id, seed) => { BlippiTrip.open(id.split('-')[0]); BlippiTrip.start(id, { seed }) }, id, seed)
-      await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().obs0 != null, { timeout: 30000 })
-      worst = Math.min(worst, await p.evaluate(() => BlippiTrip.qa().obs0))
+      await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'count', { timeout: 30000 })
+      worst = Math.min(worst, await p.evaluate(() => String(BlippiTrip.qa().obs0)).then(Number)) // Infinity (no obstacle) is JSON null
     }
     ok(worst >= 6, `${id}: an obstacle ${worst.toFixed(1)} units in, before the child has learned to steer`)
   }

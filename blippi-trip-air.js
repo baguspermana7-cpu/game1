@@ -75,7 +75,7 @@
     })
     // gift boxes mid-sky, clear of the wind streams and gates, with the sky around them kept free of obstacles
     run.giftSpots(function (zz) { return windAt(zz) >= 0 || windAt(zz + 1) >= 0 || nearGate(zz) || zz < run.len * 0.2 }).forEach(function (zz) {
-      ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'ring' || Math.abs(e.z - zz) > 1.2 })
+      ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'ring' || Math.abs(e.z - zz) > 1.2 || Math.abs(e.y - 0.45) > 0.16 })
       ents.push({ z: zz, y: 0.45, type: 'gift', st: 0, t: 0, ph: 0 })
     })
     ents.sort(function (a, b) { return a.z - b.z })
@@ -444,7 +444,7 @@
     }
     function eKey (t) { return t === 'balloon' ? 'lib:game/hot-air-balloon' : t === 'eagle' ? 'lib:animals/eagle' : t === 'parrot' ? 'lib:animals/parrot' : 'lib:tk-world/storm-cloud' }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'sun-rays', 'horizon', 'clouds-far', 'clouds-mid', 'clouds-near', 'sea', 'birds', 'clouds-front', 'plane'], get lane () { return null }, get lift () { return lift }, get py () { return py / run.H }, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: G.px, y: py, s: G.ps * 0.95 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: winds, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'ring' && windAt(e.z) >= 0 }).length } }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'sun-rays', 'horizon', 'clouds-far', 'clouds-mid', 'clouds-near', 'sea', 'birds', 'clouds-front', 'plane'], get lane () { return null }, get lift () { return lift }, get py () { return py / run.H }, obsN: ents.filter(function (e) { return e.type !== 'star' && e.type !== 'ring' && e.type !== 'gift' }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: G.px, y: py, s: G.ps * 0.95 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: winds, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'ring' && windAt(e.z) >= 0 }).length } }
   }
   T.engine('air', { assets: assets, make: make })
 })(window)

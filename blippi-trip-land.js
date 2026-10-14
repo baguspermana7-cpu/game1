@@ -25,7 +25,10 @@
   function assets (lvl) {
     var t = lvl.theme
     var a = ['lib:mojo-chase/cfar/' + t.far, 'lib:mojo-chase/cmid/' + t.mid, 'lib:nature/cloud', lvl.veh, KEYS.coin, KEYS.star, KEYS.boost, KEYS.ramp]
-    rivalIds(lvl).forEach(function (v) { a.push('race:' + v + '/standard-rear') })
+    // the child's own animated vehicle and three rivals from the same 25-vehicle pack (owner 2026-10-15); the old stills stay
+    // as the fallback when the fleet data is missing
+    var me = T.ride && T.ride('darat')
+    if (me) { a.push(me.key); T.rideRivals('darat', lvl.id).forEach(function (rv) { a.push(rv.key) }) } else rivalIds(lvl).forEach(function (v) { a.push('race:' + v + '/standard-rear') })
     OBST.forEach(function (o) { a.push('lib:mojo-chase/items/' + o) })
     t.props.forEach(function (p) { a.push('lib:mojo-chase/props/' + p) })
     return a
@@ -126,7 +129,9 @@
     })
     ents.sort(function (a, b) { return a.z - b.z })
     // rivals start ahead (the child starts last and races up the field); CTR-style rubber band keeps them near
-    var rivals = rivalIds(lvl).slice(0, 3).map(function (v, i) { return { id: v, key: 'race:' + v + '/standard-rear', z: 2.6 + i * 2.8, lane: [0, 2, 1][i], lp: [0, 2, 1][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
+    var me = T.ride && T.ride('darat')
+    var rides = me ? T.rideRivals('darat', lvl.id) : []
+    var rivals = (me ? rides.map(function (x) { return x.item.id }) : rivalIds(lvl).slice(0, 3)).map(function (v, i) { return { id: v, ride: rides[i] || null, key: rides[i] ? rides[i].key : 'race:' + v + '/standard-rear', z: 2.6 + i * 2.8, lane: [0, 2, 1][i], lp: [0, 2, 1][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
     run.pos = run.racers = rivals.length + 1
     var hop = 0
     var hopMax = 0
@@ -432,7 +437,9 @@
         var rs = Math.min(G.rw * 0.62, run.H * 0.3) * p
         c.fillStyle = 'rgba(30,40,70,.24)'
         c.beginPath(); c.ellipse(rx, y + 2 * p, rs * 0.44, rs * 0.08, 0, 0, 6.3); c.fill()
-        run.spr(c, o.key, rx, y + Math.sin(run.t * 15 + o.ph) * 1.4 * p, rs, rs * 0.86, { anchor: 'bottom', rot: (o.lane - o.lp) * -0.2 + b0 * 0.04 })
+        var rr = (o.lane - o.lp) * -0.2 + b0 * 0.04
+        if (o.ride) { c.save(); c.translate(rx, y); c.rotate(rr); if (!T.frameBot(c, o.key, o.ride.meta, run.t + o.ph, 0, 0, rs, rs * 0.86)) run.spr(c, o.key, 0, 0, rs, rs * 0.86, { anchor: 'bottom' }); c.restore() }
+        else run.spr(c, o.key, rx, y + Math.sin(run.t * 15 + o.ph) * 1.4 * p, rs, rs * 0.86, { anchor: 'bottom', rot: rr })
         return
       } else if (it.kind === 'ent') {
         var ex = CX(p) + (o.lane - 1) * LS() * p
@@ -593,12 +600,17 @@
       var hy = hop > 0 ? Math.sin((1 - hop / hopMax) * Math.PI) * sz * 0.7 : 0
       var hs = 1 + hy / sz * 0.18
       var sq = land > 0 && !run.reduced() ? Math.sin(land / 0.35 * Math.PI) * 0.08 : 0
-      run.spr(c, lvl.veh, vx, G.ny + bob - hy, sz * hs * (1 + sq), sz * 0.86 * hs * (1 - sq), { anchor: 'bottom', rot: tilt + b0 * 0.05 + dslide * 0.14 - (hop > 0 ? 0.05 : 0), alpha: alpha })
+      var vr = tilt + b0 * 0.05 + dslide * 0.14 - (hop > 0 ? 0.05 : 0)
+      var vw = sz * hs * (1 + sq)
+      var vh = sz * 0.86 * hs * (1 - sq)
+      // the child's own vehicle: its rear-view loop (wheels, lamps, puffs) instead of a still; bob is in the art
+      if (me && T.img(me.key)) { c.save(); c.translate(vx, G.ny - hy); c.rotate(vr); T.frameBot(c, me.key, me.meta, run.t, 0, 0, vw, vh, alpha); c.restore() }
+      else run.spr(c, lvl.veh, vx, G.ny + bob - hy, vw, vh, { anchor: 'bottom', rot: vr, alpha: alpha })
       vp = { x: vx, y: G.ny - sz * 0.42 - hy, s: sz }
       if (drift.on && !drift.spent) run.meterBar(c, drift, vx, G.ny - sz * 0.98, sz)
     }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return run.pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return vp }, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return run.pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, obsN: ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return vp }, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
   }
   T.engine('land', { assets: assets, make: make })
 })(window)

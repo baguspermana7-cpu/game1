@@ -35,17 +35,38 @@
   }
   // an animated craft: its frame strip as a background stepped through by CSS (steps, jump-none: every frame exactly once)
   function anim (parent, cr, big, cls) {
-    var meta = big ? cr.play : cr.pick
+    return strip(parent, 'assets/space/' + cr.id + (big ? '' : '-pick') + '.webp', big ? cr.play : cr.pick, (w.BlippiSpace.frameMs || 80) * (big ? 1 : 2), cr.name, cls)
+  }
+  function strip (parent, src, meta, ms, name, cls) {
     var sp = el('span', 'tanim' + (cls ? ' ' + cls : ''), parent)
-    sp.style.backgroundImage = 'url(assets/space/' + cr.id + (big ? '' : '-pick') + '.webp)'
+    sp.style.backgroundImage = 'url(' + src + ')'
     sp.style.backgroundSize = (meta[2] * 100) + '% 100%'
     sp.style.aspectRatio = meta[0] + ' / ' + meta[1]
     sp.style.setProperty('--n', String(meta[2]))
-    sp.style.setProperty('--d', (meta[2] * (w.BlippiSpace.frameMs || 80) * (big ? 1 : 2)) + 'ms')
+    sp.style.setProperty('--d', (meta[2] * ms) + 'ms')
     sp.setAttribute('role', 'img')
-    sp.setAttribute('aria-label', cr.name)
+    sp.setAttribute('aria-label', name)
     return sp
   }
+  // the child's own vehicle picture for a journey: the space craft (animated), or a fleet vehicle - its diagonal still on
+  // tiles, its rear-view loop when big; null when the journey has no choice of vehicle
+  var RIDE_WORD = { angkasa: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], darat: ['Kendaraanmu', 'kendaraan', 'Pilih Kendaraanmu'], air: ['Kapalmu', 'kapal', 'Pilih Kapalmu'] }
+  function myRide (cat) {
+    if (cat === 'angkasa') { var cr = T.craft && T.craft(); return cr ? { id: cr.id, name: cr.name, craft: cr } : null }
+    var r = T.ride && T.ride(cat)
+    return r ? { id: r.item.id, name: r.item.name, ride: r } : null
+  }
+  function rideList (cat) {
+    if (cat === 'angkasa') return T.crafts().map(function (cr) { return { id: cr.id, name: cr.name, craft: cr } })
+    var f = T.fleet && T.fleet(cat)
+    return f ? f.items.map(function (it) { return { id: it.id, name: it.name, ride: { key: 'fl:' + cat + '/' + it.id, tile: 'fl:' + cat + '/' + it.id + '-tile', meta: it.play.concat(f.frameMs) } } }) : []
+  }
+  function ridePic (parent, r, big, cls) {
+    if (r.craft) return anim(parent, r.craft, big, cls)
+    if (big) return strip(parent, T.url(r.ride.key), r.ride.meta, r.ride.meta[3], r.name, cls)
+    return imgEl(r.ride.tile, cls || '', parent, r.name)
+  }
+  function setMyRide (cat, id) { if (cat === 'angkasa') T.setCraft(id); else T.setRide(cat, id) }
   function btn (cls, parent, label, fn) {
     var b = el('button', cls, parent)
     b.type = 'button'
@@ -118,8 +139,8 @@
       b.style.setProperty('--tint', c.tint)
       b.style.setProperty('--ink', c.ink)
       var ic = el('span', 'tcicon', b)
-      var ccr = c.id === 'angkasa' && T.craft ? T.craft() : null // the child's own craft, moving, instead of the stock rocket
-      if (ccr) anim(ic, ccr, false); else imgEl(c.icon, '', ic)
+      var ccr = myRide(c.id) // the child's own craft / vehicle / boat instead of the stock icon
+      if (ccr) ridePic(ic, ccr, false); else imgEl(c.icon, '', ic)
       var tx = el('span', 'tctx', b)
       el('b', '', tx, c.name)
       el('em', '', tx, c.sub)
@@ -132,41 +153,42 @@
   }
 
   /* ---------- level picker ---------- */
-  /* ---------- space craft: the child's own animated craft (owner 2026-10-14) ---------- */
-  function craftBar (parent) {
-    var cr = T.craft()
+  /* ---------- the child's own vehicle per journey (space craft 2026-10-14, road vehicle + boat 2026-10-15) ---------- */
+  function craftBar (parent, cat) {
+    var cr = myRide(cat)
+    var wd = RIDE_WORD[cat]
     var bar = el('div', 'tcbar', parent)
     var pic = el('span', 'tcbig', bar)
-    anim(pic, cr, true)
+    ridePic(pic, cr, true)
     var tx = el('div', 'tctx', bar)
-    el('em', '', tx, 'Pesawatmu')
+    el('em', '', tx, wd[0])
     el('b', '', tx, cr.name)
-    var go = btn('tobtn blue tcgo', bar, 'Ganti pesawat', function () { craftPicker() })
-    go.textContent = 'GANTI PESAWAT'
-    go.setAttribute('data-act', 'ganti-pesawat')
+    var go = btn('tobtn blue tcgo', bar, 'Ganti ' + wd[1], function () { craftPicker(cat) })
+    go.textContent = 'GANTI ' + wd[1].toUpperCase()
+    go.setAttribute('data-act', 'ganti-' + wd[1])
   }
-  function craftPicker () {
-    var cur = T.craft()
+  function craftPicker (cat) {
+    var cur = myRide(cat)
     var ov = el('div', 'tcpick', $.lev)
     ov.setAttribute('role', 'dialog')
     ov.setAttribute('aria-modal', 'true')
-    ov.setAttribute('aria-label', 'Pilih pesawatmu')
+    ov.setAttribute('aria-label', RIDE_WORD[cat][2])
     var card = el('div', 'tcpcard', ov)
     var hd = el('div', 'tcphd', card)
-    el('h2', '', hd, 'Pilih Pesawatmu')
+    el('h2', '', hd, RIDE_WORD[cat][2])
     btn('tcirc', hd, 'Tutup', function () { ov.remove() }).innerHTML = BACK
     var grid = el('div', 'tcgrid', card)
-    T.crafts().forEach(function (cr) {
-      var b = btn('tct' + (cr.id === cur.id ? ' on' : ''), grid, cr.name, function () {
-        T.setCraft(cr.id)
+    rideList(cat).forEach(function (r) {
+      var b = btn('tct' + (r.id === cur.id ? ' on' : ''), grid, r.name, function () {
+        setMyRide(cat, r.id)
         w.Blippi.sfx('collect')
         ;[].forEach.call(grid.querySelectorAll('.tct'), function (x) { x.classList.toggle('on', x === b) })
         b.classList.add('chose')
-        setTimeout(function () { ov.remove(); showLevels('angkasa') }, 420)
+        setTimeout(function () { ov.remove(); showLevels(cat) }, 420)
       })
-      b.setAttribute('data-craft', cr.id)
-      anim(el('span', 'tctpic', b), cr, false)
-      el('i', '', b, cr.name)
+      b.setAttribute('data-craft', r.id)
+      ridePic(el('span', 'tctpic', b), r, false)
+      el('i', '', b, r.name)
     })
     var on = grid.querySelector('.tct.on')
     if (on) setTimeout(function () { on.scrollIntoView({ block: 'nearest' }); on.focus({ preventScroll: true }) }, 60)
@@ -180,7 +202,7 @@
     $.lev.style.setProperty('--tint', cat.tint)
     $.lev.style.setProperty('--ink', cat.ink)
     header($.lev, cat.name, showPick, cat.ctl)
-    if (catId === 'angkasa' && T.craft && T.craft()) craftBar($.lev)
+    if (myRide(catId)) craftBar($.lev, catId)
     var grid = el('div', 'tlvls', $.lev)
     D.levels.filter(function (l) { return l.cat === catId }).forEach(function (l, i) {
       var open = T.unlocked(l)
@@ -195,8 +217,8 @@
       var num = el('span', 'tnum', b, String(i + 1))
       void num
       var ph = el('span', 'tlpic', b)
-      var cr = catId === 'angkasa' && T.craft ? T.craft() : null
-      if (cr) anim(ph, cr, false)
+      var cr = myRide(catId)
+      if (cr) ridePic(ph, cr, false)
       else imgEl(l.vui || (typeof l.veh === 'string' && l.veh.indexOf(':') > 0 ? l.veh : cat.icon), '', ph)
       var tx = el('span', 'tltx', b)
       el('b', '', tx, l.name)
@@ -248,8 +270,8 @@
     el('b', 'tflag', pg).style.left = '100%'
     var cat = D.cats.filter(function (c) { return c.id === run.lvl.cat })[0]
     $.mark = el('span', 'tmark', pg)
-    var mcr = run.lvl.cat === 'angkasa' && T.craft ? T.craft() : null
-    if (mcr) anim($.mark, mcr, false) // the child's own craft
+    var mcr = myRide(run.lvl.cat)
+    if (mcr) ridePic($.mark, mcr, false) // the child's own craft / vehicle / boat
     else imgEl(run.lvl.vui || cat.icon, '', $.mark) // the vehicle this level drives, not the category icon
     var sc = el('div', 'tscore', wrap)
     sc.innerHTML = STAR
@@ -460,7 +482,8 @@
   // the finishing order (CTR's podium): four chips, rivals by how far they got, the child at its place, own chip marked KAMU
   function standings (parent, run, place) {
     var rv = (run.eng && run.eng.rivals || []).slice().sort(function (a, b) { return b.z - a.z })
-    var mine = run.lvl.cat === 'angkasa' && T.craft ? { craft: T.craft(), me: true } : { key: run.lvl.vui || run.lvl.veh, me: true }
+    var mr = myRide(run.lvl.cat)
+    var mine = mr ? (mr.craft ? { craft: mr.craft, me: true } : { key: mr.ride.tile, tile: true, me: true }) : { key: run.lvl.vui || run.lvl.veh, me: true }
     rv.splice(place - 1, 0, mine)
     var row = el('ol', 'tstand', parent)
     row.setAttribute('aria-label', 'Urutan finis')
@@ -469,6 +492,7 @@
       el('b', '', li, String(i + 1))
       var pic = el('span', 'tsv', li)
       if (r.craft) anim(pic, r.craft, false)
+      else if (r.ride || r.tile) imgEl(r.ride ? r.ride.tile : r.key, '', pic)
       else imgEl(String(r.key).replace(/\/standard-[a-z-]+$/, '/standard-front-three-quarter'), '', pic)
       if (r.me) el('i', '', li, 'KAMU')
     })

@@ -30,6 +30,7 @@ const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'qu
     ok(s.cornerObs === 0, `${id}/${seed}: ${s.cornerObs} obstacles inside a corner`)
     ok(s.ramps >= 1, `${id}/${seed}: no jump ramp`)
     ok(s.giftBoxes >= 2, `${id}/${seed}: ${s.giftBoxes} gift boxes (need >= 2)`)
+    ok(s.obsN >= 1, `${id}/${seed}: no obstacle on the whole journey`)
     ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
     ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
   }
@@ -43,6 +44,7 @@ const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'qu
     ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
     ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
     ok(s.giftBoxes >= 2, `${id}/${seed}: ${s.giftBoxes} gift boxes (need >= 2)`)
+    ok(s.obsN >= 1, `${id}/${seed}: no obstacle on the whole journey`)
   }
   await p.close()
 }
