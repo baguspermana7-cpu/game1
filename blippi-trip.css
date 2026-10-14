@@ -236,6 +236,9 @@ body.trip-on #stage{visibility:hidden}
 .tturbo.fire2{background:radial-gradient(circle at 35% 28%,#FFD1D1,#FF3B30 70%,#B3001B)}
 .tturbo.hit{transform:scale(.9)}
 .tturbo.gone{opacity:0;pointer-events:none;transform:scale(.6)}
+.tturbo.teach::after{content:'TEKAN!';position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:16px;background:#FF3B30;color:#fff;font:800 20px/1.2 Nunito,sans-serif;white-space:nowrap;box-shadow:0 4px 10px rgba(120,0,0,.35);animation:ttteach .45s ease-in-out infinite alternate}
+@keyframes ttteach{from{transform:translate(-50%,0)}to{transform:translate(-50%,-8px)}}
+@media (prefers-reduced-motion:reduce){.tturbo.teach::after{animation:none}}
 @keyframes ttpulse{from{transform:scale(1)}to{transform:scale(1.09)}}
 @media (max-width:640px){.tturbo{width:92px;height:92px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 92px)}}
 @media (max-height:460px){.tturbo{width:84px;height:84px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 92px)}.tturbo b{font-size:16px}}

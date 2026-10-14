@@ -73,6 +73,11 @@
       var q
       for (q = wd.z0 + 0.6; q < wd.z1 - 0.3; q += 0.7) { ents.push({ z: q, y: 0.45 + Math.sin(q * 1.3) * 0.12, type: 'star', st: 0, t: 0, ph: q }); collectibles++ }
     })
+    // gift boxes mid-sky, clear of the wind streams and gates, with the sky around them kept free of obstacles
+    run.giftSpots(function (zz) { return windAt(zz) >= 0 || windAt(zz + 1) >= 0 || nearGate(zz) || zz < run.len * 0.2 }).forEach(function (zz) {
+      ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'ring' || Math.abs(e.z - zz) > 1.2 })
+      ents.push({ z: zz, y: 0.45, type: 'gift', st: 0, t: 0, ph: 0 })
+    })
     ents.sort(function (a, b) { return a.z - b.z })
     var drift = run.meter()
     var told = false
@@ -108,6 +113,7 @@
       // hold position when the finger lifts; a plane never flown (still at the water line, which falls away below the screen
       // on take-off) climbs to a cruise height instead of sinking out of sight with the water
       if (run.in.down || run.in.ky) hold = -1
+      else if (lift < 0.9) steer = H * 0.42 // an untouched take-off climbs to the cruise height
       else {
         if (hold < 0) hold = py < H * 0.17 || py > H * 0.74 ? 0.42 : py / H
         steer = hold * H
@@ -136,7 +142,9 @@
         var ey = e.y * H + (e.type === 'balloon' || e.type === 'storm' ? Math.sin(run.t * 1.5 + e.ph) * 8 : 0)
         var dx = ex - G.px
         var dy = ey - py
-        if (e.type === 'star' && Math.abs(dx) < G.ps * 0.45 && Math.abs(dy) < G.ps * 0.45) { e.st = 2; run.collect(ex, ey, false) } else if (e.type === 'ring' && Math.abs(dx) < G.ps * 0.3 && Math.abs(dy) < H * 0.085) { e.st = 2; run.collect(ex, ey, true); run.fx('check-burst', ex, ey, 160); run.turbo(0.7, 0, ex, ey) /* a ring is CTR's turbo pad */ } else if (e.type !== 'star' && e.type !== 'ring' && Math.abs(dx) < G.ps * 0.38 && Math.abs(dy) < G.ps * 0.3 && run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(G.px + G.ps * 0.4, py) }
+        // the star magnet pulls stars from the whole sky column ahead
+        var rs = run.magnetT > 0 ? H * 0.42 : G.ps * 0.45
+        if (e.type === 'gift' && Math.abs(dx) < G.ps * 0.45 && Math.abs(dy) < G.ps * 0.45) { e.st = 2; run.gift(ex, ey) } else if (e.type === 'star' && Math.abs(dx) < G.ps * 0.45 && Math.abs(dy) < rs) { e.st = 2; run.collect(ex, ey, false) } else if (e.type === 'ring' && Math.abs(dx) < G.ps * 0.3 && Math.abs(dy) < H * 0.085) { e.st = 2; run.collect(ex, ey, true); run.fx('check-burst', ex, ey, 160); run.turbo(0.7, 0, ex, ey) /* a ring is CTR's turbo pad */ } else if (e.type !== 'star' && e.type !== 'ring' && e.type !== 'gift' && Math.abs(dx) < G.ps * 0.38 && Math.abs(dy) < G.ps * 0.3 && run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(G.px + G.ps * 0.4, py) }
       }
     }
 
@@ -386,7 +394,8 @@
         var ey = e.y * H + (e.type === 'balloon' || e.type === 'storm' || e.type === 'star' ? Math.sin(run.t * 1.6 + e.ph) * 8 : 0)
         var sz2 = G.ps * 0.62
         if (e.st === 1) { var k = Math.min(1, e.t / 0.8); ex += k * 80; ey -= k * 60; run.spr(c, eKey(e.type), ex, ey, sz2, sz2, { alpha: 1 - k, rot: k * 2 }); continue }
-        if (e.type === 'star') run.spr(c, 'lib:game/star', ex, ey, sz2 * 0.55, sz2 * 0.55, {})
+        if (e.type === 'gift') run.drawGift(c, ex, ey, G.ps * 0.5)
+        else if (e.type === 'star') run.spr(c, 'lib:game/star', ex, ey, sz2 * 0.55, sz2 * 0.55, {})
         else if (e.type === 'ring') {
           c.strokeStyle = '#FFC82E'
           c.lineWidth = 8
@@ -435,7 +444,7 @@
     }
     function eKey (t) { return t === 'balloon' ? 'lib:game/hot-air-balloon' : t === 'eagle' ? 'lib:animals/eagle' : t === 'parrot' ? 'lib:animals/parrot' : 'lib:tk-world/storm-cloud' }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'sun-rays', 'horizon', 'clouds-far', 'clouds-mid', 'clouds-near', 'sea', 'birds', 'clouds-front', 'plane'], get lane () { return null }, get lift () { return lift }, get py () { return py / run.H }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: winds, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'ring' && windAt(e.z) >= 0 }).length } }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'sun-rays', 'horizon', 'clouds-far', 'clouds-mid', 'clouds-near', 'sea', 'birds', 'clouds-front', 'plane'], get lane () { return null }, get lift () { return lift }, get py () { return py / run.H }, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: G.px, y: py, s: G.ps * 0.95 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: winds, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'ring' && windAt(e.z) >= 0 }).length } }
   }
   T.engine('air', { assets: assets, make: make })
 })(window)

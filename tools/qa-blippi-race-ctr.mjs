@@ -29,6 +29,7 @@ const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'qu
     ok(s.corners >= 2, `${id}/${seed}: ${s.corners} drift corners (need >= 2)`)
     ok(s.cornerObs === 0, `${id}/${seed}: ${s.cornerObs} obstacles inside a corner`)
     ok(s.ramps >= 1, `${id}/${seed}: no jump ramp`)
+    ok(s.giftBoxes >= 2, `${id}/${seed}: ${s.giftBoxes} gift boxes (need >= 2)`)
     ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
     ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
   }
@@ -41,6 +42,7 @@ const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'qu
     ok(s.cornerObs === 0, `${id}/${seed}: ${s.cornerObs} obstacles inside a turbo zone`)
     ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
     ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
+    ok(s.giftBoxes >= 2, `${id}/${seed}: ${s.giftBoxes} gift boxes (need >= 2)`)
   }
   await p.close()
 }
@@ -64,7 +66,7 @@ async function race (cat, id, seed) {
   const p = await page(844, 390)
   await p.evaluate((cat, id, seed) => { BlippiTrip.open(cat); BlippiTrip.start(id, { seed }) }, cat, id, seed)
   await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
-  let fires = [], greenTested = false, greenOk = null, greenWhy = "", sawAir = false, bumpsAtAir = -1, airTurbo = false, posSeen = new Set(), capMax = 0, gone = false
+  let fires = [], greenTested = false, greenOk = null, greenWhy = "", sawAir = false, bumpsAtAir = -1, airTurbo = false, posSeen = new Set(), capMax = 0, gone = false, teachSeen = false, teachAfter = false, stretch = false, last = null, shieldSeen = false, magnetSeen = false
   const t0 = Date.now()
   while (Date.now() - t0 < 150000) {
     if (await answerIfQuiz(p)) continue
@@ -73,6 +75,11 @@ async function race (cat, id, seed) {
     posSeen.add(s.pos)
     capMax = Math.max(capMax, s.mulNow)
     if (s.state === 'play' && s.turboGone) gone = true
+    if (s.teach && s.meterN > 0) teachAfter = true
+    if (s.stretch) stretch = true
+    if (s.shieldT > 0) shieldSeen = true
+    if (s.magnetT > 0) magnetSeen = true
+    last = s
     if (s.air && !sawAir) { sawAir = true; bumpsAtAir = s.bumps }
     if (sawAir && !s.air && bumpsAtAir >= 0 && !airTurbo) { await sleep(150); const s2 = await q(p); airTurbo = s2.reserves > 0; ok(s2.bumps === bumpsAtAir, `jump: bumped an obstacle while airborne (${bumpsAtAir} -> ${s2.bumps})`) }
     const d = s.drift
@@ -81,6 +88,7 @@ async function race (cat, id, seed) {
         greenTested = true; await tapTurbo(p); await sleep(60)
         const s2 = await q(p); greenWhy = JSON.stringify([d, s2.drift, s2.state]); greenOk = s2.drift.idx === d.idx && s2.drift.boosts === d.boosts && s2.drift.tries === d.tries + 1
       } else if (d.red) {
+        if (!s.meterN && !teachSeen) { await sleep(80); teachSeen = (await q(p)).teach }
         const n0 = s.turboN; await tapTurbo(p); await sleep(60)
         const s2 = await q(p); if (s2.turboN > n0) fires.push(s2.fire)
       }
@@ -89,6 +97,11 @@ async function race (cat, id, seed) {
     if (s.progress > 0.999) break
   }
   ok(!gone, `${id}: the TURBO button left the run`)
+  ok(teachSeen, `${id}: no TEKAN! hint on the first red meter`)
+  ok(!teachAfter, `${id}: the TEKAN! hint stayed after the first meter turbo`)
+  ok(stretch, `${id}: Blippi never called the last stretch`)
+  // the child holds still (no steering), so it drives through every gift box placed on its line
+  ok(last && last.gifts.length >= 2 && shieldSeen && magnetSeen, `${id}: gift boxes opened ${JSON.stringify(last && last.gifts)}, shield ${shieldSeen}, magnet ${magnetSeen}`)
   ok(greenOk === true, `${id}: a press in the green gave a turbo or did not empty the meter (${greenOk} ${greenWhy})`)
   ok(fires.includes(1) && fires.includes(2), `${id}: meter turbos did not climb in level: ${JSON.stringify(fires)}`)
   ok(capMax > 1.45, `${id}: speed never rose past the plain cap on stacked turbos (max ${capMax.toFixed(2)})`)

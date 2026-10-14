@@ -299,7 +299,7 @@
       in: { down: false, x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, moves: [], kx: 0, ky: 0 },
       work: [], slowFrames: 0, finishT: 0, say: say, fx: fx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
       collect: collect, bump: bump, boost: boost, turbo: turbo, press: pressTurbo, ctr: CTR,
-      meter: meter, meterBar: meterBar, zones: zones, zoneAt: zoneAt, band: band, place: place, FIRE: FIRE
+      gift: gift, drawGift: drawGift, giftSpots: giftSpots, meter: meter, meterBar: meterBar, zones: zones, zoneAt: zoneAt, band: band, place: place, FIRE: FIRE
     }
     run.gates = lvl.gates.map(function (f) { return { f: f, done: false } })
     resize()
@@ -361,6 +361,7 @@
     var k = run.dpr * run.scale
     c.setTransform(k, 0, 0, k, 0, 0)
     run.eng.draw(c, dt)
+    drawAura(c)
     drawFx(c, run.state === 'paused' ? 0 : dt)
     UI.tick(run)
     run.work.push(w.performance.now() - w0)
@@ -376,6 +377,8 @@
     // CTR turbo model: reserves are boost seconds that stack; the fire level (0-2) raises the speed cap; while reserves
     // last the vehicle accelerates 2.4x harder (CTR metaPhys: accel 1152 with reserves vs 480 without)
     r.reserves = Math.max(0, r.reserves - dt)
+    r.shieldT = Math.max(0, (r.shieldT || 0) - dt)
+    r.magnetT = Math.max(0, (r.magnetT || 0) - dt)
     if (!r.reserves) r.fire = 0
     r.boostT = r.reserves
     r.hitT = Math.max(0, r.hitT - dt)
@@ -393,6 +396,8 @@
       return
     }
     r.progress = Math.min(1, r.progress + r.rate * dt / r.len)
+    // the last stretch: Blippi cheers once, by how the race stands
+    if (!r.stretch && r.progress > 0.86 && r.pos) { r.stretch = true; say(r.pos === 1 ? 'Garis finis sudah dekat! Pertahankan!' : 'Garis finis sudah dekat! Ayo salip, tekan TURBO!') }
     var i
     for (i = 0; i < r.gates.length; i++) {
       if (!r.gates[i].done && r.progress >= r.gates[i].f) { r.gates[i].done = true; openGate(i); return }
@@ -514,6 +519,8 @@
   }
   function bump (x, y) {
     if (!run || run.slowT > 0.2) return
+    // the bubble shield takes the knock: the obstacle bounces off, nothing is lost
+    if (run.shieldT > 0) { run.shieldT = 0; run.hitT = 0.6; B().sfx('ok'); fx('spark', x, y, 160); say('Pelindungnya pecah. Kamu tetap aman!'); return }
     run.bumps++
     run.combo = 0
     run.slowT = 1.1
@@ -562,6 +569,7 @@
         var left = (1 - m.meter) * CTR.room
         var gain = CTR.fullGain + (CTR.minGain - CTR.fullGain) * Math.min(1, left / CTR.red)
         turbo(gain, m.boosts, x, y, ['Turbo!', 'Turbo dua!', 'TURBO TIGA! Hebat!'][m.boosts])
+        run.meterN = (run.meterN || 0) + 1
         m.boosts++
         m.meter = 0; m.full = 0; m.red = false
         if (m.boosts >= CTR.boosts) m.spent = true
@@ -604,6 +612,12 @@
     return out
   }
   function zoneAt (zs, z) { for (var i = 0; i < zs.length; i++) if (z >= zs[i].z0 && z < zs[i].z1) return i; return -1 }
+  // three gift-box spots (run.len units) near 30 / 55 / 78 % of the run, pushed forward past anything avoid(z) refuses
+  function giftSpots (avoid) {
+    var out = []
+    ;[0.3, 0.55, 0.78].forEach(function (f) { var z = f * run.len, n = 0; while (avoid(z) && n < 40) { z += 0.5; n++ } if (!avoid(z)) out.push(z) })
+    return out
+  }
   // CTR-style rubber band (gap = rival minus child, run.len units): far ahead a rival eases off, far behind it pushes
   function band (gap) { return gap > 7.3 ? 0.78 : gap > 4.1 ? 0.9 : gap < -4.5 ? 1.2 : 1 }
   // race position from the rivals' z against the child's (same units); Blippi cheers an overtake
@@ -613,6 +627,57 @@
     if (run.pos && np < run.pos && run.state === 'play') { say(np === 1 ? 'Salip! Kamu juara satu!' : 'Salip! Posisi ' + np + '!'); B().sfx('ok') }
     run.pos = np
     run.racers = rivals.length + 1
+  }
+  // a gift box (CTR's item crate, kid-safe: nothing to throw at anyone): a bubble shield that takes one knock, a star magnet
+  // that pulls every lane's stars in, or a turbo; the three take turns so every box feels new
+  var GIFTS = ['shield', 'magnet', 'turbo']
+  function gift (x, y) {
+    if (!run) return
+    var k = GIFTS[(run.giftN || 0) % 3]
+    run.giftN = (run.giftN || 0) + 1
+    run.gifts = (run.gifts || []).concat(k)
+    fx('gold-star', x, y, 170)
+    B().sfx('collect')
+    if (k === 'shield') { run.shieldT = 9; say('Gelembung pelindung! Aman dari satu benturan.') }
+    else if (k === 'magnet') { run.magnetT = 8; say('Magnet bintang! Bintang datang sendiri.') }
+    else turbo(1.6, 1, x, y, 'Kotak turbo! Wuuush!')
+  }
+  // the box itself: a rainbow crate with a big ?, bobbing and turning a little
+  function drawGift (c, x, y, sz) {
+    var b = reduced() ? 0 : Math.sin(run.t * 4 + x * 0.01) * sz * 0.06
+    c.save(); c.translate(x, y + b); c.rotate(reduced() ? 0 : Math.sin(run.t * 2.2 + x) * 0.12)
+    var g = c.createLinearGradient(-sz / 2, -sz / 2, sz / 2, sz / 2)
+    g.addColorStop(0, '#FF8FB1'); g.addColorStop(0.35, '#FFD86B'); g.addColorStop(0.7, '#7CE3B0'); g.addColorStop(1, '#7FB8FF')
+    c.fillStyle = g
+    c.strokeStyle = '#FFFFFF'
+    c.lineWidth = Math.max(2, sz * 0.07)
+    rrect(c, -sz / 2, -sz / 2, sz, sz, sz * 0.22); c.fill(); c.stroke()
+    c.fillStyle = '#FFFFFF'
+    c.font = '800 ' + Math.round(sz * 0.7) + 'px Fredoka,Nunito,sans-serif'
+    c.textAlign = 'center'; c.textBaseline = 'middle'
+    c.fillText('?', 0, sz * 0.04)
+    c.restore()
+  }
+  // shield bubble and magnet ring around the vehicle (the engine says where it is: eng.vpos() -> {x, y, s})
+  function drawAura (c) {
+    var v = run.eng && run.eng.vpos ? run.eng.vpos() : null
+    if (!v) return
+    if (run.shieldT > 0) {
+      var a = run.shieldT < 2 ? (Math.floor(run.t * 8) % 2 ? 0.25 : 0.6) : 0.6
+      var g = c.createRadialGradient(v.x - v.s * 0.2, v.y - v.s * 0.25, v.s * 0.1, v.x, v.y, v.s * 0.75)
+      g.addColorStop(0, 'rgba(255,255,255,' + (a * 0.5) + ')'); g.addColorStop(0.75, 'rgba(160,225,255,' + (a * 0.25) + ')'); g.addColorStop(1, 'rgba(120,200,255,' + a + ')')
+      c.fillStyle = g
+      c.beginPath(); c.arc(v.x, v.y, v.s * 0.75, 0, 6.3); c.fill()
+    }
+    if (run.magnetT > 0) {
+      c.save()
+      c.strokeStyle = 'rgba(255,200,46,.85)'
+      c.lineWidth = 4
+      c.setLineDash([10, 12])
+      c.lineDashOffset = reduced() ? 0 : -run.t * 60
+      c.beginPath(); c.arc(v.x, v.y, v.s * 0.85, 0, 6.3); c.stroke()
+      c.restore()
+    }
   }
   // the TURBO button (or Space / ArrowUp): before GO it is the start turbo, in a run the engine decides (a drift meter)
   function pressTurbo () {
@@ -754,7 +819,7 @@
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), planeY: run.eng && run.eng.py != null ? run.eng.py : null, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, planeY: run.eng && run.eng.py != null ? run.eng.py : null, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }

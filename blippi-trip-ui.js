@@ -321,6 +321,8 @@
         var m = dr && dr.on ? Math.round(dr.meter * 50) / 50 : 0
         if (m !== tb._m) { tb._m = m; tb.style.setProperty('--m', String(m)) }
         var cls = run.state === 'count' ? 'tturbo ready' : !dr || !dr.on ? 'tturbo idle' : dr.red ? 'tturbo on red' : 'tturbo on'
+        // until the child's first meter turbo, a red meter shows TEKAN! over the button (a 4-year-old does not read the ring)
+        if (dr && dr.red && !run.meterN) cls += ' teach'
         if (run.fire && run.reserves > 0) cls += ' fire' + run.fire
         if (tb.className !== cls) tb.className = cls
       }

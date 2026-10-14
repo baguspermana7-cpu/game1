@@ -115,6 +115,15 @@
         rz += endZ * 0.38
       } else rz += 3
     }
+    // gift boxes on straights, clear of corners, ramps and gates; the lane around a box is kept free of obstacles
+    run.giftSpots(function (zl) {
+      var zz = zl * SPD
+      return cornerAt(zz) >= 0 || cornerAt(zz + 3) >= 0 || gateT.some(function (g) { return Math.abs(g - zl) < 2.5 }) || ents.some(function (e) { return e.type === 'ramp' && Math.abs(e.z - zz) < 7 })
+    }).forEach(function (zl) {
+      var gl = 1 // the middle lane: reachable from either side in one move
+      ents = ents.filter(function (e) { return !(OBST.indexOf(e.type) >= 0 && e.lane === gl && Math.abs(e.z - zl * SPD) < 3) })
+      ents.push({ z: zl * SPD, lane: gl, type: 'gift', st: 0, t: 0 })
+    })
     ents.sort(function (a, b) { return a.z - b.z })
     // rivals start ahead (the child starts last and races up the field); CTR-style rubber band keeps them near
     var rivals = rivalIds(lvl).slice(0, 3).map(function (v, i) { return { id: v, key: 'race:' + v + '/standard-rear', z: 2.6 + i * 2.8, lane: [0, 2, 1][i], lp: [0, 2, 1][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
@@ -198,9 +207,11 @@
         if (e.st === 2) continue
         if (d > 0.5) break // sorted: nothing nearer further on
         if (d < -0.5) { e.st = 2; continue }
-        if (Math.abs(d) < 0.38 && Math.abs(lanePos - e.lane) < 0.55) {
+        // the star magnet reaches every lane
+        var reach = run.magnetT > 0 && (e.type === 'star' || e.type === 'coin') && !e.air ? 2.1 : 0.55
+        if (Math.abs(d) < 0.38 && Math.abs(lanePos - e.lane) < reach) {
           var sx = G.cx + (e.lane - 1) * LS()
-          if (e.type === 'star' || e.type === 'coin') { e.st = 2; T0.collect(sx, G.ny - G.rw * 0.2, e.type === 'star') } else if (e.type === 'boost') { e.st = 2; T0.boost(sx, G.ny - 20) } else if (e.type === 'ramp') {
+          if (e.type === 'star' || e.type === 'coin') { e.st = 2; T0.collect(sx, G.ny - G.rw * 0.2, e.type === 'star') } else if (e.type === 'boost') { e.st = 2; T0.boost(sx, G.ny - 20) } else if (e.type === 'gift') { e.st = 2; T0.gift(sx, G.ny - 60) } else if (e.type === 'ramp') {
             if (hop <= 0) { hopMax = hop = 0.75 + Math.max(0, run.mul - 1) * 0.9; e.st = 2; run.say('Wuuush! Terbang!'); if (w.Blippi) w.Blippi.sfx('boost') }
           } else if (hop > 0) { /* sailing over it */ } else if (run.hitT <= 0) { e.st = 1; e.t = 0; T0.bump(sx, G.ny - 30) }
         }
@@ -435,7 +446,8 @@
         if (o.type === 'star' || o.type === 'coin') {
           var bob = Math.sin(run.t * 5 + o.z) * 5 * p
           run.spr(c, KEYS[o.type], ex, y - sz * (o.air ? 1.5 : 0.55) + bob, sz * 0.8, sz * 0.8, {})
-        } else if (o.type === 'boost') run.spr(c, KEYS.boost, ex, y, sz * 1.1, sz * 0.7, { anchor: 'bottom' })
+        } else if (o.type === 'gift') run.drawGift(c, ex, y - sz * 0.5, sz * 0.8)
+        else if (o.type === 'boost') run.spr(c, KEYS.boost, ex, y, sz * 1.1, sz * 0.7, { anchor: 'bottom' })
         else if (o.type === 'ramp') run.spr(c, KEYS.ramp, ex, y, LS() * p * 1.02, sz * 0.8, { anchor: 'bottom' })
         else run.spr(c, 'lib:mojo-chase/items/' + o.type, ex, y + sz * 0.1, sz, sz, { anchor: 'bottom' })
         // soft shadow
@@ -519,6 +531,7 @@
     }
 
     var dslide = 0
+    var vp = null
     // CTR exhaust: a flame under the rear while turbo reserves last, bigger and hotter per fire level
     function exhaust (c, x, sz) {
       if (run.reserves <= 0 || run.reduced()) return
@@ -581,10 +594,11 @@
       var hs = 1 + hy / sz * 0.18
       var sq = land > 0 && !run.reduced() ? Math.sin(land / 0.35 * Math.PI) * 0.08 : 0
       run.spr(c, lvl.veh, vx, G.ny + bob - hy, sz * hs * (1 + sq), sz * 0.86 * hs * (1 - sq), { anchor: 'bottom', rot: tilt + b0 * 0.05 + dslide * 0.14 - (hop > 0 ? 0.05 : 0), alpha: alpha })
+      vp = { x: vx, y: G.ny - sz * 0.42 - hy, s: sz }
       if (drift.on && !drift.spent) run.meterBar(c, drift, vx, G.ny - sz * 0.98, sz)
     }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return run.pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return run.pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return vp }, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
   }
   T.engine('land', { assets: assets, make: make })
 })(window)

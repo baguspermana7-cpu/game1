@@ -104,6 +104,11 @@
       var q
       for (q = ln.z0 + 0.6; q < ln.z1 - 0.3; q += 0.95) { ents.push({ z: q, x: 0.5 + Math.sin(q * 1.4) * 0.16, type: 'star', st: 0, t: 0, ph: q }); collectibles++ }
     })
+    // gift boxes in open water / space, clear of the lanes and gates, with the stretch around them kept free of obstacles
+    run.giftSpots(function (zz) { return laneAt(zz) >= 0 || laneAt(zz + 1) >= 0 || nearGate(zz) || zz < GRACE }).forEach(function (zz) {
+      ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'big' || Math.abs(e.z - zz) > 1.2 })
+      ents.push({ z: zz, x: 0.5, type: 'gift', st: 0, t: 0, ph: 0 })
+    })
     ents.sort(function (a, b) { return a.z - b.z })
     var drift = run.meter()
     var told = false
@@ -239,10 +244,12 @@
         var ey = G.py - d * G.pyu
         var dx = ex - px * W
         var dy = ey - G.py
-        var small = e.type === 'star' || e.type === 'big'
+        var small = e.type === 'star' || e.type === 'big' || e.type === 'gift'
         var rr = small ? G.ps * 0.5 : G.ps * (0.3 + 0.28 * (e.sc || 1))
-        if (Math.abs(dx) < rr && Math.abs(dy) < rr) {
-          if (small) { e.st = 2; run.collect(ex, ey, e.type === 'big') } else if (run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(ex, ey) }
+        // the star magnet pulls stars in from the whole width
+        var rx = run.magnetT > 0 && e.type === 'star' ? W : rr
+        if (Math.abs(dx) < rx && Math.abs(dy) < rr) {
+          if (e.type === 'gift') { e.st = 2; run.gift(ex, ey) } else if (small) { e.st = 2; run.collect(ex, ey, e.type === 'big') } else if (run.hitT <= 0) { e.st = 1; e.t = 0; wobble = 0.8; run.bump(ex, ey) }
         }
       }
     }
@@ -592,7 +599,8 @@
           drawObs(c, e, ex + (e.x > 0.5 ? 1 : -1) * k * 90, ey + k * 30, sz, 1 - k, k * 3)
           continue
         }
-        if (e.type === 'star') run.spr(c, 'lib:game/star', ex, ey + Math.sin(run.t * 4 + e.ph) * 4, G.ps * 0.5, G.ps * 0.5, {})
+        if (e.type === 'gift') run.drawGift(c, ex, ey, G.ps * 0.55)
+        else if (e.type === 'star') run.spr(c, 'lib:game/star', ex, ey + Math.sin(run.t * 4 + e.ph) * 4, G.ps * 0.5, G.ps * 0.5, {})
         else if (e.type === 'big') run.spr(c, eSprite(e), ex, ey + Math.sin(run.t * 3) * 4, G.ps * 0.7, G.ps * 0.7, {})
         else drawObs(c, e, ex, ey, sz, 1, Math.sin(run.t * 1.6 + e.ph) * 0.06)
       }
@@ -644,7 +652,7 @@
       }
     }
     // QA: where the first obstacle sits, in world units (the opening must stay clear while the how-to chip is up)
-    function firstObs () { var o = ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' })[0]; return o ? o.z : Infinity }
+    function firstObs () { var o = ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' })[0]; return o ? o.z : Infinity }
     function drawObs (c, e, x, y, sz, alpha, rot) {
       if (!water) {
         var ang = rot + e.ph + run.t * (0.5 + (e.ph % 1)) * (e.ph > 3 ? -1 : 1)
@@ -653,7 +661,7 @@
       } else run.spr(c, eSprite(e), x, y, sz, sz, { alpha: alpha, rot: rot })
     }
 
-    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
+    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: px * run.W, y: G.py, s: G.ps * 1.15 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
   }
   T.engine('water', { assets: function (l) { return assets(l, 'water') }, make: function (run) { return make(run, 'water') } })
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })
