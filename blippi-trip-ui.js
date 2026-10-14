@@ -22,6 +22,10 @@
   var LARR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'
   var RARR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>'
 
+  // last input was a key (true) or a touch / mouse (false): decides whether a new screen moves focus
+  var kbd = false
+  w.addEventListener('keydown', function () { kbd = true }, true)
+  w.addEventListener('pointerdown', function () { kbd = false }, true)
   function el (tag, cls, parent, text) {
     var e = doc.createElement(tag)
     if (cls) e.className = cls
@@ -251,6 +255,9 @@
     sc.innerHTML = STAR
     $.score = el('u', '', sc, '0')
     $.combo = el('b', 'tcombo', sc, '')
+    // race position (road): 4/4 at the start, the child races up the field
+    $.pos = run.lvl.cat === 'darat' ? el('div', 'tpos', wrap) : null
+    $.posN = 0
     // Blippi's speech line
     var sp = el('div', 'tsay', $.run)
     sp.setAttribute('aria-live', 'polite')
@@ -275,6 +282,15 @@
       br.setAttribute('data-act', 'kanan')
       press(br, 1)
     }
+    // TURBO (CTR): the start turbo on every journey (press just before GO); on the road it also fires the drift turbo in a
+    // corner when its ring is red. Moves on the PRESS like the arrows; the click after a press is ignored.
+    var tbT = 0
+    var tb = btn('tturbo', $.run, 'Turbo', function () { if (Date.now() - tbT > 700) run.press() })
+    tb.setAttribute('data-act', 'turbo')
+    tb.innerHTML = '<i class="tring"></i><b>TURBO</b>'
+    tb.addEventListener('pointerdown', function (e) { tbT = Date.now(); run.press(); tb.classList.add('hit'); setTimeout(function () { tb.classList.remove('hit') }, 140); e.preventDefault() })
+    $.turbo = tb
+    $.turboKeep = run.lvl.cat === 'darat'
     // how-to chip for the first seconds
     var how = el('div', 'thow', $.run, cat.ctl)
     setTimeout(function () { if (how.parentNode) how.classList.add('gone') }, 3600)
@@ -291,6 +307,33 @@
       $.mark.style.left = p + '%'
       $.pg.setAttribute('aria-valuenow', String(Math.round(p)))
     }
+    if ($.pos && run.pos && run.pos !== $.posN) {
+      $.posN = run.pos
+      $.pos.innerHTML = '<b>' + run.pos + '</b><i>/' + (run.racers || 4) + '</i>'
+      $.pos.classList.remove('pop'); void $.pos.offsetWidth; $.pos.classList.add('pop')
+      $.pos.classList.toggle('first', run.pos === 1)
+    }
+    var tb = $.turbo
+    if (tb) {
+      if (run.state === 'play' && !$.turboKeep) { if (!tb.classList.contains('gone')) tb.classList.add('gone') } else {
+        // the ring is the CTR turbo meter: it fills while drifting, turns red in the last half second
+        var dr = run.eng && run.eng.drift ? run.eng.drift() : null
+        var m = dr && dr.on ? Math.round(dr.meter * 50) / 50 : 0
+        if (m !== tb._m) { tb._m = m; tb.style.setProperty('--m', String(m)) }
+        var cls = run.state === 'count' ? 'tturbo ready' : !dr || !dr.on ? 'tturbo idle' : dr.red ? 'tturbo on red' : 'tturbo on'
+        if (run.fire && run.reserves > 0) cls += ' fire' + run.fire
+        if (tb.className !== cls) tb.className = cls
+      }
+    }
+  }
+  // start lights: a big 3, 2, 1, GO! over the road
+  function count (txt) {
+    if (!$.run) return
+    var o = $.run.querySelector('.tcount') || el('div', 'tcount', $.run)
+    o.textContent = txt
+    o.classList.remove('pop'); void o.offsetWidth; o.classList.add('pop')
+    o.classList.toggle('go', txt === 'GO!')
+    if (txt === 'GO!') setTimeout(function () { if (o.parentNode) o.parentNode.removeChild(o) }, 800)
   }
   function say (t) {
     if (!$.say || !$.sayBox) return
@@ -372,9 +415,9 @@
       b.textContent = String(c)
       b.setAttribute('data-ans', String(i))
     })
-    // the first button focus lets keyboard play
+    // the first button focus lets keyboard play; only for a keyboard player, or its ring reads as a pre-picked answer on a tablet
     var f = ch.querySelector('button')
-    if (f) setTimeout(function () { f.focus({ preventScroll: true }) }, 60)
+    if (f && kbd) setTimeout(function () { f.focus({ preventScroll: true }) }, 60)
   }
   function lock (ch) { [].forEach.call(ch.querySelectorAll('button'), function (b) { b.disabled = true }) }
   function markAnswer (ch, q) {
@@ -413,7 +456,9 @@
     b3.setAttribute('data-act', 'keluar')
   }
   function result (run, stars, first, improved) {
-    var p = panel('tresult', 'Hore! Sampai di tujuan!')
+    var place = run.pos && run.racers ? run.pos : 0
+    var p = panel('tresult', place === 1 ? 'Juara 1! Kamu tercepat!' : place ? 'Finis posisi ' + place + '!' : 'Hore! Sampai di tujuan!')
+    if (place) p.sc.setAttribute('data-place', String(place))
     p.sc.setAttribute('data-trip', 'result')
     var bl = el('div', 'tqhd', p.card)
     var bp = el('span', 'tprof small', bl)
@@ -474,7 +519,7 @@
     if (!el2) return
     el2.classList.remove('pop'); void el2.offsetWidth; el2.classList.add('pop')
   }
-  T.setUI({ showRun: showRun, hud: hud, tick: tick, say: say, quiz: quiz, pause: pause, result: result, scoreAt: scoreAt, pop: pop })
+  T.setUI({ showRun: showRun, hud: hud, tick: tick, say: say, quiz: quiz, pause: pause, result: result, scoreAt: scoreAt, pop: pop, count: count })
   T.open = open
   T.close = close
   T.showLevels = showLevels

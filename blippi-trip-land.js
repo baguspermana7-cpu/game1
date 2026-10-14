@@ -16,12 +16,16 @@
   var EMAX = 30
   var BAND = 1.8
   var OBST = ['cone', 'crate', 'barrel', 'tyres-2']
-  var KEYS = { coin: 'lib:mojo-chase/items/coin', star: 'lib:mojo-chase/items/star', boost: 'lib:mojo-chase/items/boost-pad' }
+  var KEYS = { coin: 'lib:mojo-chase/items/coin', star: 'lib:mojo-chase/items/star', boost: 'lib:mojo-chase/items/boost-pad', ramp: 'lib:mojo-chase/items/ramp' }
+  // rivals: other Blippi road vehicles (rear view), three per race, never the child's own vehicle
+  var RIVALS = ['police-suv', 'ambulance', 'fire-engine', 'recycling-truck', 'school-bus']
+  function rivalIds (lvl) { var own = (/race:([^/]+)\//.exec(lvl.veh) || [])[1]; return RIVALS.filter(function (v) { return v !== own }).slice(0, 4) }
   var BB = { cone: [70, 26, 270, 232], crate: [60, 20, 275, 230], barrel: [90, 20, 250, 232], 'tyres-2': [70, 30, 265, 230] }
 
   function assets (lvl) {
     var t = lvl.theme
-    var a = ['lib:mojo-chase/cfar/' + t.far, 'lib:mojo-chase/cmid/' + t.mid, 'lib:nature/cloud', lvl.veh, KEYS.coin, KEYS.star, KEYS.boost]
+    var a = ['lib:mojo-chase/cfar/' + t.far, 'lib:mojo-chase/cmid/' + t.mid, 'lib:nature/cloud', lvl.veh, KEYS.coin, KEYS.star, KEYS.boost, KEYS.ramp]
+    rivalIds(lvl).forEach(function (v) { a.push('race:' + v + '/standard-rear') })
     OBST.forEach(function (o) { a.push('lib:mojo-chase/items/' + o) })
     t.props.forEach(function (p) { a.push('lib:mojo-chase/props/' + p) })
     return a
@@ -76,6 +80,49 @@
     ents.sort(function (a, b) { return a.z - b.z })
     var gateZ = gateT.map(function (g) { return g * SPD })
     var endZ = run.len * SPD
+    // CTR power-slide corners (owner 2026-10-14 "reverse engineering CTR"): authored bends, each ~3 s long, clear of the
+    // question gates. Inside one the vehicle drifts on its own and the TURBO meter runs; obstacles stay out of the corner so
+    // the child watches the meter, coins line the inside lane.
+    var corners = []
+    var cz = GRACE * SPD + 8
+    while (cz < endZ - 16) {
+      var clen = 7.5 + r() * 2.5
+      var czz = cz
+      if (gateZ.some(function (g) { return g > czz - 6 && g < czz + clen + 4 })) { cz += 4; continue }
+      corners.push({ z0: cz, z1: cz + clen, dir: r() < 0.5 ? -1 : 1 })
+      cz += clen + 16 + r() * 12
+    }
+    function cornerAt (z) { for (var ci = 0; ci < corners.length; ci++) if (z >= corners[ci].z0 && z < corners[ci].z1) return ci; return -1 }
+    for (var oi = ents.length - 1; oi >= 0; oi--) if (OBST.indexOf(ents[oi].type) >= 0 && cornerAt(ents[oi].z) >= 0) ents.splice(oi, 1)
+    corners.forEach(function (cn) {
+      var inner = cn.dir < 0 ? 0 : 2
+      for (var q = cn.z0 + 1.5; q < cn.z1 - 0.5; q += 1.4) { ents.push({ z: q, lane: inner, type: 'coin', st: 0, t: 0 }); collectibles++ }
+    })
+    // jump ramps (Mojo Chase's hop, CTR's hang-time turbo): a ramp across all three lanes on a straight, then two obstacles
+    // the vehicle sails over and a star line in the air
+    var ramps = 0
+    var rz = GRACE * SPD + 14
+    while (rz < endZ - 12 && ramps < 2) {
+      var rzz = rz
+      var clear = cornerAt(rz) < 0 && cornerAt(rz + 5) < 0 && !gateZ.some(function (g) { return Math.abs(g - rzz - 2) < 6 })
+      if (clear) {
+        for (var oj = ents.length - 1; oj >= 0; oj--) if (ents[oj].z > rz - 2.5 && ents[oj].z < rz + 5) ents.splice(oj, 1)
+        for (var ln = 0; ln < 3; ln++) ents.push({ z: rz, lane: ln, type: 'ramp', st: 0, t: 0 })
+        ents.push({ z: rz + 2.6, lane: 0, type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
+        ents.push({ z: rz + 2.6, lane: 2, type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
+        for (var sq = 0; sq < 3; sq++) { ents.push({ z: rz + 1.4 + sq * 0.8, lane: 1, type: 'star', st: 0, t: 0, air: true }); collectibles++ }
+        ramps++
+        rz += endZ * 0.38
+      } else rz += 3
+    }
+    ents.sort(function (a, b) { return a.z - b.z })
+    // rivals start ahead (the child starts last and races up the field); CTR-style rubber band keeps them near
+    var rivals = rivalIds(lvl).slice(0, 3).map(function (v, i) { return { id: v, key: 'race:' + v + '/standard-rear', z: 2.6 + i * 2.8, lane: [0, 2, 1][i], lp: [0, 2, 1][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
+    var pos = rivals.length + 1
+    run.pos = pos
+    run.racers = pos
+    var hop = 0
+    var hopMax = 0
     var pz = 1
     while (pz < endZ + 6) {
       var key = th.props[(r() * th.props.length) | 0]
@@ -96,7 +143,25 @@
     function P (d) { return 1 / (1 + d / D0) }
     // the road winds (owner 2026-10-13 "jauh lebih bagus, super smooth"): a slow sum of two sines of the world position bends
     // the far road sideways; the near road (p ~ 1) stays under the vehicle, so steering is unchanged and the curve only reads
-    function bend (z) { return Math.sin(z * 0.05) * 0.7 + Math.sin(z * 0.13 + 1.3) * 0.3 }
+    // curvature of the road at z: a gentle sway plus the authored corners (eased in and out over 3 units), so in a corner the
+    // road keeps curving away ahead (OutRun-style) instead of straightening under the vehicle
+    function curve (z) {
+      var k = Math.sin(z * 0.05) * 0.18
+      for (var ci = 0; ci < corners.length; ci++) {
+        var cn = corners[ci]
+        if (z < cn.z0 - 3 || z > cn.z1 + 1) continue
+        var e = z < cn.z0 ? (z - cn.z0 + 3) / 3 : z > cn.z1 - 2 ? Math.max(0, (cn.z1 + 1 - z) / 3) : 1
+        k += cn.dir * 1.15 * (0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, e)))
+      }
+      return k
+    }
+    var yaw = 0
+    // the CTR drift: per corner the meter fills over CTR.room s, its last CTR.red s are red; a press in the red is a turbo
+    // (more the closer to full), up to CTR.boosts per corner; a press in the green empties the meter; a full meter left
+    // alone is lost for this corner (CTR adds 3 attempts) - with a short grace for small fingers
+    var C = run.ctr
+    var drift = { on: false, idx: -1, meter: 0, red: false, boosts: 0, tries: 0, spent: false, full: 0, dir: 0, told: false }
+    var sparks = []
     var b0 = 0
     var puffs = []
     var hz = null
@@ -115,6 +180,20 @@
       }
       lanePos += (lane - lanePos) * Math.min(1, dt * 15)
       tilt = (lane - lanePos) * -0.22
+      stepDrift(dt)
+      stepRivals(dt)
+      if (hop > 0) {
+        hop -= dt
+        if (hop <= 0) {
+          // CTR hang time: the longer in the air, the bigger the landing turbo
+          hop = 0
+          var gainH = 0.5 + Math.min(1, Math.max(0, (hopMax - 0.7) / 0.5)) * 0.65
+          run.fx('dust', G.cx + (lanePos - 1) * LS(), G.ny - 10, 160)
+          land = 0.35
+          run.turbo(gainH, 0, G.cx + (lanePos - 1) * LS(), G.ny + 14, 'Mendarat! Turbo!')
+        }
+      }
+      land = Math.max(0, land - dt)
       var i
       for (i = 0; i < ents.length; i++) {
         var e = ents[i]
@@ -125,11 +204,85 @@
         if (d < -0.5) { e.st = 2; continue }
         if (Math.abs(d) < 0.38 && Math.abs(lanePos - e.lane) < 0.55) {
           var sx = G.cx + (e.lane - 1) * LS()
-          if (e.type === 'star' || e.type === 'coin') { e.st = 2; T0.collect(sx, G.ny - G.rw * 0.2, e.type === 'star') } else if (e.type === 'boost') { e.st = 2; T0.boost(sx, G.ny - 20) } else if (run.hitT <= 0) { e.st = 1; e.t = 0; T0.bump(sx, G.ny - 30) }
+          if (e.type === 'star' || e.type === 'coin') { e.st = 2; T0.collect(sx, G.ny - G.rw * 0.2, e.type === 'star') } else if (e.type === 'boost') { e.st = 2; T0.boost(sx, G.ny - 20) } else if (e.type === 'ramp') {
+            if (hop <= 0) { hopMax = hop = 0.75 + Math.max(0, run.mul - 1) * 0.9; e.st = 2; run.say('Wuuush! Terbang!'); if (w.Blippi) w.Blippi.sfx('boost') }
+          } else if (hop > 0) { /* sailing over it */ } else if (run.hitT <= 0) { e.st = 1; e.t = 0; T0.bump(sx, G.ny - 30) }
         }
       }
     }
     var T0 = run
+    var land = 0
+    var nudgeT = 0
+    // rivals drive their own pace (level speed x f) with a CTR-style rubber band: far ahead they ease off, far behind they
+    // push, so the race stays close; each steers out of an obstacle in its lane and, near the child, out of the child's lane
+    function stepRivals (dt) {
+      nudgeT = Math.max(0, nudgeT - dt)
+      var base = lvl.speed * SPD
+      var i
+      for (i = 0; i < rivals.length; i++) {
+        var rv = rivals[i]
+        var gap = rv.z - Z
+        var band = gap > 16 ? 0.78 : gap > 9 ? 0.9 : gap < -10 ? 1.2 : 1
+        rv.z += base * rv.f * band * dt
+        rv.cool = Math.max(0, rv.cool - dt)
+        if (rv.cool <= 0) {
+          var block = ents.some(function (e) { return e.st === 0 && OBST.indexOf(e.type) >= 0 && e.lane === rv.lane && e.z > rv.z && e.z - rv.z < 3.5 })
+          var crowd = gap > 0 && gap < 3 && Math.abs(lanePos - rv.lane) < 0.6 && run.rate > lvl.speed * rv.f
+          if (block || crowd) {
+            var opts = [0, 1, 2].filter(function (l) { return l !== rv.lane && Math.abs(l - rv.lane) === 1 && !ents.some(function (e) { return e.st === 0 && OBST.indexOf(e.type) >= 0 && e.lane === l && e.z > rv.z - 0.5 && e.z - rv.z < 3.5 }) })
+            if (opts.length) { rv.lane = opts[(Math.random() * opts.length) | 0]; rv.cool = 1.2 }
+          }
+        }
+        rv.lp += (rv.lane - rv.lp) * Math.min(1, dt * 5)
+        // touching a rival: a soft nudge, no crash (a child is never punished for racing close)
+        if (hop <= 0 && nudgeT <= 0 && Math.abs(gap) < 0.7 && Math.abs(lanePos - rv.lp) < 0.5) { nudgeT = 1; run.mul *= 0.85; rv.z += 0.6; run.fx('dust', G.cx + (lanePos - 1) * LS(), G.ny - 20, 110) }
+      }
+      var np = 1
+      for (i = 0; i < rivals.length; i++) if (rivals[i].z > Z) np++
+      if (np < pos && run.state === 'play') { run.say(np === 1 ? 'Salip! Kamu juara satu!' : 'Salip! Posisi ' + np + '!'); if (w.Blippi) w.Blippi.sfx('ok') }
+      pos = np
+      run.pos = pos
+      run.racers = rivals.length + 1
+    }
+    function stepDrift (dt) {
+      var ci = cornerAt(Z)
+      // Blippi announces the first corner once, before it starts
+      if (!drift.told && corners.length && corners[0].z0 - Z < 9 && corners[0].z0 > Z) { drift.told = true; run.say('Tikungan! Tekan TURBO saat lingkarannya merah!') }
+      if (ci !== drift.idx) {
+        drift.idx = ci
+        drift.on = ci >= 0
+        drift.meter = 0; drift.boosts = 0; drift.tries = 0; drift.spent = false; drift.full = 0; drift.red = false
+        drift.dir = ci >= 0 ? corners[ci].dir : 0
+      }
+      if (!drift.on || drift.spent) { drift.red = false; return }
+      var wasRed = drift.red
+      drift.meter = Math.min(1, drift.meter + dt / C.room)
+      drift.red = drift.meter >= 1 - C.red / C.room
+      if (drift.red && !wasRed && w.Blippi) w.Blippi.sfx('meter')
+      if (drift.meter >= 1) {
+        drift.full += dt
+        if (drift.full > 0.18) { drift.spent = true; drift.red = false; if (!drift.boosts) run.say('Ups, terlewat. Tekan saat merah, ya!') }
+      }
+    }
+    // TURBO press from the core: a drift turbo in the red, an emptied meter in the green, nothing outside a corner
+    function turbo () {
+      if (!drift.on || drift.spent) return
+      var px = G.cx + (lanePos - 1) * LS()
+      if (drift.red) {
+        var left = (1 - drift.meter) * C.room
+        var gain = C.fullGain + (C.minGain - C.fullGain) * Math.min(1, left / C.red)
+        var lines = ['Turbo!', 'Turbo dua!', 'TURBO TIGA! Hebat!']
+        run.turbo(gain, drift.boosts, px, G.ny + 14, lines[drift.boosts])
+        drift.boosts++
+        drift.meter = 0; drift.full = 0; drift.red = false
+        if (drift.boosts >= C.boosts) drift.spent = true
+      } else {
+        drift.meter = 0
+        drift.tries++
+        if (drift.tries === 1) run.say('Tunggu sampai merah, ya!')
+        if (drift.tries >= 4) drift.spent = true
+      }
+    }
     var DL = []
     var pool = []
     var poolN = 0
@@ -153,9 +306,11 @@
       var W = run.W
       var H = run.H
       // the bend ahead eases in, so a curve never jumps
-      var bt = bend(Z + 20) - bend(Z)
-      b0 += (bt - b0) * Math.min(1, dt * 3)
-      var shift = (lanePos - 1) * 26 - b0 * 60
+      // the road ahead curves by the curvature a little in front; while it curves the scenery turns past (yaw)
+      var bt = curve(Z + 5)
+      b0 += (bt - b0) * Math.min(1, dt * 2.5)
+      if (run.state === 'play') yaw += b0 * dt * run.rate * 55
+      var shift = (lanePos - 1) * 26 - b0 * 60 + yaw
       // a short shake on a bump (never under reduced motion)
       var shk = run.hitT > 0.5 && !run.reduced() ? (run.hitT - 0.5) * 9 : 0
       c.save()
@@ -170,7 +325,7 @@
       if (ci) {
         var q
         for (q = 0; q < 3; q++) {
-          var cxp = ((q * 0.37 + run.t * 0.006 * (1 + q * 0.4)) % 1.25) * (W + 160) - 120 - shift * 0.3
+          var cxp = ((((q * 0.37 + run.t * 0.006 * (1 + q * 0.4)) - shift * 0.3 / (W + 160)) % 1.25 + 1.25) % 1.25) * (W + 160) - 120
           run.spr(c, 'lib:nature/cloud', cxp, G.hy * (0.22 + q * 0.13), 120 + q * 40, 80 + q * 24, { alpha: 0.85 })
         }
       }
@@ -265,6 +420,7 @@
       for (i = pi0; i < props.length; i++) { var pr = props[i]; var dd2 = pr.z - Z; if (dd2 >= DMAX) break; drawList.push(item(dd2, 'prop', pr)) }
       while (ei0 < ents.length && ents[ei0].z - Z < -1.2) ei0++
       for (i = ei0; i < ents.length; i++) { var en = ents[i]; var de = en.z - Z; if (de >= EMAX) break; if (en.st !== 2) drawList.push(item(de, 'ent', en)) }
+      for (i = 0; i < rivals.length; i++) { var dr0 = rivals[i].z - Z; if (dr0 > -1.1 && dr0 < DMAX) drawList.push(item(dr0, 'rival', rivals[i])) }
       for (i = 0; i < gateZ.length + 1; i++) { var gz = i < gateZ.length ? gateZ[i] : endZ; var dg = gz - Z; if (dg > -1.2 && dg < DMAX) drawList.push(item(dg, i < gateZ.length ? 'gate' : 'finish', { z: gz })) }
       drawList.sort(sortFar)
       var playerDrawn = false
@@ -301,6 +457,13 @@
       if (it.kind === 'prop') {
         var px = CX(p) + o.side * G.rw * o.off * p
         run.spr(c, o.k, px, y, G.rw * 0.9 * o.sc * p, G.rw * 1.0 * o.sc * p, { anchor: 'bottom' })
+      } else if (it.kind === 'rival') {
+        var rx = CX(p) + (o.lp - 1) * LS() * p
+        var rs = Math.min(G.rw * 0.62, run.H * 0.3) * p
+        c.fillStyle = 'rgba(30,40,70,.24)'
+        c.beginPath(); c.ellipse(rx, y + 2 * p, rs * 0.44, rs * 0.08, 0, 0, 6.3); c.fill()
+        run.spr(c, o.key, rx, y + Math.sin(run.t * 15 + o.ph) * 1.4 * p, rs, rs * 0.86, { anchor: 'bottom', rot: (o.lane - o.lp) * -0.2 + b0 * 0.04 })
+        return
       } else if (it.kind === 'ent') {
         var ex = CX(p) + (o.lane - 1) * LS() * p
         var sz = G.rw * 0.46 * p
@@ -312,11 +475,12 @@
         }
         if (o.type === 'star' || o.type === 'coin') {
           var bob = Math.sin(run.t * 5 + o.z) * 5 * p
-          run.spr(c, KEYS[o.type], ex, y - sz * 0.55 + bob, sz * 0.8, sz * 0.8, {})
+          run.spr(c, KEYS[o.type], ex, y - sz * (o.air ? 1.5 : 0.55) + bob, sz * 0.8, sz * 0.8, {})
         } else if (o.type === 'boost') run.spr(c, KEYS.boost, ex, y, sz * 1.1, sz * 0.7, { anchor: 'bottom' })
+        else if (o.type === 'ramp') run.spr(c, KEYS.ramp, ex, y, LS() * p * 1.02, sz * 0.8, { anchor: 'bottom' })
         else run.spr(c, 'lib:mojo-chase/items/' + o.type, ex, y + sz * 0.1, sz, sz, { anchor: 'bottom' })
         // soft shadow
-        if (o.type !== 'boost') { c.fillStyle = 'rgba(40,60,90,.18)'; c.beginPath(); c.ellipse(ex, y + 1, sz * 0.35, sz * 0.09, 0, 0, 6.3); c.fill() }
+        if (o.type !== 'boost' && o.type !== 'ramp') { c.fillStyle = 'rgba(40,60,90,.18)'; c.beginPath(); c.ellipse(ex, y + 1, sz * 0.35, sz * 0.09, 0, 0, 6.3); c.fill() }
       } else {
         var hw = G.rw * 1.0 * p
         var h = G.rw * 0.95 * p
@@ -395,6 +559,59 @@
       c.globalAlpha = 1
     }
 
+    var dslide = 0
+    var FIRE = [['#FFF3B0', '#FFB347'], ['#FFE29A', '#FF7A1A'], ['#FFD1D1', '#FF3B30']]
+    // CTR exhaust: a flame under the rear while turbo reserves last, bigger and hotter per fire level
+    function exhaust (c, x, sz) {
+      if (run.reserves <= 0 || run.reduced()) return
+      var f = FIRE[run.fire]
+      var fl = (0.7 + run.fire * 0.25) * (0.85 + Math.sin(run.t * 47) * 0.15) * Math.min(1, run.reserves * 2)
+      var q
+      for (q = -1; q <= 1; q += 2) {
+        var ex = x + q * sz * 0.2
+        var g = c.createLinearGradient(0, G.ny - 4, 0, G.ny + sz * 0.3 * fl)
+        g.addColorStop(0, f[0]); g.addColorStop(0.45, f[1]); g.addColorStop(1, 'rgba(255,120,40,0)')
+        c.fillStyle = g
+        c.beginPath(); c.moveTo(ex - sz * 0.07, G.ny - 4); c.quadraticCurveTo(ex, G.ny + sz * 0.36 * fl, ex + sz * 0.07, G.ny - 4); c.closePath(); c.fill()
+      }
+    }
+    // drift sparks from the rear wheels: green while the meter fills, red-orange in the red zone (a small pool)
+    function driftSparks (c, x, sz) {
+      if (run.reduced()) return
+      var col = drift.spent ? '#FFFFFF' : drift.red ? '#FF5A3C' : '#7CF29A'
+      var n = drift.red ? 3 : 2
+      var q
+      for (q = 0; q < n; q++) {
+        var sp = sparks.length < 40 ? {} : sparks.shift()
+        var side = q % 2 ? 1 : -1
+        sp.x = x + side * sz * 0.34; sp.y = G.ny - 2; sp.vx = side * (40 + Math.random() * 90) + drift.dir * 40; sp.vy = -(60 + Math.random() * 120); sp.t = 0; sp.col = col
+        sparks.push(sp)
+      }
+      var i
+      for (i = 0; i < sparks.length; i++) {
+        var u = sparks[i]
+        u.t += lastDt
+        if (u.t > 0.35) continue
+        c.fillStyle = u.col
+        c.globalAlpha = 1 - u.t / 0.35
+        c.fillRect(u.x + u.vx * u.t, u.y + u.vy * u.t + 300 * u.t * u.t, 4, 4)
+      }
+      c.globalAlpha = 1
+    }
+    // the turbo meter over the vehicle (the child looks at the vehicle, not the button): fills green, last part red
+    function meterBar (c, x, y, sz) {
+      var w = sz * 0.8
+      var h = Math.max(14, sz * 0.1)
+      var x0 = x - w / 2
+      c.fillStyle = 'rgba(19,49,138,.55)'
+      run.rrect(c, x0 - 3, y - 3, w + 6, h + 6, h); c.fill()
+      c.fillStyle = 'rgba(255,90,60,.35)'
+      c.fillRect(x0 + w * (1 - C.red / C.room), y, w * C.red / C.room, h)
+      c.fillStyle = drift.red ? '#FF3B30' : '#36C46B'
+      run.rrect(c, x0, y, Math.max(h, w * drift.meter), h, h / 2); c.fill()
+      var d
+      for (d = 0; d < drift.boosts; d++) { c.fillStyle = FIRE[d][1]; c.beginPath(); c.arc(x0 + w + 16 + d * 18, y + h / 2, 7, 0, 6.3); c.fill() }
+    }
     function drawPlayer (c) {
       var bob = Math.sin(run.t * 16) * 1.6
       var px = G.cx + (lanePos - 1) * LS()
@@ -405,12 +622,25 @@
       c.fill()
       dust(c, lastDt, px, sz)
       var alpha = run.hitT > 0 && !run.reduced() ? (Math.floor(run.t * 12) % 2 ? 0.45 : 1) : 1
+      // a drift swings the rear out (the nose points into the corner) and slides it a little to the outside
+      var ds = drift.on && !run.reduced() ? drift.dir : 0
+      dslide += (ds - dslide) * Math.min(1, lastDt * 6)
+      var vx = px - dslide * sz * 0.1
+      // turbo streaks sit BEHIND the vehicle (over it they hid it)
+      if (run.boostT > 0 && !run.reduced()) run.spr(c, 'fx:speed', vx, G.ny - sz * 0.05, sz * 1.25, sz * 0.7, { alpha: 0.35 })
+      exhaust(c, vx, sz)
+      if (drift.on) driftSparks(c, vx, sz)
       // leans into the curve ahead a little, on top of the lane-change tilt
-      run.spr(c, lvl.veh, px, G.ny + bob, sz, sz * 0.86, { anchor: 'bottom', rot: tilt + b0 * 0.05, alpha: alpha })
-      if (run.boostT > 0 && !run.reduced()) run.spr(c, 'fx:speed', px, G.ny - sz * 0.1, sz * 1.1, sz * 0.8, { alpha: 0.5 })
+      // a jump (Mojo Chase's hop arc): the vehicle rises on a sine and grows a little, the shadow stays on the road; a short
+      // squash on landing
+      var hy = hop > 0 ? Math.sin((1 - hop / hopMax) * Math.PI) * sz * 0.7 : 0
+      var hs = 1 + hy / sz * 0.18
+      var sq = land > 0 && !run.reduced() ? Math.sin(land / 0.35 * Math.PI) * 0.08 : 0
+      run.spr(c, lvl.veh, vx, G.ny + bob - hy, sz * hs * (1 + sq), sz * 0.86 * hs * (1 - sq), { anchor: 'bottom', rot: tilt + b0 * 0.05 + dslide * 0.14 - (hop > 0 ? 0.05 : 0), alpha: alpha })
+      if (drift.on && !drift.spent) meterBar(c, vx, G.ny - sz * 0.98, sz)
     }
 
-    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, ents: ents, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
+    return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
   }
   T.engine('land', { assets: assets, make: make })
 })(window)

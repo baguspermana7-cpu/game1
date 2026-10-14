@@ -61,6 +61,54 @@ for (const [w, h] of [[1280, 800], [844, 390]]) {
   ok(await p.evaluate(id => getComputedStyle(document.querySelector('.tmark .tanim')).backgroundImage.includes(id), last), `${w}: the progress mark is not the chosen craft`)
   await p.close()
 }
+// every frame of every strip is whole (owner 2026-10-14: "tidak ada mutilasi?"): no opaque pixel on the frame's outer band
+// (play: 1 px, the canvas draws an exact source rect; picker: 3 px, CSS steps() can round a pixel into the next frame), and
+// one body per frame (no piece of a neighbouring craft from the sheet). Decoded in the browser, alpha > 40.
+{
+  const p = await b.newPage()
+  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' })
+  const res = await p.evaluate(async C => {
+    const out = []
+    for (const c of C) for (const [kind, suf, band] of [['play', '', 1], ['pick', '-pick', 3]]) {
+      const im = new Image(); im.src = 'assets/space/' + c.id + suf + '.webp'; await im.decode()
+      const [fw, fh, n] = c[kind], cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height
+      const x = cv.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, im.width, im.height).data
+      let edge = 0, pieces = 0
+      for (let f = 0; f < n; f++) {
+        const on = (i, j) => d[(j * im.width + f * fw + i) * 4 + 3] > 40
+        for (let j = 0; j < fh; j++) for (let i = 0; i < fw; i++) if ((i < band || j < band || i >= fw - band || j >= fh - band) && on(i, j)) edge++
+        // count bodies of 30+ px (8-connected)
+        const seen = new Uint8Array(fw * fh); let bodies = 0
+        for (let j = 0; j < fh; j++) for (let i = 0; i < fw; i++) {
+          if (seen[j * fw + i] || !on(i, j)) continue
+          let sz = 0; const st = [[i, j]]; seen[j * fw + i] = 1
+          while (st.length) { const [a, b2] = st.pop(); sz++; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = a + dx, v = b2 + dy; if (u >= 0 && v >= 0 && u < fw && v < fh && !seen[v * fw + u] && on(u, v)) { seen[v * fw + u] = 1; st.push([u, v]) } } }
+          if (sz >= 30) bodies++
+        }
+        if (bodies > 1) pieces++
+      }
+      out.push([c.id, kind, edge, pieces])
+    }
+    return out
+  }, C)
+  res.forEach(([id, kind, edge, pieces]) => { ok(!edge, `${id} ${kind}: ${edge} opaque px on the frame edge (cut off, or bleeding into the next frame)`); ok(!pieces, `${id} ${kind}: ${pieces} frames carry a second piece`) })
+  await p.close()
+}
+// the quiz card: no answer looks pre-picked for a touch player (the focus ring on the first answer read as a choice),
+// while a keyboard player still lands on the first answer
+{
+  const p = await b.newPage(); await p.setViewport({ width: 390, height: 844, hasTouch: true, isMobile: true })
+  await p.evaluateOnNewDocument(() => { let bt; Object.defineProperty(window, 'BlippiTrip', { configurable: true, get: () => bt, set: v => { const o = v.setUI; v.setUI = u => { window.__tripUI = u; o(u) }; bt = v } }) })
+  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' })
+  await p.waitForFunction('window.__tripUI && window.SoalEngine')
+  await p.evaluate(() => BlippiTrip.open('darat')) // the journey screen must be showing, or nothing in it can take focus
+  const ask = () => p.evaluate(async () => { document.querySelectorAll('.tquiz').forEach(e => e.remove()); const q = SoalEngine.pick({ game: 'blippi', context: 'gate', avatar: 'auto', count: 1, grade: 1 })[0]; __tripUI.showRun(BlippiTrip.D.byId['darat-1']); __tripUI.quiz({ q, gate: 0 }); await new Promise(r => setTimeout(r, 250)); const a = document.activeElement; return a && a.hasAttribute('data-ans') ? a.getAttribute('data-ans') : null })
+  await p.touchscreen.tap(195, 600)
+  ok(await ask() === null, 'quiz after a touch: an answer is focused, its ring looks pre-picked')
+  await p.keyboard.press('ArrowLeft')
+  ok(await ask() === '0', 'quiz after a key: the first answer is not focused for keyboard play')
+  await p.close()
+}
 // the opening of every road / space level is obstacle free while the how-to chip is up (2026-10-14: a crash 2.5 s in).
 // Checked on the generated level for 12 seeds each: the first obstacle sits at least 6 world units (about 6 s at speed 1) in.
 {

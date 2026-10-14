@@ -17,8 +17,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   58,
-   85,
+   66,
+   93,
    24
   ]
  },
@@ -31,8 +31,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   56,
+   92,
+   64,
    24
   ]
  },
@@ -45,8 +45,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   85,
+   93,
+   93,
    24
   ]
  },
@@ -59,8 +59,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   72,
+   92,
+   80,
    24
   ]
  },
@@ -73,8 +73,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   77,
+   92,
+   85,
    24
   ]
  },
@@ -87,8 +87,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   84,
+   92,
+   92,
    24
   ]
  },
@@ -101,8 +101,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   82,
+   92,
+   90,
    24
   ]
  },
@@ -115,8 +115,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   75,
+   93,
+   83,
    24
   ]
  },
@@ -129,8 +129,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   82,
-   86,
+   90,
+   94,
    24
   ]
  },
@@ -143,8 +143,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   68,
+   92,
+   76,
    24
   ]
  },
@@ -157,8 +157,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
+   93,
    85,
-   77,
    24
   ]
  },
@@ -171,8 +171,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   70,
+   93,
+   78,
    24
   ]
  },
@@ -185,8 +185,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   72,
-   86,
+   80,
+   94,
    24
   ]
  },
@@ -199,8 +199,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   63,
+   93,
+   71,
    24
   ]
  },
@@ -213,8 +213,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
+   92,
    84,
-   76,
    24
   ]
  },
@@ -227,8 +227,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
+   92,
    84,
-   76,
    24
   ]
  },
@@ -241,8 +241,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   69,
+   93,
+   77,
    24
   ]
  },
@@ -255,8 +255,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   78,
+   92,
+   86,
    24
   ]
  },
@@ -269,8 +269,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   68,
+   92,
+   76,
    24
   ]
  },
@@ -283,8 +283,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   81,
-   88,
+   89,
+   96,
    24
   ]
  },
@@ -297,8 +297,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   64,
+   93,
+   72,
    24
   ]
  },
@@ -311,8 +311,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   84,
-   67,
+   92,
+   75,
    24
   ]
  },
@@ -325,8 +325,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   82,
+   93,
+   90,
    24
   ]
  },
@@ -339,8 +339,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   85,
-   66,
+   93,
+   74,
    24
   ]
  },
@@ -353,8 +353,8 @@ window.BlippiSpace = {
    48
   ],
   "pick": [
-   83,
-   73,
+   91,
+   81,
    24
   ]
  }

@@ -1,0 +1,91 @@
+// qa-blippi-race-ctr.mjs — the road journey races like CTR (owner 2026-10-14: "balapannya sangat kurang seru, reverse
+// engineering game CTR dan adopt mechanical smoothnya"). Real input (touch taps on the TURBO button) on the real game:
+//   start lights: 3-2-1-GO, a press in the last 0.45 s is a start turbo, an early press is not
+//   corners: every road level has authored corners with no obstacle inside; in a corner the meter runs and a press in the
+//            red is a turbo whose level climbs 1 -> 2 -> 3 (speed cap rises each time); a press in the green gives none
+//   jumps: ramps across the road, the vehicle is airborne over the obstacles behind (no bump) and lands with a turbo
+//   rivals: three rivals, the child starts last, positions change, the result names the place
+// Server: ~/rz-work on port 8090.   node tools/qa-blippi-race-ctr.mjs
+import puppeteer from 'puppeteer'
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+let pass = 0, fail = 0
+const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m) } }
+const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
+const errs = []
+const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e))); await p.setViewport({ width: w, height: h, isMobile: true, hasTouch: true }); await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); return p }
+const q = p => p.evaluate(() => BlippiTrip.qa())
+const tapTurbo = async p => { const bb = await (await p.$('[data-act=turbo]')).boundingBox(); await p.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2) }
+const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'quiz' && s.quiz) { await p.evaluate(i => document.querySelector('[data-ans="' + i + '"]').click(), s.quiz.answerIdx); await sleep(2600); return true } return false }
+
+// structure over all road levels and several seeds
+{
+  const p = await page(844, 390)
+  for (const id of ['darat-1', 'darat-2', 'darat-3', 'darat-4']) for (const seed of [1, 2, 3]) {
+    await p.evaluate((id, seed) => { BlippiTrip.open('darat'); BlippiTrip.start(id, { seed }) }, id, seed)
+    await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'count', { timeout: 30000 })
+    const s = await q(p)
+    ok(s.corners >= 2, `${id}/${seed}: ${s.corners} drift corners (need >= 2)`)
+    ok(s.cornerObs === 0, `${id}/${seed}: ${s.cornerObs} obstacles inside a corner`)
+    ok(s.ramps >= 1, `${id}/${seed}: no jump ramp`)
+    ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
+  }
+  await p.close()
+}
+// start lights
+for (const [label, delay, want] of [['in time', 1950, true], ['too early', 900, false]]) {
+  const p = await page(844, 390)
+  await p.evaluate(() => { BlippiTrip.open('darat'); BlippiTrip.start('darat-1', { seed: 4 }) })
+  await p.waitForFunction(() => { const e = document.querySelector('.tcount'); return e && e.textContent === '3' }, { timeout: 30000 })
+  const t0 = Date.now()
+  ok(await p.evaluate(() => BlippiTrip.qa().state) === 'count', 'no countdown before the run')
+  await sleep(Math.max(0, delay - (Date.now() - t0)))
+  await tapTurbo(p)
+  await p.waitForFunction(() => BlippiTrip.qa().state === 'play', { timeout: 10000 })
+  await sleep(120)
+  const s = await q(p)
+  ok((s.turboN > 0) === want, `start press ${label}: start turbo ${s.turboN > 0 ? 'given' : 'not given'}`)
+  await p.close()
+}
+// drift turbos climb 1 -> 2 -> 3; green press gives nothing; jump over obstacles; rivals overtaken; result place
+{
+  const p = await page(844, 390)
+  await p.evaluate(() => { BlippiTrip.open('darat'); BlippiTrip.start('darat-2', { seed: 7 }) })
+  await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
+  let fires = [], greenTested = false, greenOk = null, sawAir = false, bumpsAtAir = -1, airTurbo = false, posSeen = new Set(), capMax = 0
+  const t0 = Date.now()
+  while (Date.now() - t0 < 140000) {
+    if (await answerIfQuiz(p)) continue
+    const s = await q(p)
+    if (!s || s.state === 'done') break
+    posSeen.add(s.pos)
+    capMax = Math.max(capMax, s.mulNow)
+    if (s.air && !sawAir) { sawAir = true; bumpsAtAir = s.bumps }
+    if (sawAir && !s.air && bumpsAtAir >= 0 && !airTurbo) { await sleep(150); const s2 = await q(p); airTurbo = s2.reserves > 0; ok(s2.bumps === bumpsAtAir, `jump: bumped an obstacle while airborne (${bumpsAtAir} -> ${s2.bumps})`) }
+    const d = s.drift
+    if (d && d.on && !d.spent) {
+      if (!greenTested && !d.red && d.meter > 0.15 && d.meter < 0.4) {
+        greenTested = true; const n0 = s.turboN; await tapTurbo(p); await sleep(60)
+        const s2 = await q(p); greenOk = s2.turboN === n0 && s2.drift.meter < 0.2
+      } else if (d.red) {
+        const n0 = s.turboN; await tapTurbo(p); await sleep(60)
+        const s2 = await q(p); if (s2.turboN > n0) fires.push(s2.fire)
+      }
+      await sleep(25)
+    } else await sleep(60)
+    if (s.progress > 0.999) break
+  }
+  ok(greenOk === true, `a press in the green gave a turbo or did not empty the meter (${greenOk})`)
+  ok(fires.includes(1) && fires.includes(2), `drift turbos did not climb in level: ${JSON.stringify(fires)}`)
+  ok(capMax > 1.45, `speed never rose past the plain cap on stacked turbos (max ${capMax.toFixed(2)})`)
+  ok(sawAir, 'never airborne on a jump ramp')
+  ok(airTurbo, 'no turbo on landing (hang time)')
+  ok(posSeen.size >= 2, `the race position never changed: ${[...posSeen]}`)
+  for (let i = 0; i < 60 && !(await p.$('[data-trip=result]')); i++) await sleep(250)
+  const place = await p.evaluate(() => { const e = document.querySelector('[data-place]'); return e ? +e.getAttribute('data-place') : 0 })
+  ok(place >= 1 && place <= 4, `result names no place (${place})`)
+  await p.close()
+}
+ok(!errs.length, 'page errors: ' + errs.slice(0, 3).join(' | '))
+await b.close()
+console.log(`qa-blippi-race-ctr: ${pass}/${pass + fail} checks passed`)
+process.exit(fail ? 1 : 0)

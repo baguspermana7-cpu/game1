@@ -147,6 +147,12 @@
     else if (kind === 'collect') { tone(880, 1320, 0.09, 0.05); setTimeout(function () { tone(1320, 1760, 0.1, 0.045) }, 70) }
     else if (kind === 'bump') { tone(240, 120, 0.22, 0.07, 'triangle'); setTimeout(function () { tone(180, 150, 0.12, 0.04, 'sine') }, 90) }
     else if (kind === 'boost') { tone(300, 900, 0.35, 0.05, 'sawtooth'); setTimeout(function () { tone(600, 1400, 0.25, 0.04, 'triangle') }, 120) }
+    // the racing set (CTR-style start lights and stacked turbos: each turbo level a step higher)
+    else if (kind === 'tick') tone(440, 440, 0.16, 0.07, 'square')
+    else if (kind === 'go') tone(880, 880, 0.4, 0.08, 'square')
+    else if (kind === 'turbo2') { tone(380, 1100, 0.32, 0.055, 'sawtooth'); setTimeout(function () { tone(760, 1700, 0.25, 0.045, 'triangle') }, 110) }
+    else if (kind === 'turbo3') { tone(460, 1400, 0.3, 0.06, 'sawtooth'); setTimeout(function () { tone(920, 2100, 0.28, 0.05, 'triangle') }, 100) }
+    else if (kind === 'meter') tone(1180, 1180, 0.07, 0.035, 'square')
   }
 
   /* ---------- state + save (per avatar) ---------- */

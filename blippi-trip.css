@@ -208,3 +208,32 @@ body.trip-on #stage{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.tanim,.tcbig,.tct.chose,.tcpcard{animation:none}}
 /* all 25 craft on one screen, like the owner's 5 x 5 sheet */
 @media (min-width:640px){.tcgrid{grid-template-columns:repeat(5,1fr)}.tct{padding:6px 4px 6px}.tctpic{height:clamp(46px,9.5vh,96px)}.tct i{font-size:clamp(11px,1.3vw,15px)}}
+/* racing (CTR-style): start lights + the TURBO button whose ring is the turbo meter */
+.tcount{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font:700 clamp(110px,28vmin,220px)/1 Fredoka,Nunito,sans-serif;color:#fff;-webkit-text-stroke:6px #13318A;paint-order:stroke;text-shadow:0 8px 0 rgba(19,49,138,.35);pointer-events:none;z-index:5}
+.tcount.go{color:#FFE27A;-webkit-text-stroke-color:#B4510F}
+.tcount.pop{animation:tcpop .7s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes tcpop{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}25%{opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:.95}}
+.tturbo{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 100px);width:104px;height:104px;border-radius:50%;border:0;padding:0;z-index:4;
+  background:radial-gradient(circle at 35% 28%,#FFF6D6,#FFB347 70%,#E8742A);box-shadow:0 6px 16px rgba(10,30,90,.4);transition:transform .12s,opacity .25s,filter .25s;--m:0}
+.tturbo b{position:relative;font:700 19px/1 Fredoka,Nunito,sans-serif;color:#7A2E00;letter-spacing:.02em}
+.tturbo .tring{position:absolute;inset:-7px;border-radius:50%;background:conic-gradient(var(--ring,#36C46B) calc(var(--m)*360deg),rgba(255,255,255,.55) 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px));mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px))}
+.tturbo.idle{filter:saturate(.55) brightness(.95);opacity:.8}
+.tturbo.on{--ring:#36C46B}
+.tturbo.red{--ring:#FF3B30;animation:ttpulse .32s ease-in-out infinite alternate}
+.tturbo.ready{animation:ttpulse .5s ease-in-out infinite alternate}
+.tturbo.fire1 b,.tturbo.fire2 b{color:#fff}
+.tturbo.fire1{background:radial-gradient(circle at 35% 28%,#FFE29A,#FF7A1A 70%,#D9480F)}
+.tturbo.fire2{background:radial-gradient(circle at 35% 28%,#FFD1D1,#FF3B30 70%,#B3001B)}
+.tturbo.hit{transform:scale(.9)}
+.tturbo.gone{opacity:0;pointer-events:none;transform:scale(.6)}
+@keyframes ttpulse{from{transform:scale(1)}to{transform:scale(1.09)}}
+@media (max-width:640px){.tturbo{width:92px;height:92px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 92px)}}
+@media (max-height:460px){.tturbo{width:84px;height:84px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 92px)}.tturbo b{font-size:16px}}
+@media (prefers-reduced-motion:reduce){.tcount.pop,.tturbo.red,.tturbo.ready{animation:none}}
+.tpos{display:flex;align-items:baseline;gap:2px;min-height:56px;padding:0 14px;border-radius:30px;background:linear-gradient(#EAF3FF,#C9DEFF);border:4px solid #8DB3EE;box-shadow:0 5px 12px rgba(10,30,90,.3);font:700 30px/56px Fredoka,sans-serif;color:#13318A;pointer-events:none}
+.tpos i{font-style:normal;font-size:18px;opacity:.7}
+.tpos.first{background:linear-gradient(#FFF6C8,#FFD86B);border-color:#E5A300;color:#7A4A00}
+.tpos.pop{animation:tpop .45s cubic-bezier(.2,1.5,.4,1)}
+@media (prefers-reduced-motion:reduce){.tpos.pop{animation:none}}
+@media (max-width:640px){.thow{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 210px)}}

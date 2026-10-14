@@ -9,6 +9,12 @@
   var D = w.BlippiTripData
   var V = w.BlippiVFX || {}
   var engines = {}
+  // CTR (Crash Team Racing 1999) turbo numbers, from the CTR-ModSDK decompilation (metaPhys table + PowerSlide_Update):
+  // the meter fills in 30 frames (1.0 s) and its last 15 (0.5 s) are the red zone; a press in the red adds reserves mapped
+  // linearly from 0 at the red edge to 36 frames (1.15 s) at full; up to 3 turbos per slide; the speed cap rises with each
+  // (+2048, +2560, +3072 over class speed 13140 = +15.6 / +19.5 / +23.4 %, here x2.5 so a child feels it); acceleration
+  // with reserves 1152 vs 480 without (2.4x). Ten wumpa make the kart slightly faster (here: 10 stars).
+  var CTR = { room: 1.0, red: 0.5, fullGain: 1.15, minGain: 0.4, boosts: 3, cap: [1.39, 1.49, 1.58], juiced: 1.06, accel: 2.2, accelRes: 5.3, decel: 2.6, maxRes: 4, step: 0.75, startWin: 0.45 }
   var cache = {}
   var run = null
   var raf = 0
@@ -288,11 +294,11 @@
     run = {
       lvl: lvl, E: E, cv: cv, c: cv.getContext('2d'), W: 0, H: 0, scale: 0.8, dpr: 1,
       rnd: rng(opts.seed || ((Date.now() & 0xffff) + 17)), len: lvl.len * (opts.len || 1),
-      progress: 0, mul: 1, slowT: 0, boostT: 0, hitT: 0, rate: lvl.speed, t: 0,
+      progress: 0, mul: 1, slowT: 0, boostT: 0, hitT: 0, rate: lvl.speed, t: 0, reserves: 0, fire: 0, countT: 0, startPress: -9, juiced: false,
       stars: 0, starTotal: 0, bumps: 0, state: 'loading', fxs: [], fly: [], gates: [], quiz: null, qlog: [], bonus: 0,
       in: { down: false, x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, moves: [], kx: 0, ky: 0 },
       work: [], slowFrames: 0, finishT: 0, say: say, fx: fx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
-      collect: collect, bump: bump, boost: boost
+      collect: collect, bump: bump, boost: boost, turbo: turbo, press: pressTurbo, ctr: CTR
     }
     run.gates = lvl.gates.map(function (f) { return { f: f, done: false } })
     resize()
@@ -300,8 +306,12 @@
     load(E.assets(lvl).concat(FXK), function () {
       if (!run || run !== mine) return
       run.eng = E.make(run)
-      run.state = 'play'
+      // 3-2-1-GO before the run (CTR's start lights): a TURBO press just before GO gives a start turbo
+      run.state = 'count'
+      run.countT = 0
       UI.hud(run)
+      UI.count('3')
+      B().sfx('tick')
       say(lvl.say)
       raf = w.requestAnimationFrame(frame)
     })
@@ -344,7 +354,8 @@
     else run.slowFrames = Math.max(0, run.slowFrames - 1)
     if (run.slowFrames > 40 && run.scale > 0.61) { run.scale = Math.max(0.6, run.scale - 0.15); run.slowFrames = 0; resize() }
     var w0 = w.performance.now()
-    if (run.state === 'play' || run.state === 'finishing') update(dt)
+    if (run.state === 'count') countdown(dt)
+    else if (run.state === 'play' || run.state === 'finishing') update(dt)
     var c = run.c
     var k = run.dpr * run.scale
     c.setTransform(k, 0, 0, k, 0, 0)
@@ -361,12 +372,17 @@
     r.t += dt
     stepInput(dt)
     r.slowT = Math.max(0, r.slowT - dt)
-    r.boostT = Math.max(0, r.boostT - dt)
+    // CTR turbo model: reserves are boost seconds that stack; the fire level (0-2) raises the speed cap; while reserves
+    // last the vehicle accelerates 2.4x harder (CTR metaPhys: accel 1152 with reserves vs 480 without)
+    r.reserves = Math.max(0, r.reserves - dt)
+    if (!r.reserves) r.fire = 0
+    r.boostT = r.reserves
     r.hitT = Math.max(0, r.hitT - dt)
     r.comboT = Math.max(0, (r.comboT || 0) - dt)
     if (r.comboT === 0 && r.combo) r.combo = 0
-    var target = r.slowT > 0 ? 0.42 : (r.boostT > 0 ? 1.65 : 1)
-    r.mul += (target - r.mul) * Math.min(1, dt * 5)
+    var target = r.slowT > 0 ? 0.42 : (r.reserves > 0 ? CTR.cap[r.fire] : (r.juiced ? CTR.juiced : 1))
+    var acc = target > r.mul ? (r.reserves > 0 ? CTR.accelRes : CTR.accel) : CTR.decel
+    r.mul += (target - r.mul) * Math.min(1, dt * acc)
     if (r.state === 'finishing') { r.finishT += dt; r.mul = lerp(r.mul, 0.55, Math.min(1, dt * 2)) }
     r.rate = r.lvl.speed * r.mul
     r.eng.update(dt)
@@ -436,6 +452,7 @@
         else if (k === 'ArrowRight' || k === 'd' || k === 'D') { run.in.moves.push(1); run.in.kx = 1 }
         else if (k === 'ArrowUp' || k === 'w' || k === 'W') run.in.ky = -1
         else if (k === 'ArrowDown' || k === 's' || k === 'S') run.in.ky = 1
+        else if (k === ' ' || k === 'Spacebar') pressTurbo()
         else if (k === 'Escape') UI.pause()
         else return
         e.preventDefault()
@@ -486,6 +503,8 @@
     if (run.combo % 5 === 0) { say('Kombo ' + run.combo + '! Bintang bonus!'); fx('gold-star', x, y - 30, 180) }
     run.comboT = 3
     B().sfx('collect')
+    // CTR: ten wumpa make the kart a little faster - here ten stars, with Blippi saying so once
+    if (!run.juiced && run.stars >= 10) { run.juiced = true; say('Sepuluh bintang! Kendaraanmu jadi lebih ngebut!') }
     fx('spark', x, y, 120)
     // the star FLIES to the star counter (an arc, 0.55 s), which pops when it lands: the child sees where it went
     if (!reduced() && run.fly.length < 12) run.fly.push({ x: x, y: y, t: 0, d: 0.55, n: big ? 2 : 1 })
@@ -498,17 +517,44 @@
     run.combo = 0
     run.slowT = 1.1
     run.hitT = 0.9
+    run.reserves = 0 // CTR: a hit costs the stored turbo
     B().sfx('bump')
     if (run.lvl.cat === 'air') { fx('splash', x, y, 190); fx('ripple', x, y + 30, 200) } else fx('dust', x, y, 130)
     say(LINES_BUMP[run.bumps % LINES_BUMP.length])
   }
-  function boost (x, y) {
+  // a turbo pad / pickup: a level-1 turbo (CTR turbo pads add reserves at the single-turbo cap)
+  function boost (x, y) { turbo(1.6, 1, x, y, 'Wuuush! Cepat sekali!') }
+  // add CTR reserves (seconds, stacking up to CTR.maxRes) and raise the fire level (never lowers it while reserves last)
+  function turbo (sec, level, x, y, line) {
     if (!run) return
-    run.boostT = 2.4
+    run.reserves = Math.min(CTR.maxRes, run.reserves + sec)
+    run.fire = Math.max(run.fire, Math.min(2, level))
+    run.boostT = run.reserves
     run.slowT = 0
-    B().sfx('boost')
-    fx('speed', x, y, 160)
-    say('Wuuush! Cepat sekali!')
+    B().sfx(level >= 2 ? 'turbo3' : level === 1 ? 'turbo2' : 'boost')
+    if (x != null) { fx('speed', x, y, 100 + level * 20); fx('spark', x, y - 10, 90 + level * 30) }
+    run.turboN = (run.turboN || 0) + 1
+    if (line) say(line)
+  }
+  // the TURBO button (or Space / ArrowUp): before GO it is the start turbo, in a run the engine decides (a drift meter)
+  function pressTurbo () {
+    if (!run) return
+    if (run.state === 'count') { run.startPress = run.countT; return }
+    if (run.state === 'play' && run.eng && run.eng.turbo) run.eng.turbo()
+  }
+  function countdown (dt) {
+    var r = run
+    var before = Math.floor(r.countT / CTR.step)
+    r.countT += dt
+    r.t += dt
+    var now = Math.floor(r.countT / CTR.step)
+    if (now !== before && now <= 3) { UI.count(now < 3 ? String(3 - now) : 'GO!'); B().sfx(now < 3 ? 'tick' : 'go') }
+    if (now >= 3) {
+      r.state = 'play'
+      var early = CTR.step * 3 - r.startPress
+      if (early >= 0 && early <= CTR.startWin) turbo(1.4, 1, r.W / 2, r.H * 0.8, 'Start turbo! Mantap!')
+      else if (r.startPress > 0) say('Hampir! Tekan TURBO pas lampu hijau, ya.')
+    }
   }
 
   /* ---------- question gates ---------- */
@@ -616,8 +662,8 @@
   }
 
   function work90 () { if (!run || run.work.length < 10) return 0; var a = run.work.slice().sort(function (x, y) { return x - y }); return a[Math.floor(a.length * 0.9)] }
-  function pauseRun () { if (run && run.state === 'play') run.state = 'paused' }
-  function resumeRun () { if (run && run.state === 'paused') { run.state = 'play'; last = 0 } }
+  function pauseRun () { if (run && (run.state === 'play' || run.state === 'count')) { run.before = run.state; run.state = 'paused' } }
+  function resumeRun () { if (run && run.state === 'paused') { run.state = run.before || 'play'; last = 0 } }
   w.document.addEventListener('visibilitychange', function () { if (w.document.hidden && run && run.state === 'play') UI.pause() })
 
   w.BlippiTrip = {
@@ -630,7 +676,7 @@
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }
