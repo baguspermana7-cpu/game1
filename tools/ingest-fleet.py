@@ -5,17 +5,28 @@ dan ada animated asset yang tampak belakang utk di gameplaynya"). Each pack hold
   animation_sheets/NN_<slug>_<verb>.png  2560x1536, 10x6 frames of 256 px, 60 frames at 50 ms, full alpha, rear view
   sprites_diagonal/NN_<slug>.png         320x320, rear three-quarter still (the selection picture)
 Output (alpha only, no outline, one fixed box per vehicle = union of its alpha over all frames, so nothing jitters):
-  assets/fleet/<cat>/<id>.webp       play strip, every frame, scale PLAY, 2 px clear margin per frame side
+  assets/fleet/<cat>/<id>.webp       play sheet, every frame in rows of 10, scale PLAY, 2 px clear margin per frame side
   assets/fleet/<cat>/<id>-tile.webp  the diagonal still, trimmed, longest side TILE px, 4 px clear margin
   data/blippi-fleet-<cat>.js         window.BlippiFleet.<cat> = { frameMs, items: [{ id, name, play, tile }] }
-Usage: python tools/ingest-fleet.py <pack dir> <darat|air>   (needs numpy + Pillow)"""
+A pack with no sprites_diagonal/ (the aircraft download arrived without it) takes its stills from the 5x5 grid of
+<Name>_25_Preview.png (diagonal view, 320 px cells). The paper-plane pack is a 5x5 grid GIF instead of per-plane sheets:
+  python tools/ingest-fleet.py --grid <rear animated gif> <preview png> kertas
+The full paper-plane pack (PaperPlanes_25_Animated_Asset_Pack, owner 2026-10-15) has per-plane sheets with soft alpha and
+replaces the GIF cut: python tools/ingest-fleet.py <pack dir> kertas
+Usage: python tools/ingest-fleet.py <pack dir> <darat|air|udara|kertas>   (needs numpy + Pillow)"""
 import glob, json, os, re, sys
+from PIL import ImageSequence
 import numpy as np
 from PIL import Image
 
-PACK, CAT = sys.argv[1], sys.argv[2]
+GRID = sys.argv[1] == '--grid'
+if GRID:
+    GIF, PREVIEW, CAT = sys.argv[2], sys.argv[3], sys.argv[4]
+else:
+    PACK, CAT = sys.argv[1], sys.argv[2]
 PLAY = 0.75   # rear frames ~190 px: the road vehicle is drawn up to ~250 px, the boat ~150 px
 TILE = 180
+SHEET_COLS = 10
 COLS, ROWS, CELL = 10, 6, 256
 
 NAMES = {
@@ -27,42 +38,91 @@ NAMES = {
           'Kapal Feri', 'Kapal Roda Dayung', 'Kapal Kontainer', 'Kapal Tanker', 'Kapal Pemadam', 'Kapal Patroli', 'Sekoci',
           'Kapal Riset', 'Pemecah Es', 'Kapal Bajak Laut', 'Rumah Kapal', 'Perahu Cadik', 'Sampan Beratap', 'Perahu Bebek',
           'Hovercraft', 'Kapal Pendarat', 'Kapal Derek'],
+  'udara': ['Pesawat Laut', 'Antonov Raksasa', 'Concorde', 'Helikopter Penyelamat', 'Biplane', 'Jumbo 747', 'Airbus A380',
+            'Jet Bisnis', 'Turboprop', 'Pesawat Kargo', 'Pesawat Pemadam', 'Jet Pengintai', 'Sayap Terbang', 'Jet Delta',
+            'Pesawat Pertanian', 'Glider', 'Pesawat Akrobat', 'Tiltrotor', 'Helikopter Kembar', 'Autogyro',
+            'Helikopter Ambulans', 'DC-3 Klasik', 'Pesawat Ekor Kembar', 'Kapal Udara', 'Trike Ringan'],
+  'kertas': ['Dart Klasik', 'Glider Sayap Lebar', 'Dart Jarum', 'Glider Bulldog', 'Sayap Delta', 'Cakram Planet', 'Glider Dua Cincin',
+             'Naga Origami', 'Kelelawar Origami', 'Bangau Origami', 'Glider Walet', 'Glider Kupu-Kupu', 'Glider Pari',
+             'Elang Kertas', 'Phoenix Koral', 'Glider Albatros', 'Jet Ekor Ganda', 'Jet Canard', 'Glider Sayap Kotak',
+             'Glider Kipas', 'Glider Bumerang', 'Glider Ketupat', 'Glider Bintang', 'Roket Kertas', 'Ikan Terbang'],
 }[CAT]
+IDS = {'kertas': ['classic-dart', 'blue-glider', 'orange-arrow', 'yellow-jet', 'green-wing', 'paper-disc', 'ring-wing', 'green-dragon',
+                  'blue-bat', 'paper-crane', 'blue-swallow', 'butterfly', 'green-ray', 'brown-eagle', 'fire-bird', 'white-gull',
+                  'navy-jet', 'salmon-jet', 'box-kite', 'green-peacock', 'v-wing', 'salmon-kite', 'yellow-star', 'paper-rocket',
+                  'flying-fish']}.get(CAT)
 
 out_dir = 'assets/fleet/%s' % CAT
 os.makedirs(out_dir, exist_ok=True)
-sheets = sorted(glob.glob(os.path.join(PACK, 'animation_sheets', '*.png')))
-assert len(sheets) == 25, len(sheets)
-items = []
-for n, path in enumerate(sheets):
-    base = os.path.basename(path)
-    num = base[:2]
-    slug = re.sub(r'_[a-z]+\.png$', '', base[3:])           # 15_school_bus_drive.png -> school_bus
-    vid = slug.replace('_', '-')
-    sheet = Image.open(path).convert('RGBA')
-    frames = [sheet.crop(((i % COLS) * CELL, (i // COLS) * CELL, (i % COLS + 1) * CELL, (i // COLS + 1) * CELL)) for i in range(COLS * ROWS)]
-    alpha = np.stack([np.array(f)[..., 3] for f in frames]).max(0)
-    ys, xs = np.where(alpha > 8)
-    box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
-    w, h = box[2] - box[0], box[3] - box[1]
-    pad = 2
-    fw, fh = round(w * PLAY) + pad * 2, round(h * PLAY) + pad * 2
-    strip = Image.new('RGBA', (fw * len(frames), fh), (0, 0, 0, 0))
-    for i, f in enumerate(frames):
-        strip.alpha_composite(f.crop(box).resize((fw - pad * 2, fh - pad * 2), Image.LANCZOS), (i * fw + pad, pad))
-    strip.save('%s/%s.webp' % (out_dir, vid), quality=86, method=4)
-    still = Image.open(glob.glob(os.path.join(PACK, 'sprites_diagonal', num + '_*.png'))[0]).convert('RGBA')
+
+
+def grid_cells(img, n=5):
+    """the 25 cells of a 5x5 grid image, row by row"""
+    c = img.width // n
+    return [img.crop(((i % n) * c, (i // n) * c, (i % n + 1) * c, (i // n + 1) * c)) for i in range(n * n)]
+
+
+def save_tile(still, path):
     still = still.crop(still.getbbox())
     k = TILE / max(still.size)
     still = still.resize((max(1, round(still.width * k)), max(1, round(still.height * k))), Image.LANCZOS)
     tile = Image.new('RGBA', (still.width + 8, still.height + 8), (0, 0, 0, 0))
     tile.alpha_composite(still, (4, 4))
-    tile.save('%s/%s-tile.webp' % (out_dir, vid), quality=88, method=4)
-    items.append({'id': vid, 'name': NAMES[n], 'play': [fw, fh, len(frames)], 'tile': [tile.width, tile.height]})
-    print(vid, items[-1]['play'], items[-1]['tile'])
+    tile.save(path, quality=88, method=4)
+    return [tile.width, tile.height]
+
+
+def save_strip(frames, path):
+    """one fixed box over every frame (nothing jitters), alpha only, PLAY scale, 2 px clear margin per frame side"""
+    alpha = np.stack([np.array(f)[..., 3] for f in frames]).max(0)
+    ys, xs = np.where(alpha > 8)
+    box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+    w, h = box[2] - box[0], box[3] - box[1]
+    pad = 2
+    fw, fh = round(w * k_play) + pad * 2, round(h * k_play) + pad * 2
+    # rows of SHEET_COLS frames: a single 60-80 frame row was 9000-12000 px wide, past a tablet GPU's texture limit
+    cols = SHEET_COLS
+    rows = -(-len(frames) // cols)
+    strip = Image.new('RGBA', (fw * cols, fh * rows), (0, 0, 0, 0))
+    for i, f in enumerate(frames):
+        strip.alpha_composite(f.crop(box).resize((fw - pad * 2, fh - pad * 2), Image.LANCZOS), ((i % cols) * fw + pad, (i // cols) * fh + pad))
+    strip.save(path, quality=86, method=4)
+    return [fw, fh, len(frames), cols]
+
+
+items = []
+if GRID:
+    # the paper planes: one GIF grid (200 px cells, 80 frames at 50 ms, binary alpha) + a 4K preview grid for the stills
+    gif = Image.open(GIF)
+    gframes = [grid_cells(f.convert('RGBA')) for f in ImageSequence.Iterator(gif)]
+    k_play = 0.95   # 200 px cells: a plane ~150 px tall, like the boats
+    stills = grid_cells(Image.open(PREVIEW).convert('RGBA'))
+    for n in range(25):
+        vid = IDS[n]
+        play = save_strip([fr[n] for fr in gframes], '%s/%s.webp' % (out_dir, vid))
+        tile = save_tile(stills[n], '%s/%s-tile.webp' % (out_dir, vid))
+        items.append({'id': vid, 'name': NAMES[n], 'play': play, 'tile': tile})
+        print(vid, play, tile)
+else:
+    k_play = PLAY
+    sheets = sorted(glob.glob(os.path.join(PACK, 'animation_sheets', '*.png')))
+    assert len(sheets) == 25, len(sheets)
+    previews = glob.glob(os.path.join(PACK, '*_25_Preview.png'))
+    grid_stills = grid_cells(Image.open(previews[0]).convert('RGBA')) if not os.path.isdir(os.path.join(PACK, 'sprites_diagonal')) else None
+    for n, path in enumerate(sheets):
+        base = os.path.basename(path)
+        num = base[:2]
+        vid = re.sub(r'_[a-z]+\.png$', '', base[3:]).replace('_', '-')   # 15_school_bus_drive.png -> school-bus
+        sheet = Image.open(path).convert('RGBA')
+        frames = [sheet.crop(((i % COLS) * CELL, (i // COLS) * CELL, (i % COLS + 1) * CELL, (i // COLS + 1) * CELL)) for i in range(COLS * ROWS)]
+        play = save_strip(frames, '%s/%s.webp' % (out_dir, vid))
+        still = grid_stills[n] if grid_stills else Image.open(glob.glob(os.path.join(PACK, 'sprites_diagonal', num + '_*.png'))[0]).convert('RGBA')
+        tile = save_tile(still, '%s/%s-tile.webp' % (out_dir, vid))
+        items.append({'id': vid, 'name': NAMES[n], 'play': play, 'tile': tile})
+        print(vid, play, tile)
 
 js = ('/* G32 Blippi -- the %s fleet (generated by tools/ingest-fleet.py from the owner\'s 25-vehicle animated pack; do not\n'
-      ' * hand-edit). play = rear-view frame strip [frameW, frameH, frames] at frameMs; tile = the diagonal still for selection. */\n'
+      ' * hand-edit). play = rear-view frame sheet [frameW, frameH, frames, columns] at frameMs; tile = the diagonal still for selection. */\n'
       'window.BlippiFleet = window.BlippiFleet || {}\n'
       'window.BlippiFleet[%s] = { frameMs: 50, items: %s }\n') % (CAT.upper(), json.dumps(CAT), json.dumps(items, indent=1))
 open('data/blippi-fleet-%s.js' % CAT, 'w').write(js)

@@ -16,7 +16,7 @@ ok(new Set(C.map(c => c.id)).size === C.length, 'craft ids repeat')
 const webpW = f => { const b = fs.readFileSync(f); const t = b.toString('ascii', 12, 16); if (t === 'VP8X') return 1 + b.readUIntLE(24, 3); if (t === 'VP8L') return 1 + (b.readUInt32LE(21) & 0x3fff); return b.readUInt16LE(26) & 0x3fff }
 for (const c of C) for (const [f, m] of [[`assets/space/${c.id}.webp`, c.play], [`assets/space/${c.id}-pick.webp`, c.pick]]) {
   ok(fs.existsSync(f), `missing ${f}`)
-  if (fs.existsSync(f)) ok(webpW(f) === m[0] * m[2], `${f} is ${webpW(f)} px wide, frames say ${m[0] * m[2]}`)
+  if (fs.existsSync(f)) ok(webpW(f) === m[0] * (m[3] || m[2]), `${f} is ${webpW(f)} px wide, frames say ${m[0] * (m[3] || m[2])}`)
 }
 ok(fs.existsSync('assets/space/asteroid.webp'), 'missing assets/space/asteroid.webp')
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
@@ -71,11 +71,12 @@ for (const [w, h] of [[1280, 800], [844, 390]]) {
     const out = []
     for (const c of C) for (const [kind, suf, band] of [['play', '', 1], ['pick', '-pick', 3]]) {
       const im = new Image(); im.src = 'assets/space/' + c.id + suf + '.webp'; await im.decode()
-      const [fw, fh, n] = c[kind], cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height
+      const [fw, fh, n] = c[kind], cols = c[kind][3] || n, cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height
       const x = cv.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, im.width, im.height).data
       let edge = 0, pieces = 0
       for (let f = 0; f < n; f++) {
-        const on = (i, j) => d[(j * im.width + f * fw + i) * 4 + 3] > 40
+        const ox = (f % cols) * fw, oy = Math.floor(f / cols) * fh
+        const on = (i, j) => d[((oy + j) * im.width + ox + i) * 4 + 3] > 40
         for (let j = 0; j < fh; j++) for (let i = 0; i < fw; i++) if ((i < band || j < band || i >= fw - band || j >= fh - band) && on(i, j)) edge++
         // count bodies of 30+ px (8-connected)
         const seen = new Uint8Array(fw * fh); let bodies = 0

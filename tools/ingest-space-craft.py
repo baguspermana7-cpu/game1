@@ -3,7 +3,7 @@
 Owner 2026-10-15: the first sheet's craft did not face up; this sheet (Spacecraft_5x5_Animated-1.webp, 1280 px, 60
 frames at 50 ms, transparent) is the right one. Same 25 craft in the same order as data/blippi-space.js.
   - one fixed box per craft = the union of its alpha over ALL frames (no jitter), cut by alpha only, no outline
-  - play strip  assets/space/<id>.webp       every frame, scale PLAY, 2 px clear margin per frame side
+  - play sheet  assets/space/<id>.webp       every frame in rows of 10, scale PLAY, 2 px clear margin per frame side
   - pick strip  assets/space/<id>-pick.webp  every 2nd frame, scale PICK, 4 px clear margin per frame side
 Rewrites the play/pick sizes and frameMs in data/blippi-space.js (ids and names kept).
 Usage: python tools/ingest-space-craft.py <sheet.webp>   (needs numpy + Pillow)"""
@@ -29,21 +29,25 @@ head, tail = src[:src.index('craft:') + 6], src[src.rindex(']') + 1:]
 craft = json.loads(src[src.index('craft:') + 6:src.rindex(']') + 1])
 assert len(craft) == 25
 
-def strip(boxes, step, k, pad):
+def strip(boxes, step, k, pad, cols=None):
+    """frames in rows of `cols` (None = one row: the CSS-stepped picker strip); the play sheet uses 10 columns, because a
+    single 60-frame row was ~7000 px wide, near a tablet GPU's texture limit"""
     l, t, r, b = boxes
     w, h = r - l, b - t
     fw, fh = round(w * k) + pad * 2, round(h * k) + pad * 2
     sel = frames[::step]
-    out = Image.new('RGBA', (fw * len(sel), fh), (0, 0, 0, 0))
+    cols = cols or len(sel)
+    rows = -(-len(sel) // cols)
+    out = Image.new('RGBA', (fw * cols, fh * rows), (0, 0, 0, 0))
     for i, f in enumerate(sel):
-        out.alpha_composite(f.crop(boxes).resize((fw - pad * 2, fh - pad * 2), Image.LANCZOS), (i * fw + pad, pad))
-    return out, [fw, fh, len(sel)]
+        out.alpha_composite(f.crop(boxes).resize((fw - pad * 2, fh - pad * 2), Image.LANCZOS), ((i % cols) * fw + pad, (i // cols) * fh + pad))
+    return out, ([fw, fh, len(sel), cols] if cols != len(sel) else [fw, fh, len(sel)])
 
 for i, c in enumerate(craft):
     r0, c0 = (i // 5) * CELL, (i % 5) * CELL
     ys, xs = np.where(alpha[r0:r0 + CELL, c0:c0 + CELL] > 8)
     box = (c0 + int(xs.min()), r0 + int(ys.min()), c0 + int(xs.max()) + 1, r0 + int(ys.max()) + 1)
-    play, c['play'] = strip(box, 1, PLAY, 2)
+    play, c['play'] = strip(box, 1, PLAY, 2, 10)
     pick, c['pick'] = strip(box, 2, PICK, 4)
     play.save('assets/space/%s.webp' % c['id'], quality=86, method=4)
     pick.save('assets/space/%s-pick.webp' % c['id'], quality=86, method=4)

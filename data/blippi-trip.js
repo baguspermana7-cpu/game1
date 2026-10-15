@@ -5,9 +5,11 @@
   'use strict'
   var CATS = [
     { id: 'darat', name: 'DARAT', sub: 'Tiga jalur, geser kiri dan kanan', tint: '#CDEFE0', ink: '#1F6B4E', icon: 'race:school-bus/blippi_peek-front-three-quarter', engine: 'land', ctl: 'Geser atau ketuk kiri-kanan' },
-    { id: 'udara', name: 'UDARA', sub: 'Pesawat laut lepas landas ke langit', tint: '#CFE6FB', ink: '#1D5FD4', icon: 'race:floatplane/blippi_peek-front-three-quarter', engine: 'air', ctl: 'Seret naik-turun' },
+    { id: 'udara', name: 'UDARA', sub: 'Terbang menembus awan', tint: '#CFE6FB', ink: '#1D5FD4', icon: 'race:floatplane/blippi_peek-front-three-quarter', engine: 'sky', ctl: 'Seret kiri-kanan' },
     { id: 'angkasa', name: 'LUAR ANGKASA', sub: 'Pesawat angkasa menyusuri bintang dan planet', tint: '#E3D7F7', ink: '#5B3FA8', icon: 'lib:mojo-chase/items/rocket', engine: 'space', ctl: 'Seret kiri-kanan' },
-    { id: 'air', name: 'AIR', sub: 'Berlayar di laut, pulau dan es', tint: '#FFDCCB', ink: '#B4510F', icon: 'race:tugboat/blippi_peek-front-three-quarter', engine: 'water', ctl: 'Seret kiri-kanan' }
+    { id: 'air', name: 'AIR', sub: 'Berlayar di laut, pulau dan es', tint: '#FFDCCB', ink: '#B4510F', icon: 'race:tugboat/blippi_peek-front-three-quarter', engine: 'water', ctl: 'Seret kiri-kanan' },
+    // the 5th arena (owner 2026-10-15): a paper-plane festival, with the owner's 25 animated paper planes
+    { id: 'kertas', name: 'PESAWAT KERTAS', sub: 'Festival pesawat kertas di langit', tint: '#FFE6F2', ink: '#B0306A', icon: 'fl:kertas/classic-dart-tile', engine: 'paper', ctl: 'Seret kiri-kanan' }
   ]
   // theme: palette + scenery keys used by the engine; speed 1 = relaxed; dens = obstacle density 0..1
   var LEVELS = [
@@ -29,7 +31,11 @@
     { id: 'air-1', cat: 'air', name: 'Teluk Tenang', veh: 'race:tugboat/standard-rear', vui: 'race:tugboat/blippi_peek-front-three-quarter', vname: 'Kapal Tunda', len: 46, speed: 1, dens: 0.3, gates: [0.34, 0.68], theme: { water: ['#9BE6F2', '#2E9FC9'], foam: '#FFFFFF', deco: ['palm-island'], obs: ['barrel'] }, say: 'Air tenang. Ayo berlayar!' },
     { id: 'air-2', cat: 'air', name: 'Laut Karang', veh: 'race:speedboat/standard-rear', vui: 'race:speedboat/blippi_peek-front-three-quarter', vname: 'Kapal Cepat', len: 52, speed: 1.12, dens: 0.45, gates: [0.3, 0.6, 0.85], theme: { water: ['#8EE3E0', '#2A94BE'], foam: '#FFFFFF', deco: ['palm-island', 'arch-island'], obs: ['barrel', 'iceberg-2'] }, say: 'Banyak pulau kecil di sini.' },
     { id: 'air-3', cat: 'air', name: 'Samudra Es', veh: 'race:workboat/standard-rear', vui: 'race:workboat/blippi_peek-front-three-quarter', vname: 'Kapal Kerja', len: 56, speed: 1.22, dens: 0.55, gates: [0.28, 0.55, 0.82], theme: { water: ['#C4EEFA', '#4C9FD2'], foam: '#F4FBFF', deco: ['iceberg-big', 'snow-island'], obs: ['iceberg-2', 'barrel'] }, say: 'Brr, dingin! Hati-hati bongkahan es.' },
-    { id: 'air-4', cat: 'air', name: 'Lautan Senja', veh: 'race:sailboat/standard-rear', vui: 'race:sailboat/blippi_peek-front-three-quarter', vname: 'Kapal Layar', len: 60, speed: 1.32, dens: 0.65, gates: [0.25, 0.5, 0.75, 0.9], theme: { water: ['#A9D8F0', '#2F78B4'], glow: 'rgba(255,150,80,.38)', foam: '#FFF3E4', deco: ['lighthouse-sunset', 'palm-island'], obs: ['barrel', 'iceberg-2'] }, say: 'Laut berwarna jingga. Cantik sekali.' }
+    { id: 'air-4', cat: 'air', name: 'Lautan Senja', veh: 'race:sailboat/standard-rear', vui: 'race:sailboat/blippi_peek-front-three-quarter', vname: 'Kapal Layar', len: 60, speed: 1.32, dens: 0.65, gates: [0.25, 0.5, 0.75, 0.9], theme: { water: ['#A9D8F0', '#2F78B4'], glow: 'rgba(255,150,80,.38)', foam: '#FFF3E4', deco: ['lighthouse-sunset', 'palm-island'], obs: ['barrel', 'iceberg-2'] }, say: 'Laut berwarna jingga. Cantik sekali.' },
+    { id: 'kertas-1', cat: 'kertas', name: 'Taman Festival', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 46, speed: 1, dens: 0.3, gates: [0.34, 0.68], theme: { sky: ['#FFE3EF', '#E3F3FF'] }, say: 'Festival pesawat kertas dimulai! Ayo terbang!' },
+    { id: 'kertas-2', cat: 'kertas', name: 'Pita Pelangi', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 52, speed: 1.12, dens: 0.45, gates: [0.3, 0.6, 0.85], theme: { sky: ['#E9E1FF', '#FFF4D6'] }, say: 'Lihat pita warna-warni di bawah!' },
+    { id: 'kertas-3', cat: 'kertas', name: 'Angin Sore', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 56, speed: 1.24, dens: 0.55, gates: [0.28, 0.55, 0.82], theme: { sky: ['#FFD9B8', '#FFF1DC'] }, say: 'Angin sore bertiup. Pesawat kertas melayang!' },
+    { id: 'kertas-4', cat: 'kertas', name: 'Lomba Juara', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 60, speed: 1.36, dens: 0.68, gates: [0.25, 0.5, 0.75, 0.9], theme: { sky: ['#CDE8FF', '#FFE6F2'] }, say: 'Lomba terakhir! Siapa pesawat kertas tercepat?' }
   ]
   w.BlippiTripData = { cats: CATS, levels: LEVELS, byId: LEVELS.reduce(function (m, l) { m[l.id] = l; return m }, {}) }
 })(window)

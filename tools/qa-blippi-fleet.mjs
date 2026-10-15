@@ -1,4 +1,5 @@
-// qa-blippi-fleet.mjs — the child's own vehicle on DARAT and AIR (owner 2026-10-15: the 25-vehicle and 25-boat animated packs,
+// qa-blippi-fleet.mjs — the child's own vehicle on DARAT, AIR, UDARA and PESAWAT KERTAS (owner 2026-10-15: the 25-vehicle,
+// 25-boat, 25-aircraft and 25-paper-plane animated packs;
 // "ada previewnya dan ada animated asset yang tampak belakang utk di gameplaynya"):
 //   data: 25 items per journey, every strip as wide as its frames say, a tile still per item
 //   art: every play frame whole (nothing on the 1 px frame edge, no piece of a neighbour), tiles inside their 3 px margin
@@ -12,14 +13,14 @@ let pass = 0, fail = 0
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m) } }
 const webpW = f => { const b = fs.readFileSync(f); const t = b.toString('ascii', 12, 16); if (t === 'VP8X') return 1 + b.readUIntLE(24, 3); if (t === 'VP8L') return 1 + (b.readUInt32LE(21) & 0x3fff); return b.readUInt16LE(26) & 0x3fff }
 const F = {}
-for (const cat of ['darat', 'air']) {
+for (const cat of ['darat', 'air', 'udara', 'kertas']) {
   const win = {}; new Function('window', fs.readFileSync(`data/blippi-fleet-${cat}.js`, 'utf8'))(win)
   F[cat] = win.BlippiFleet[cat]
   ok(F[cat].items.length === 25, `${cat}: ${F[cat].items.length} vehicles, the pack has 25`)
   ok(new Set(F[cat].items.map(i => i.id)).size === 25, `${cat}: ids repeat`)
   for (const it of F[cat].items) {
     const f = `assets/fleet/${cat}/${it.id}.webp`, t = `assets/fleet/${cat}/${it.id}-tile.webp`
-    ok(fs.existsSync(f) && webpW(f) === it.play[0] * it.play[2], `${f}: missing or not ${it.play[0] * it.play[2]} px wide`)
+    ok(fs.existsSync(f) && webpW(f) === it.play[0] * it.play[3], `${f}: missing or not ${it.play[0] * it.play[3]} px wide (${it.play[3]} frames a row)`)
     ok(fs.existsSync(t), `missing ${t}`)
   }
 }
@@ -34,19 +35,23 @@ const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e 
     const out = []
     for (const cat of Object.keys(F)) for (const it of F[cat].items) {
       const im = new Image(); im.src = `assets/fleet/${cat}/${it.id}.webp`; try { await im.decode() } catch (e) { out.push([cat + "/" + it.id + " (does not decode)", 1, 1, 1]); continue }
-      const [fw, fh, n] = it.play, cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height
+      const [fw, fh, n, cols] = it.play, cv = document.createElement('canvas'); cv.width = im.width; cv.height = im.height
       const x = cv.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, im.width, im.height).data
       let edge = 0, pieces = 0
       for (let f = 0; f < n; f += 3) {
-        const on = (i, j) => d[(j * im.width + f * fw + i) * 4 + 3] > 40
+        const ox = (f % cols) * fw, oy = Math.floor(f / cols) * fh
+        const on = (i, j) => d[((oy + j) * im.width + ox + i) * 4 + 3] > 40
+        // pieces are traced at alpha > 12: a spinning rotor is a faint blur that still joins its blades to the body
+        const onP = (i, j) => d[((oy + j) * im.width + ox + i) * 4 + 3] > 12
         for (let j = 0; j < fh; j++) for (let i = 0; i < fw; i++) if ((i < 1 || j < 1 || i >= fw - 1 || j >= fh - 1) && on(i, j)) edge++
         const seen = new Uint8Array(fw * fh); let bodies = 0
         for (let j = 0; j < fh; j++) for (let i = 0; i < fw; i++) {
-          if (seen[j * fw + i] || !on(i, j)) continue
-          let sz = 0, top = j; const st = [[i, j]]; seen[j * fw + i] = 1
-          while (st.length) { const [a, b2] = st.pop(); sz++; top = Math.min(top, b2); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = a + dx, v = b2 + dy; if (u >= 0 && v >= 0 && u < fw && v < fh && !seen[v * fw + u] && on(u, v)) { seen[v * fw + u] = 1; st.push([u, v]) } } }
+          if (seen[j * fw + i] || !onP(i, j)) continue
+          let sz = 0, top = j, x0 = i, x1 = i, y1 = j; const st = [[i, j]]; seen[j * fw + i] = 1
+          while (st.length) { const [a, b2] = st.pop(); sz++; top = Math.min(top, b2); y1 = Math.max(y1, b2); x0 = Math.min(x0, a); x1 = Math.max(x1, a); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const u = a + dx, v = b2 + dy; if (u >= 0 && v >= 0 && u < fw && v < fh && !seen[v * fw + u] && onP(u, v)) { seen[v * fw + u] = 1; st.push([u, v]) } } }
           // a boat's own wake (foam and spray under the hull) is part of its loop: only pieces starting above the waterline count
-          if (sz >= 60 && (cat !== 'air' || top < fh * 0.5)) bodies++
+          // an aircraft's speed lines are part of its loop too: thin streaks (under 8 px across either way) never count
+          if (sz >= 60 && (cat !== 'air' || top < fh * 0.5) && x1 - x0 >= 8 && y1 - top >= 8) bodies++
         }
         if (bodies > 1) pieces++
       }
@@ -62,7 +67,7 @@ const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e 
   await p.close()
 }
 // picker, saved choice, run
-for (const [w, h] of [[844, 390], [390, 844]]) for (const [cat, word, lvl] of [['darat', 'kendaraan', 'darat-1'], ['air', 'kapal', 'air-1']]) {
+for (const [w, h] of [[844, 390], [390, 844]]) for (const [cat, word, lvl] of [['darat', 'kendaraan', 'darat-1'], ['air', 'kapal', 'air-1'], ['udara', 'pesawat', 'udara-1'], ['kertas', 'pesawat-kertas', 'kertas-1']]) {
   const p = await page(w, h)
   await p.evaluate(c => BlippiTrip.open(c), cat); await sleep(700)
   ok(await p.$(`[data-act="ganti-${word}"]`), `${w} ${cat}: no vehicle bar on the level screen`)

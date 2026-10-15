@@ -47,12 +47,24 @@
       // decoded BEFORE the run starts and drawn once off screen: a picture first decoded when it scrolls into view stalls
       // that frame (a visible hitch the first time each crate, barrel, cloud or effect appears)
       im.onload = function () {
-        var ready = function () { cache[k] = im; warm(im); if (--left === 0) cb() }
+        var ready = function () { cache[k] = sheet(k, im); warm(im); if (--left === 0) cb() }
         if (im.decode) im.decode().then(ready, ready); else ready()
       }
       im.onerror = function () { cache[k] = false; if (--left === 0) cb() }
       im.src = url(k)
     })
+  }
+  // an animation sheet (fleet vehicle / space craft) is copied once into a canvas: drawn from the <img>, several large sheets
+  // plus the water's cached bands outgrew Chrome's decoded-image cache and the WebP was decoded again every frame (AIR with
+  // the boat pack: 78 ms of native work a frame at 4x vs 6 ms; a canvas is never evicted)
+  function sheet (k, im) {
+    if (!/^(fl:|sp:)/.test(k) || /-tile$/.test(k)) return im
+    try {
+      var cv = w.document.createElement('canvas')
+      cv.width = im.naturalWidth; cv.height = im.naturalHeight
+      cv.getContext('2d').drawImage(im, 0, 0)
+      return cv
+    } catch (e) { return im }
   }
   var warmC = null
   function warm (im) {
@@ -71,11 +83,11 @@
   }
   // the child's own vehicle on DARAT / AIR (owner 2026-10-15: the 25-vehicle and 25-boat animated packs), saved per avatar
   // like the space craft; a journey with no fleet data keeps its level vehicle
-  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat' }
+  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat', udara: 'float-seaplane', kertas: 'classic-dart' }
   function fleet (cat) { var f = w.BlippiFleet && w.BlippiFleet[cat]; return f && f.items && f.items.length ? f : null }
   function rideItem (cat, id) { var f = fleet(cat), i; if (!f) return null; for (i = 0; i < f.items.length; i++) if (f.items[i].id === id) return f.items[i]; return null }
   // {item, key, tile, meta: [frameW, frameH, frames, frameMs]} for an item of a journey's fleet
-  function rideOf (cat, it) { var f = fleet(cat); return it ? { cat: cat, item: it, key: 'fl:' + cat + '/' + it.id, tile: 'fl:' + cat + '/' + it.id + '-tile', meta: it.play.concat(f.frameMs) } : null }
+  function rideOf (cat, it) { var f = fleet(cat); return it ? { cat: cat, item: it, key: 'fl:' + cat + '/' + it.id, tile: 'fl:' + cat + '/' + it.id + '-tile', meta: [it.play[0], it.play[1], it.play[2], it.play[3], f.frameMs] } : null }
   function ride (cat) {
     var f = fleet(cat)
     if (!f) return null
@@ -95,17 +107,36 @@
     for (i = 0; i < lvlId.length; i++) h = (h * 31 + lvlId.charCodeAt(i)) >>> 0
     return [0, 8, 16].map(function (o) { return rideOf(cat, pool[(h + o) % pool.length]) })
   }
-  // one frame of an animated strip (frames side by side), fitted into bw x bh around (x, y); meta[3] = frame ms if given
+  // one frame of an animated sheet, fitted into bw x bh around (x, y). meta = [frameW, frameH, frames, cols, frameMs]: the
+  // frames sit in rows of `cols` (a 60-frame single row was 9000-12000 px wide - past the 4096/8192 px texture limit of a
+  // tablet GPU, which drew it on a slow path: 80 ms a frame at 4x); cols missing = one row, frameMs missing = the craft's
   function frameSpr (c, key, meta, t, x, y, bw, bh, alpha) {
     var im = cache[key]
     if (!im) return false
-    var fw = meta[0], fh = meta[1], n = meta[2]
-    var f = reduced() ? 0 : Math.floor(t * 1000 / (meta[3] || w.BlippiSpace.frameMs || 80)) % n
+    var fw = meta[0], fh = meta[1], n = meta[2], cols = meta[3] || n
+    var f = reduced() ? 0 : Math.floor(t * 1000 / (meta[4] || w.BlippiSpace.frameMs || 80)) % n
     var k = Math.min(bw / fw, bh / fh)
     if (alpha != null) c.globalAlpha = alpha
-    c.drawImage(im, f * fw, 0, fw, fh, x - fw * k / 2, y - fh * k / 2, fw * k, fh * k)
+    c.drawImage(im, (f % cols) * fw, Math.floor(f / cols) * fh, fw, fh, x - fw * k / 2, y - fh * k / 2, fw * k, fh * k)
     if (alpha != null) c.globalAlpha = 1
     return true
+  }
+  // a rival's sheet at half resolution (a quarter of the memory): rivals are drawn smaller and further off. With four full
+  // sheets plus the water's cached bands, AIR spent 77 ms of native work a frame at 4x (each sheet alone: 6 ms) - the raster
+  // cache thrashed. Returns {key, meta} to draw with, or null before the full sheet is loaded.
+  function halfSheet (key, meta) {
+    var hk = key + '@half'
+    if (!cache[hk]) {
+      var im = cache[key]
+      if (!im) return null
+      try {
+        var cv = w.document.createElement('canvas')
+        cv.width = Math.ceil(im.width / 2); cv.height = Math.ceil(im.height / 2)
+        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height)
+        cache[hk] = cv
+      } catch (e) { return { key: key, meta: meta } }
+    }
+    return { key: hk, meta: [meta[0] / 2, meta[1] / 2, meta[2], meta[3], meta[4]] }
   }
   // the same, standing on yb (bottom-anchored: a vehicle on the road)
   function frameBot (c, key, meta, t, x, yb, bw, bh, alpha) {
@@ -844,14 +875,14 @@
   w.BlippiTrip = {
     engine: function (name, E) { engines[name] = E },
     setUI: function (u) { UI = u },
-    D: D, craft: craft, crafts: crafts, setCraft: setCraft, frameSpr: frameSpr, frameBot: frameBot, fleet: fleet, ride: ride, setRide: setRide, rideRivals: rideRivals, start: start, stop: stop, answer: answer, resumeFromQuiz: resumeFromQuiz, pauseRun: pauseRun, resumeRun: resumeRun,
+    D: D, craft: craft, crafts: crafts, setCraft: setCraft, frameSpr: frameSpr, frameBot: frameBot, halfSheet: halfSheet, fleet: fleet, ride: ride, setRide: setRide, rideRivals: rideRivals, start: start, stop: stop, answer: answer, resumeFromQuiz: resumeFromQuiz, pauseRun: pauseRun, resumeRun: resumeRun,
     scaled: scaled, levelState: levelState, unlocked: unlocked, catStars: catStars, url: url, load: load, img: img, spr: spr, rng: rng, clamp: clamp, lerp: lerp,
     running: function () { return !!run },
     // QA seam: read-only snapshot for the gate
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, obsN: run.eng && run.eng.obsN != null ? run.eng.obsN : -1, rivalKeys: run.eng && run.eng.rivals ? run.eng.rivals.map(function (v) { return v.key }) : [], rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, planeY: run.eng && run.eng.py != null ? run.eng.py : null, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, obsN: run.eng && run.eng.obsN != null ? run.eng.obsN : -1, rivalKeys: run.eng && run.eng.rivals ? run.eng.rivals.map(function (v) { return v.key }) : [], rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }

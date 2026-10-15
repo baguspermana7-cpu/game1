@@ -25,8 +25,9 @@
   // rivals (owner 2026-10-14 "balapan kurang seru", CTR): three other boats (rear view) or three other space craft
   var BOATS = ['tugboat', 'speedboat', 'workboat', 'sailboat']
   function rivalKeys (lvl, skin) {
-    var fl = skin === 'water' && T.ride && T.ride('air')
-    if (fl) return T.rideRivals('air', lvl.id).map(function (x) { return { key: x.key, ride: x } })
+    var fc = skin === 'water' ? 'air' : T.skins && T.skins[skin] ? T.skins[skin].cat : null
+    var fl = fc && T.ride && T.ride(fc)
+    if (fl) return T.rideRivals(fc, lvl.id).map(function (x) { return { key: x.key, ride: x } })
     if (skin === 'water') { var own = (/race:([^/]+)\//.exec(lvl.veh) || [])[1]; return BOATS.filter(function (v) { return v !== own }).slice(0, 3).map(function (v) { return { key: 'race:' + v + '/standard-rear' } }) }
     var cr = T.craft && T.craft()
     var all = (T.crafts ? T.crafts() : []).filter(function (k) { return !cr || k.id !== cr.id })
@@ -36,7 +37,13 @@
 
   function assets (lvl, skin) {
     var a = ['lib:nature/cloud', 'fx:splash', 'fx:ripple', 'fx:bubbles', 'lib:game/star', 'lib:game/lifebuoy', 'lib:game/gem-blue', 'lib:game/barrel', 'lib:tk-world/iceberg-2', 'fx:spark', 'fx:dust', 'fx:speed', 'fx:gold-star', 'fx:confetti', 'fx:droplets', 'fx:ripple', 'fx:bubbles']
-    if (skin === 'water') {
+    var SK = T.skins && T.skins[skin]
+    if (SK) {
+      // a sky skin (blippi-trip-sky.js): the child's own aircraft / paper plane from its fleet, the skin's scenery
+      var mine = T.ride && T.ride(SK.cat)
+      if (mine) a.push(mine.key)
+      a = a.concat(SK.assets(lvl))
+    } else if (skin === 'water') {
       // the child's own animated boat (25-boat pack, owner 2026-10-15); the level boat still is the fallback
       var me = T.ride && T.ride('air')
       a.push(me ? me.key : lvl.veh)
@@ -73,9 +80,11 @@
     var gateZ = lvl.gates.map(function (f) { return f * run.len })
     function nearGate (z) { return gateZ.some(function (g) { return Math.abs(g - z) < 1.5 }) }
     var water = skin === 'water'
-    var craft = !water && T.craft ? T.craft() : null
-    var myBoat = water && T.ride ? T.ride('air') : null
-    var obsKeys = water ? th.obs : ['asteroid']
+    var space = skin === 'space'
+    var SK = (T.skins && T.skins[skin]) || null
+    var craft = space && T.craft ? T.craft() : null
+    var myBoat = (water || SK) && T.ride ? T.ride(SK ? SK.cat : 'air') : null
+    var obsKeys = water ? th.obs : SK ? SK.obs : ['asteroid']
     var z = 3
     var step = 2.5 - lvl.dens * 1.1
     while (z < run.len - 2) {
@@ -114,6 +123,17 @@
       ents = ents.filter(function (e) { return e.type === 'star' || e.type === 'big' || Math.abs(e.z - zz) > 1.2 || Math.abs(e.x - 0.5) > 0.22 })
       ents.push({ z: zz, x: 0.5, type: 'gift', st: 0, t: 0, ph: 0 })
     })
+    // turbo zones and gift boxes take obstacles away; a calm level could end up with none (seen: 0 on a festival level), so
+    // top the course up to a floor in the open stretches left (not in a zone, near a gift, a gate or the opening)
+    var isObs = function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' }
+    var floor = Math.round(4 + lvl.dens * 6)
+    var fz = GRACE + 1
+    while (ents.filter(isObs).length < floor && fz < run.len - 3) {
+      var fzz = fz
+      var open = !nearGate(fz) && laneAt(fz) < 0 && laneAt(fz + 0.6) < 0 && !ents.some(function (e) { return (isObs(e) || e.type === 'gift') && Math.abs(e.z - fzz) < 1.5 })
+      if (open) ents.push({ z: fz, x: 0.18 + r() * 0.64, type: obsKeys[(r() * obsKeys.length) | 0], st: 0, t: 0, ph: r() * 6, sc: 0.9 + r() * 0.4 })
+      fz += open ? 2.6 : 0.7
+    }
     ents.sort(function (a, b) { return a.z - b.z })
     var drift = run.meter()
     var told = false
@@ -126,7 +146,7 @@
       if (water) deco.push({ z: dz, side: r() < 0.5 ? -1 : 1, k: 'lib:tk-world/' + th.deco[(r() * th.deco.length) | 0], off: 0.04 + r() * 0.1, sc: 0.8 + r() * 0.6 })
       dz += 2.2 + r() * 2
     }
-    if (!water) {
+    if (space) {
       var pz = 2
       while (pz < run.len + 10) {
         planets.push({ z: pz, x: 0.1 + r() * 0.8, rad: 0.05 + r() * 0.09, col: th.planets[(r() * th.planets.length) | 0], ring: r() < 0.4, ph: r() })
@@ -173,7 +193,7 @@
           for (i = 0; i < 9; i++) { var x = (i * 53) % s; var y = (i * 71) % s; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 12, y - 8, x + 26, y); c.stroke() }
         })
       }
-      if (!water && !starTiles) {
+      if (space && !starTiles) {
         starTiles = [0, 1, 2].map(function (li) {
           var arr = []
           var n = 44 - li * 12
@@ -231,7 +251,7 @@
       tilt = Math.max(-0.4, Math.min(0.4, tilt))
       wobble = Math.max(0, wobble - dt)
       wakeT -= dt
-      if (wakeT <= 0) { wakeT = 0.04; if (!water) { trail.push({ x: px * run.W, y: G.py + G.ps * 0.5, t: 0 }); if (trail.length > 22) trail.shift() } wake.push({ x: px * run.W, y: G.py + G.ps * 0.7, t: 0 }); if (wake.length > 30) wake.shift() }
+      if (wakeT <= 0) { wakeT = 0.04; if (space) { trail.push({ x: px * run.W, y: G.py + G.ps * 0.5, t: 0 }); if (trail.length > 22) trail.shift() } wake.push({ x: px * run.W, y: G.py + G.ps * 0.7, t: 0 }); if (wake.length > 30) wake.shift() }
       var i
       for (i = 0; i < wake.length; i++) wake[i].t += dt
       for (i = 0; i < trail.length; i++) trail[i].t += dt
@@ -261,7 +281,7 @@
 
     function stepLane (dt) {
       var li = laneAt(Z)
-      if (!told && lanes.length && lanes[0].z0 - Z < 4 && lanes[0].z0 > Z) { told = true; run.say(water ? 'Arus deras! Tekan TURBO saat lingkarannya merah!' : 'Jalur warp! Tekan TURBO saat lingkarannya merah!') }
+      if (!told && lanes.length && lanes[0].z0 - Z < 4 && lanes[0].z0 > Z) { told = true; run.say(SK ? SK.zoneLine : water ? 'Arus deras! Tekan TURBO saat lingkarannya merah!' : 'Jalur warp! Tekan TURBO saat lingkarannya merah!') }
       drift.step(dt, li, 1)
     }
     function turbo () { drift.press(px * run.W, G.py + G.ps * 0.5) }
@@ -295,7 +315,7 @@
         var yb = G.py - (lanes[i].z0 - Z) * G.pyu
         var yt = G.py - (lanes[i].z1 - Z) * G.pyu
         if (yb < -40 || yt > run.H + 40) continue
-        var col = water ? '255,255,255' : '200,170,255'
+        var col = SK ? SK.laneCol : water ? '255,255,255' : '200,170,255'
         var g = c.createLinearGradient(0, yt, 0, yb)
         g.addColorStop(0, 'rgba(' + col + ',0)'); g.addColorStop(0.15, 'rgba(' + col + ',.2)'); g.addColorStop(0.85, 'rgba(' + col + ',.2)'); g.addColorStop(1, 'rgba(' + col + ',0)')
         c.fillStyle = g
@@ -321,12 +341,15 @@
         if (y < -G.ps || y > run.H + G.ps) continue
         var x = rv.x * run.W
         var ps = G.ps * 0.92
-        if (water) {
-          c.fillStyle = th.foam
-          c.globalAlpha = 0.5
-          c.beginPath(); c.ellipse(x, y + ps * 0.75, ps * 0.22, ps * 0.08, 0, 0, 6.3); c.fill()
-          c.globalAlpha = 1
-          if (!(rv.ride && T.frameSpr(c, rv.key, rv.ride.meta, run.t + rv.ph, x, y, ps * 1.25, ps * 1.5))) run.spr(c, rv.key, x, y + Math.sin(run.t * 2.4 + rv.ph) * 3, ps * 1.25, ps * 1.5, {})
+        if (water || SK) {
+          if (water) {
+            c.fillStyle = th.foam
+            c.globalAlpha = 0.5
+            c.beginPath(); c.ellipse(x, y + ps * 0.75, ps * 0.22, ps * 0.08, 0, 0, 6.3); c.fill()
+            c.globalAlpha = 1
+          }
+          var hs = rv.ride && T.halfSheet(rv.key, rv.ride.meta)
+          if (!(hs && T.frameSpr(c, hs.key, hs.meta, run.t + rv.ph, x, y, ps * 1.25, ps * 1.5))) run.spr(c, rv.key, x, y + Math.sin(run.t * 2.4 + rv.ph) * 3, ps * 1.25, ps * 1.5, {})
         } else if (!(rv.craft && T.frameSpr(c, rv.key, rv.craft.play, run.t + rv.ph, x, y, ps * 1.2, ps * 1.2))) run.spr(c, ROCKET, x, y, ps, ps, { rot: -Math.PI / 4 })
       }
     }
@@ -345,7 +368,8 @@
 
     function eSprite (e) {
       if (e.type === 'star') return 'lib:game/star'
-      if (e.type === 'big') return water ? 'lib:game/lifebuoy' : 'lib:game/gem-blue'
+      if (e.type === 'big') return water ? 'lib:game/lifebuoy' : SK ? SK.big : 'lib:game/gem-blue'
+      if (SK && SK.keys[e.type]) return SK.keys[e.type]
       if (e.type === 'barrel') return 'lib:game/barrel'
       if (e.type === 'iceberg-2') return 'lib:tk-world/iceberg-2'
       return null
@@ -525,6 +549,13 @@
       var ps = G.ps
       var alpha = run.hitT > 0 && !run.reduced() ? (Math.floor(run.t * 12) % 2 ? 0.45 : 1) : 1
       var wob = wobble > 0 ? Math.sin(run.t * 30) * 0.12 * wobble : 0
+      if (SK) {
+        // the child's own aircraft / paper plane: its rear-view loop (rotor, propeller, wind lines) banking with the steering
+        c.save(); c.translate(x, y); c.rotate(tilt * 0.45 + wob); c.globalAlpha = alpha
+        if (!(myBoat && T.frameSpr(c, myBoat.key, myBoat.meta, run.t, 0, 0, ps * 1.3, ps * 1.3))) run.spr(c, ROCKET, 0, 0, ps, ps, {})
+        c.restore()
+        return
+      }
       if (water) {
         // layered wake: wide soft foam ribbon + bright inner V, both fading and spreading with age
         var i
@@ -586,7 +617,7 @@
 
     function draw (c, dt) {
       geo()
-      if (water) drawBgWater(c); else drawBgSpace(c)
+      if (SK) SK.bg(c, run, Z, G); else if (water) drawBgWater(c); else drawBgSpace(c)
       drawLanes(c)
       var W = run.W
       var H = run.H
@@ -611,7 +642,7 @@
       }
       var gl = gateZ.concat([run.len])
       for (i = 0; i < gl.length; i++) drawGate(c, gl[i], i === gl.length - 1)
-      if (!water) drawIntroOutro(c)
+      if (space) drawIntroOutro(c)
       drawRivals(c)
       exhaust(c)
       drawPlayer(c)
@@ -659,15 +690,17 @@
     // QA: where the first obstacle sits, in world units (the opening must stay clear while the how-to chip is up)
     function firstObs () { var o = ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' })[0]; return o ? o.z : Infinity }
     function drawObs (c, e, x, y, sz, alpha, rot) {
-      if (!water) {
+      if (space) {
         var ang = rot + e.ph + run.t * (0.5 + (e.ph % 1)) * (e.ph > 3 ? -1 : 1)
         if (T.img(ROCK)) { run.spr(c, ROCK, x, y, sz * 1.15, sz * 1.15, { alpha: alpha, rot: ang }); return }
         c.save(); c.globalAlpha = alpha; c.translate(x, y); c.rotate(ang); c.drawImage(rock, -sz / 2, -sz / 2, sz, sz); c.restore()
       } else run.spr(c, eSprite(e), x, y, sz, sz, { alpha: alpha, rot: rot })
     }
 
-    return { update: update, draw: draw, resize: geo, layers: water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), obsN: ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: px * run.W, y: G.py, s: G.ps * 1.15 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
+    return { update: update, draw: draw, resize: geo, layers: SK ? SK.layers : water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), obsN: ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: px * run.W, y: G.py, s: G.ps * 1.15 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
   }
   T.engine('water', { assets: function (l) { return assets(l, 'water') }, make: function (run) { return make(run, 'water') } })
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })
+  T.engine('sky', { assets: function (l) { return assets(l, 'sky') }, make: function (run) { return make(run, 'sky') } })
+  T.engine('paper', { assets: function (l) { return assets(l, 'paper') }, make: function (run) { return make(run, 'paper') } })
 })(window)

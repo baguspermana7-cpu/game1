@@ -14,7 +14,8 @@ window.BlippiSpace = {
   "play": [
    83,
    126,
-   60
+   60,
+   10
   ],
   "pick": [
    68,
@@ -28,7 +29,8 @@ window.BlippiSpace = {
   "play": [
    109,
    124,
-   60
+   60,
+   10
   ],
   "pick": [
    88,
@@ -42,7 +44,8 @@ window.BlippiSpace = {
   "play": [
    120,
    124,
-   60
+   60,
+   10
   ],
   "pick": [
    96,
@@ -56,7 +59,8 @@ window.BlippiSpace = {
   "play": [
    88,
    124,
-   60
+   60,
+   10
   ],
   "pick": [
    72,
@@ -70,7 +74,8 @@ window.BlippiSpace = {
   "play": [
    103,
    124,
-   60
+   60,
+   10
   ],
   "pick": [
    84,
@@ -84,7 +89,8 @@ window.BlippiSpace = {
   "play": [
    103,
    125,
-   60
+   60,
+   10
   ],
   "pick": [
    84,
@@ -98,7 +104,8 @@ window.BlippiSpace = {
   "play": [
    118,
    123,
-   60
+   60,
+   10
   ],
   "pick": [
    95,
@@ -112,7 +119,8 @@ window.BlippiSpace = {
   "play": [
    103,
    126,
-   60
+   60,
+   10
   ],
   "pick": [
    84,
@@ -126,7 +134,8 @@ window.BlippiSpace = {
   "play": [
    104,
    124,
-   60
+   60,
+   10
   ],
   "pick": [
    84,
@@ -140,7 +149,8 @@ window.BlippiSpace = {
   "play": [
    77,
    123,
-   60
+   60,
+   10
   ],
   "pick": [
    63,
@@ -154,7 +164,8 @@ window.BlippiSpace = {
   "play": [
    110,
    123,
-   60
+   60,
+   10
   ],
   "pick": [
    89,
@@ -168,7 +179,8 @@ window.BlippiSpace = {
   "play": [
    79,
    125,
-   60
+   60,
+   10
   ],
   "pick": [
    65,
@@ -182,7 +194,8 @@ window.BlippiSpace = {
   "play": [
    101,
    118,
-   60
+   60,
+   10
   ],
   "pick": [
    82,
@@ -196,7 +209,8 @@ window.BlippiSpace = {
   "play": [
    123,
    113,
-   60
+   60,
+   10
   ],
   "pick": [
    99,
@@ -210,7 +224,8 @@ window.BlippiSpace = {
   "play": [
    112,
    118,
-   60
+   60,
+   10
   ],
   "pick": [
    90,
@@ -224,7 +239,8 @@ window.BlippiSpace = {
   "play": [
    99,
    124,
-   60
+   60,
+   10
   ],
   "pick": [
    80,
@@ -238,7 +254,8 @@ window.BlippiSpace = {
   "play": [
    123,
    120,
-   60
+   60,
+   10
   ],
   "pick": [
    99,
@@ -252,7 +269,8 @@ window.BlippiSpace = {
   "play": [
    120,
    123,
-   60
+   60,
+   10
   ],
   "pick": [
    96,
@@ -266,7 +284,8 @@ window.BlippiSpace = {
   "play": [
    95,
    124,
-   60
+   60,
+   10
   ],
   "pick": [
    78,
@@ -280,7 +299,8 @@ window.BlippiSpace = {
   "play": [
    113,
    125,
-   60
+   60,
+   10
   ],
   "pick": [
    91,
@@ -294,7 +314,8 @@ window.BlippiSpace = {
   "play": [
    105,
    126,
-   60
+   60,
+   10
   ],
   "pick": [
    85,
@@ -308,7 +329,8 @@ window.BlippiSpace = {
   "play": [
    85,
    126,
-   60
+   60,
+   10
   ],
   "pick": [
    70,
@@ -322,7 +344,8 @@ window.BlippiSpace = {
   "play": [
    96,
    125,
-   60
+   60,
+   10
   ],
   "pick": [
    79,
@@ -336,7 +359,8 @@ window.BlippiSpace = {
   "play": [
    99,
    126,
-   60
+   60,
+   10
   ],
   "pick": [
    80,
@@ -350,7 +374,8 @@ window.BlippiSpace = {
   "play": [
    117,
    125,
-   60
+   60,
+   10
   ],
   "pick": [
    95,

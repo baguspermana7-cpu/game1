@@ -30,11 +30,11 @@ const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'qu
     ok(s.cornerObs === 0, `${id}/${seed}: ${s.cornerObs} obstacles inside a corner`)
     ok(s.ramps >= 1, `${id}/${seed}: no jump ramp`)
     ok(s.giftBoxes >= 2, `${id}/${seed}: ${s.giftBoxes} gift boxes (need >= 2)`)
-    ok(s.obsN >= 1, `${id}/${seed}: no obstacle on the whole journey`)
+    ok(s.obsN >= 4, `${id}/${seed}: only ${s.obsN} obstacles on the whole journey`)
     ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
     ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
   }
-  for (const cat of ['udara', 'air', 'angkasa']) for (const n of [1, 2, 3, 4]) for (const seed of [1, 2]) {
+  for (const cat of ['udara', 'air', 'angkasa', 'kertas']) for (const n of [1, 2, 3, 4]) for (const seed of [1, 2]) {
     const id = cat + '-' + n
     await p.evaluate((cat, id, seed) => { BlippiTrip.open(cat); BlippiTrip.start(id, { seed }) }, cat, id, seed)
     await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'count', { timeout: 30000 })
@@ -44,7 +44,7 @@ const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'qu
     ok(s.rivals === 3 && s.pos === 4, `${id}/${seed}: ${s.rivals} rivals, starts at ${s.pos} (want 3 rivals, last place)`)
     ok(s.rivalArt, `${id}/${seed}: a rival's art did not load`)
     ok(s.giftBoxes >= 2, `${id}/${seed}: ${s.giftBoxes} gift boxes (need >= 2)`)
-    ok(s.obsN >= 1, `${id}/${seed}: no obstacle on the whole journey`)
+    ok(s.obsN >= 4, `${id}/${seed}: only ${s.obsN} obstacles on the whole journey`)
   }
   await p.close()
 }
@@ -120,21 +120,11 @@ async function race (cat, id, seed) {
   await p.screenshot({ path: '/tmp/claude-1000/qa-ctr-result-' + id + '.png' })
   await p.close()
 }
-// UDARA with no touch at all: after take-off the plane is on screen (it once sank with the falling water line, out of sight)
-{
-  const p = await page(390, 844)
-  await p.evaluate(() => { BlippiTrip.open('udara'); BlippiTrip.start('udara-1', { seed: 2 }) })
-  await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
-  await p.waitForFunction(() => { const s = BlippiTrip.qa(); return s.progress > 0.2 || s.state === 'quiz' }, { timeout: 60000 })
-  await sleep(800)
-  const s = await q(p)
-  ok(s.planeY > 0.1 && s.planeY < 0.65, `udara untouched: the plane sits at ${s.planeY && s.planeY.toFixed(2)} of the screen height (off screen)`)
-  await p.close()
-}
 await race('darat', 'darat-2', 7)
 await race('udara', 'udara-2', 7)
 await race('air', 'air-2', 7)
 await race('angkasa', 'angkasa-2', 7)
+await race('kertas', 'kertas-2', 7)
 ok(!errs.length, 'page errors: ' + errs.slice(0, 3).join(' | '))
 await b.close()
 console.log(`qa-blippi-race-ctr: ${pass}/${pass + fail} checks passed`)

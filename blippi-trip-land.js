@@ -127,6 +127,16 @@
       ents = ents.filter(function (e) { return !(OBST.indexOf(e.type) >= 0 && e.lane === gl && Math.abs(e.z - zl * SPD) < 3) })
       ents.push({ z: zl * SPD, lane: gl, type: 'gift', st: 0, t: 0 })
     })
+    // corners, ramps and gift boxes take obstacles away; top the road up to a floor on the open straights left
+    var isObs = function (e) { return OBST.indexOf(e.type) >= 0 }
+    var floor = Math.round(4 + lvl.dens * 6)
+    var fz = (GRACE + 1) * SPD
+    while (ents.filter(isObs).length < floor && fz < endZ - 6) {
+      var fzz = fz
+      var open = !gateZ.some(function (g) { return Math.abs(g - fzz) < 4 }) && cornerAt(fz) < 0 && cornerAt(fz + 2) < 0 && !ents.some(function (e) { return (isObs(e) || e.type === 'gift' || e.type === 'ramp') && Math.abs(e.z - fzz) < 3.5 })
+      if (open) ents.push({ z: fz, lane: [0, 2, 1][(r() * 3) | 0], type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
+      fz += open ? 5.5 : 1.5
+    }
     ents.sort(function (a, b) { return a.z - b.z })
     // rivals start ahead (the child starts last and races up the field); CTR-style rubber band keeps them near
     var me = T.ride && T.ride('darat')
@@ -438,7 +448,8 @@
         c.fillStyle = 'rgba(30,40,70,.24)'
         c.beginPath(); c.ellipse(rx, y + 2 * p, rs * 0.44, rs * 0.08, 0, 0, 6.3); c.fill()
         var rr = (o.lane - o.lp) * -0.2 + b0 * 0.04
-        if (o.ride) { c.save(); c.translate(rx, y); c.rotate(rr); if (!T.frameBot(c, o.key, o.ride.meta, run.t + o.ph, 0, 0, rs, rs * 0.86)) run.spr(c, o.key, 0, 0, rs, rs * 0.86, { anchor: 'bottom' }); c.restore() }
+        var hs = o.ride && T.halfSheet(o.key, o.ride.meta)
+        if (hs) { c.save(); c.translate(rx, y); c.rotate(rr); if (!T.frameBot(c, hs.key, hs.meta, run.t + o.ph, 0, 0, rs, rs * 0.86)) run.spr(c, o.key, 0, 0, rs, rs * 0.86, { anchor: 'bottom' }); c.restore() }
         else run.spr(c, o.key, rx, y + Math.sin(run.t * 15 + o.ph) * 1.4 * p, rs, rs * 0.86, { anchor: 'bottom', rot: rr })
         return
       } else if (it.kind === 'ent') {
