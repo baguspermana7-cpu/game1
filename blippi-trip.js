@@ -114,13 +114,26 @@
     var im = cache[key]
     if (!im) return false
     var fw = meta[0], fh = meta[1], n = meta[2], cols = meta[3] || n
-    var f = reduced() ? 0 : Math.floor(t * 1000 / (meta[4] || w.BlippiSpace.frameMs || 80)) % n
+    var ff = reduced() ? 0 : t * 1000 / (meta[4] || w.BlippiSpace.frameMs || 80)
+    var f = Math.floor(ff) % n
     var k = Math.min(bw / fw, bh / fh)
-    if (alpha != null) c.globalAlpha = alpha
-    c.drawImage(im, (f % cols) * fw, Math.floor(f / cols) * fh, fw, fh, x - fw * k / 2, y - fh * k / 2, fw * k, fh * k)
-    if (alpha != null) c.globalAlpha = 1
+    var a0 = alpha != null ? alpha : 1
+    var dx = x - fw * k / 2, dy = y - fh * k / 2
+    c.globalAlpha = a0
+    c.drawImage(im, (f % cols) * fw, Math.floor(f / cols) * fh, fw, fh, dx, dy, fw * k, fh * k)
+    // the art loops at 20 fps; the next frame is blended in over the current one, so the picture changes every display frame
+    // (a propeller, a wheel, a wing beat turn instead of ticking; owner 2026-10-15 "super smooth")
+    var mix = ff - Math.floor(ff)
+    if (mix > 0.02) {
+      var g = (f + 1) % n
+      c.globalAlpha = a0 * mix
+      c.drawImage(im, (g % cols) * fw, Math.floor(g / cols) * fh, fw, fh, dx, dy, fw * k, fh * k)
+      tweens++
+    }
+    c.globalAlpha = 1
     return true
   }
+  var tweens = 0
   // a rival's sheet at half resolution (a quarter of the memory): rivals are drawn smaller and further off. With four full
   // sheets plus the water's cached bands, AIR spent 77 ms of native work a frame at 4x (each sheet alone: 6 ms) - the raster
   // cache thrashed. Returns {key, meta} to draw with, or null before the full sheet is loaded.
@@ -283,7 +296,8 @@
 
   /* ---------- fx particles (canvas) ---------- */
   function fx (name, x, y, size, o) {
-    if (!run || !V[name] || run.fxs.length > 14) return
+    if (!run || !V[name]) return
+    if (run.fxs.length > 14) run.fxs.shift() // the oldest gives way: a new burst never silently fails to appear
     o = o || {}
     run.fxs.push({ k: 'fx:' + name, x: x, y: y, s: size || 120, t: 0, d: o.dur || 0.8, rise: o.rise || 0, blend: V[name].blend })
     if (cache['fx:' + name] === undefined) load(['fx:' + name], function () {})
@@ -327,14 +341,16 @@
       if (p >= 1) { run.fxs.splice(i, 1); continue }
       var im = cache[f.k]
       if (!im) continue
-      var a = p < 0.3 ? p / 0.3 : 1 - (p - 0.3) / 0.7
-      var sc = reduced() ? 1 : 0.5 + p * 0.7
+      // eased, not linear: a quick pop in (ease-out cubic), then a soft fade (ease-in on the tail); the rise decelerates
+      var e = 1 - Math.pow(1 - p, 3)
+      var a = p < 0.18 ? p / 0.18 : 1 - Math.pow((p - 0.18) / 0.82, 2)
+      var sc = reduced() ? 1 : 0.55 + e * 0.65
       var wd = f.s * sc
       var ht = wd * im.height / im.width
       c.save()
       c.globalAlpha = clamp(a, 0, 1)
       if (f.blend === 'screen') c.globalCompositeOperation = 'screen'
-      c.drawImage(im, f.x - wd / 2, f.y - ht / 2 - f.rise * p, wd, ht)
+      c.drawImage(im, f.x - wd / 2, f.y - ht / 2 - f.rise * e, wd, ht)
       c.restore()
     }
   }
@@ -360,7 +376,7 @@
       progress: 0, mul: 1, slowT: 0, boostT: 0, hitT: 0, rate: lvl.speed, t: 0, reserves: 0, fire: 0, countT: 0, startPress: -9, juiced: false,
       stars: 0, starTotal: 0, bumps: 0, state: 'loading', fxs: [], fly: [], gates: [], quiz: null, qlog: [], bonus: 0,
       in: { down: false, x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, moves: [], kx: 0, ky: 0 },
-      work: [], slowFrames: 0, finishT: 0, say: say, fx: fx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
+      work: [], dts: [], slowFrames: 0, fastFrames: 0, raiseNeed: 120, raisedAt: 0, dtS: 0, finishT: 0, say: say, fx: fx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
       collect: collect, bump: bump, boost: boost, turbo: turbo, press: pressTurbo, ctr: CTR,
       gift: gift, drawGift: drawGift, giftSpots: giftSpots, meter: meter, meterBar: meterBar, zones: zones, zoneAt: zoneAt, band: band, place: place, FIRE: FIRE
     }
@@ -411,12 +427,26 @@
   function frame (ts) {
     raf = 0
     if (!run) return
-    var dt = last ? Math.min(0.05, (ts - last) / 1000) : 0.016
+    var raw = last ? Math.min(0.05, (ts - last) / 1000) : 0.016
     last = ts
-    // adaptive render scale: sustained long frames drop resolution (floor 0.6); never raises again within a run
-    if (dt > 0.024) run.slowFrames++
+    // the step the world moves eases toward the real frame time (owner 2026-10-15 "super smooth"): a hitch - a GC, a busy
+    // tablet - is spread over the next frames instead of one 3x leap and a snap back
+    var dt = run.dtS ? run.dtS + (raw - run.dtS) * 0.2 : raw
+    run.dtS = dt
+    // adaptive render scale: sustained long frames drop resolution (floor 0.6); 2 s of quick frames raise it a step again, so a
+    // slow spell no longer leaves the world blurry for the rest of the run (a drop soon after a raise doubles that wait)
+    if (raw > 0.024) run.slowFrames++
     else run.slowFrames = Math.max(0, run.slowFrames - 1)
-    if (run.slowFrames > 40 && run.scale > 0.61) { run.scale = Math.max(0.6, run.scale - 0.15); run.slowFrames = 0; resize() }
+    // a single late frame only sets the count back a little (a reset on every one kept a heavier road blurry for good)
+    run.fastFrames = raw < 0.02 ? run.fastFrames + 1 : Math.max(0, run.fastFrames - 4)
+    if (run.slowFrames > 40 && run.scale > 0.61) {
+      run.scale = Math.max(0.6, run.scale - 0.15); run.slowFrames = 0; run.fastFrames = 0
+      if (run.raisedAt && run.t - run.raisedAt < 4) run.raiseNeed *= 2
+      resize()
+    }
+    if (run.fastFrames > run.raiseNeed && run.scale < 0.79) { run.scale = Math.min(0.8, run.scale + 0.15); run.fastFrames = 0; run.raisedAt = run.t; resize() }
+    run.dts.push(dt)
+    if (run.dts.length > 240) run.dts.shift()
     var w0 = w.performance.now()
     if (run.state === 'count') countdown(dt)
     else if (run.state === 'play' || run.state === 'finishing') update(dt)
@@ -882,7 +912,7 @@
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, obsN: run.eng && run.eng.obsN != null ? run.eng.obsN : -1, rivalKeys: run.eng && run.eng.rivals ? run.eng.rivals.map(function (v) { return v.key }) : [], rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, dts: run.dts.slice(), scale: run.scale, tween: tweens > 0, obsN: run.eng && run.eng.obsN != null ? run.eng.obsN : -1, rivalKeys: run.eng && run.eng.rivals ? run.eng.rivals.map(function (v) { return v.key }) : [], rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }

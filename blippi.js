@@ -212,6 +212,11 @@
     for (i = 0; i < D.vehicles.length; i++) if (D.vehicles[i].id === id) return D.vehicles[i]
     return D.vehicles[0]
   }
+  function replayFor (veh) {
+    var own = D.order.filter(function (id) { return D.missions[id].vehicle === veh.id })[0]
+    var any = D.order.filter(function (id) { return fits(veh, D.missions[id]) })[0]
+    return D.missions[own || any] || null
+  }
   function fits (veh, mission) {
     var i
     for (i = 0; i < mission.needs.length; i++) if (veh.tags.indexOf(mission.needs[i]) < 0) return false
@@ -543,6 +548,10 @@
   /* ---------- KENDARAAN ---------- */
   function vehiclesBuild (el, params) {
     var mission = D.missions[params.mission || recommended().id]
+    // everything done: the garage is free play. Each vehicle gets its own job to replay (the mission made for it, else the
+    // first it fits), so no vehicle is "for another mission" and PAKAI never swaps it for a loaner
+    var free = D.order.every(missionDone)
+    if (free && params.vehicle) mission = replayFor(vehicleById(params.vehicle)) || mission
     var si = 0
     var want = params.vehicle || mission.vehicle
     D.vehicles.forEach(function (v, i) { if (v.id === want) si = i })

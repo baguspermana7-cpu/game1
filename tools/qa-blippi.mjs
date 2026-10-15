@@ -1086,6 +1086,27 @@ for (const [id, veh, data] of [['W01-M01', 'buggy', { route: 'R' }], ['W01-M02',
   await rp.close();
 }
 // BALAPAN is withdrawn (owner, 2026-10-10): its gates run only with QA_RACE=1 until it is rebuilt on the Mojo/TK engines (step 3d)
+// all 30 missions done (owner 2026-10-15: "semua sudah checklist" yet the crane said it was for a mission not done): the
+// garage is free play. Each vehicle, reached through the carousel, fits its own replay job and PAKAI starts it with that
+// vehicle (no loaner swap); the progress panel counts all 30 missions
+{
+  const gp = await fresh(1280, 800);
+  await gp.evaluate(() => { Blippi.commit(s => { BlippiData.order.forEach(i => { s.done[i] = 1; }); }); });
+  ok(await gp.evaluate(() => BlippiData.order.length) === await gp.evaluate(() => BlippiData.worlds.reduce((n, w) => n + (w.missions || []).length, 0)), 'mission order does not cover every mission on the map');
+  const ids = await gp.evaluate(() => BlippiData.vehicles.map(v => v.id));
+  const bad = [];
+  for (const id of ids) {
+    await gp.evaluate((v) => { const last = BlippiData.order[BlippiData.order.length - 1]; Blippi.go('vehicles', { mission: last, vehicle: v }); }, id); await sleep(150);
+    const fit = await gp.evaluate(() => document.querySelector('[data-fit]').getAttribute('data-fit'));
+    if (fit !== 'yes') bad.push(id + ':' + fit);
+  }
+  ok(!bad.length, `all missions done: vehicles still "for another mission": ${bad.join(' ')}`);
+  await gp.evaluate(() => { const last = BlippiData.order[BlippiData.order.length - 1]; Blippi.go('vehicles', { mission: last, vehicle: 'mobile-crane' }); }); await sleep(150);
+  await gp.click('[data-act=pakai]'); await sleep(400);
+  ok(await gp.evaluate(() => Blippi.current()) === 'mission', 'all done: PAKAI with the crane did not start a mission');
+  ok(!/pinjamkan/i.test(await gp.evaluate(() => document.body.innerText)), 'all done: PAKAI swapped the crane for a loaner');
+  await gp.close();
+}
 if (process.env.QA_RACE) {
 // ---------- Part C: BALAPAN (arena racing from the Codex turnaround + arena packs) ----------
 // 0. authored route data sanity for EVERY arena x orientation (never inferred at runtime): closed loop, start on the centerline,

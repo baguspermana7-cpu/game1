@@ -1024,7 +1024,9 @@
     stickers: STICKERS,
     hubLines: HUB_LINES,
     firstMission: 'W01-M01',
-    order: ['W01-M01', 'W01-M02', 'W01-M03', 'W01-M04', 'W01-M05', 'W02-M01', 'W02-M02', 'W02-M03'],
+    // every mission on the map, world by world (derived: a hand list stopped at W02-M03 while the map grew to 30, so with all 30
+    // done the garage still pointed at W02-M03 and called every other vehicle "for another mission"; owner 2026-10-15)
+    order: WORLDS.reduce(function (a, wd) { return a.concat(wd.missions || []) }, []),
     stickerTotal: 30
   }
 })(window)
