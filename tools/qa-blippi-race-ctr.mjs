@@ -115,11 +115,39 @@ async function race (cat, id, seed) {
   for (let i = 0; i < 60 && !(await p.$('[data-trip=result]')); i++) await sleep(250)
   const place = await p.evaluate(() => { const e = document.querySelector('[data-place]'); return e ? +e.getAttribute('data-place') : 0 })
   ok(place >= 1 && place <= 4, `${id}: result names no place (${place})`)
+  // the chips' pictures decode a moment after the card appears: give them up to 3 s before counting
+  for (let i = 0; i < 30 && !(await p.evaluate(() => [...document.querySelectorAll('.tstand li img')].every(i => i.complete && i.naturalWidth > 0))); i++) await sleep(100)
   const st = await p.evaluate(() => { const li = [...document.querySelectorAll('.tstand li')]; return { n: li.length, me: li.findIndex(e => e.classList.contains('me')) + 1, pics: li.filter(e => { const i = e.querySelector('img'); return i ? i.complete && i.naturalWidth > 0 : !!e.querySelector('.tanim') }).length } })
   ok(st.n === 4 && st.me === place && st.pics === 4, `${id}: finishing order ${JSON.stringify(st)} (want 4 chips with art, KAMU at ${place})`)
   await p.screenshot({ path: '/tmp/claude-1000/qa-ctr-result-' + id + '.png' })
   await p.close()
 }
+// sky and paper open on the ground (runway / festival stage) and arrive somewhere (destination runway / bullseye),
+// like the space journey's launch pad and planet: count the scene's own fill colour on the canvas at both ends
+async function ends (cat, id, cols) {
+  const p = await page(844, 390)
+  await p.evaluate((cat, id) => { BlippiTrip.open(cat); BlippiTrip.start(id, { seed: 3 }) }, cat, id)
+  await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
+  const count = () => p.evaluate(cols => {
+    const cv = [...document.querySelectorAll('canvas')].sort((a, b) => b.width * b.height - a.width * a.height)[0]
+    const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data
+    let n = 0
+    for (let i = 0; i < d.length; i += 16) if (cols.some(c => Math.abs(d[i] - c[0]) < 6 && Math.abs(d[i + 1] - c[1]) < 6 && Math.abs(d[i + 2] - c[2]) < 6)) n++
+    return n / (d.length / 16)
+  }, cols)
+  const open = await count()
+  await p.evaluate(() => BlippiTrip.qaSeek(0.5)); await sleep(300)
+  const mid = await count()
+  await p.evaluate(() => BlippiTrip.qaSeek(0.985)); await sleep(300)
+  const end = await count()
+  ok(open > 0.03, `${id}: the opening scene is not on screen (${(open * 100).toFixed(1)}% of the canvas)`)
+  ok(mid < 0.005, `${id}: the opening or arrival scene shows mid-race (${(mid * 100).toFixed(1)}%)`)
+  ok(end > 0.03, `${id}: the arrival scene is not on screen (${(end * 100).toFixed(1)}%)`)
+  console.log(`${id} ends: open ${(open * 100).toFixed(1)}%, mid ${(mid * 100).toFixed(1)}%, end ${(end * 100).toFixed(1)}%`)
+  await p.close()
+}
+await ends('udara', 'udara-2', [[0x5E, 0x68, 0x78], [0x8C, 0xCB, 0x72]])
+await ends('kertas', 'kertas-2', [[0xC9, 0x8B, 0x4E], [0xE2, 0x46, 0x3F]])
 await race('darat', 'darat-2', 7)
 await race('udara', 'udara-2', 7)
 await race('air', 'air-2', 7)

@@ -643,6 +643,7 @@
       var gl = gateZ.concat([run.len])
       for (i = 0; i < gl.length; i++) drawGate(c, gl[i], i === gl.length - 1)
       if (space) drawIntroOutro(c)
+      else if (SK && SK.ends) SK.ends(c, run, G)
       drawRivals(c)
       exhaust(c)
       drawPlayer(c)

@@ -908,6 +908,8 @@
     D: D, craft: craft, crafts: crafts, setCraft: setCraft, frameSpr: frameSpr, frameBot: frameBot, halfSheet: halfSheet, fleet: fleet, ride: ride, setRide: setRide, rideRivals: rideRivals, start: start, stop: stop, answer: answer, resumeFromQuiz: resumeFromQuiz, pauseRun: pauseRun, resumeRun: resumeRun,
     scaled: scaled, levelState: levelState, unlocked: unlocked, catStars: catStars, url: url, load: load, img: img, spr: spr, rng: rng, clamp: clamp, lerp: lerp,
     running: function () { return !!run },
+    // QA seam: jump the run to a progress (0..1) so a gate can look at the opening and the arrival
+    qaSeek: function (p) { if (run) run.progress = clamp(p, 0, 0.999) },
     // QA seam: read-only snapshot for the gate
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,

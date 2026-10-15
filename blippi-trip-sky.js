@@ -41,6 +41,28 @@
     c.globalAlpha = 1
   }
 
+  // the opening (first 7.5 %) slides away under the vehicle; the arrival (last 10 %) rises in from the top. Same timing as
+  // the space journey's launch pad and destination planet (blippi-trip-top.js drawIntroOutro).
+  function opening (run) { return run.progress < 0.075 ? run.progress / 0.075 : -1 }
+  function arrival (run) { if (run.progress <= 0.9) return -1; var o = Math.min(1, (run.progress - 0.9) / 0.1); return o * o * (3 - 2 * o) }
+  // a top-down runway strip: asphalt, dashed centre line, threshold bars at the far end, edge lights blinking in turn
+  function runway (c, run, cx, top, bot, w) {
+    c.fillStyle = '#5E6878'
+    c.fillRect(cx - w / 2, top, w, bot - top)
+    c.fillStyle = '#FFFFFF'
+    var y
+    for (y = top + 70; y < bot; y += 56) c.fillRect(cx - 3, y, 6, 30)
+    var b
+    for (b = 0; b < 6; b++) c.fillRect(cx - w / 2 + 8 + b * (w - 16) / 6, top + 10, (w - 16) / 6 - 8, 44)
+    var i = 0
+    for (y = top + 20; y < bot; y += 48) {
+      var on = run.reduced() || Math.floor(run.t * 6 - i * 0.5) % 4 === 0
+      c.fillStyle = on ? '#FFE680' : '#C9B45A'
+      c.beginPath(); c.arc(cx - w / 2 - 6, y, on ? 5 : 3.5, 0, 6.3); c.arc(cx + w / 2 + 6, y, on ? 5 : 3.5, 0, 6.3); c.fill()
+      i++
+    }
+  }
+
   T.skins.sky = {
     cat: 'udara',
     assets: function () { return ['lib:nature/cloud', 'lib:game/hot-air-balloon', 'lib:tk-world/storm-cloud', 'lib:game/gem-blue'] },
@@ -49,7 +71,36 @@
     big: 'lib:game/gem-blue',
     laneCol: '255,255,255',
     zoneLine: 'Angin kencang! Tekan TURBO saat lingkarannya merah!',
-    layers: ['gradient', 'stars', 'clouds-far', 'clouds-mid', 'clouds-near', 'plane'],
+    layers: ['gradient', 'stars', 'clouds-far', 'clouds-mid', 'clouds-near', 'runway', 'plane'],
+    // take-off from the home runway, landing on the destination airport's runway
+    ends: function (c, run, G) {
+      var W = run.W
+      var H = run.H
+      var w = G.ps * 1.6
+      var k = opening(run)
+      if (k >= 0) {
+        var gy = G.py - G.ps * 2.4 + k * H * 0.9
+        c.fillStyle = '#8CCB72'
+        c.fillRect(0, gy - 30, W, H)
+        c.fillStyle = '#7AB862'
+        var i
+        for (i = 0; i < 8; i++) c.fillRect(0, gy + 40 + i * 70, W, 26)
+        runway(c, run, W * 0.5, gy, H + 40, w)
+      }
+      var o = arrival(run)
+      if (o >= 0) {
+        var bot = -H * 0.2 + o * H * 0.75
+        c.fillStyle = '#8CCB72'
+        c.fillRect(0, -40, W, bot + 70)
+        runway(c, run, W * 0.5, -40, bot, w)
+        // approach lights: a row that blinks toward the runway end
+        var j
+        for (j = 0; j < 5; j++) {
+          c.fillStyle = Math.floor(run.t * 8) % 5 === j || run.reduced() ? '#FFFFFF' : 'rgba(255,255,255,.35)'
+          c.beginPath(); c.arc(W * 0.5, bot + 18 + j * 22, 5, 0, 6.3); c.fill()
+        }
+      }
+    },
     bg: function (c, run, Z, G) {
       var th = run.lvl.theme
       var sk = th.sky || ['#BFE6FF', '#EAF7FF']
@@ -99,7 +150,46 @@
     big: 'lib:game/gem-green',
     laneCol: '255,214,120',
     zoneLine: 'Angin festival! Tekan TURBO saat lingkarannya merah!',
-    layers: ['gradient', 'clouds', 'far-balloons', 'bunting', 'confetti', 'plane'],
+    layers: ['gradient', 'clouds', 'far-balloons', 'bunting', 'confetti', 'stage', 'plane'],
+    // launched from the festival stage (planks, a red launch carpet, two flag poles); lands on a big bullseye target
+    ends: function (c, run, G) {
+      var W = run.W
+      var H = run.H
+      var k = opening(run)
+      if (k >= 0) {
+        var gy = G.py - G.ps * 1.2 + k * H * 0.9
+        c.fillStyle = '#C98B4E'
+        c.fillRect(0, gy, W, H)
+        c.fillStyle = '#B07740'
+        var y
+        for (y = gy + 22; y < H; y += 26) c.fillRect(0, y, W, 3)
+        c.fillStyle = '#E2463F'
+        c.fillRect(W * 0.5 - G.ps * 0.55, gy - 4, G.ps * 1.1, H)
+        c.fillStyle = '#FFD86B'
+        c.fillRect(W * 0.5 - G.ps * 0.55, gy - 4, G.ps * 1.1, 6)
+        var s
+        for (s = -1; s <= 1; s += 2) {
+          var fx = W * 0.5 + s * G.ps * 1.25
+          c.fillStyle = '#8A5A2B'
+          c.fillRect(fx - 3, gy - 60, 6, 64)
+          c.fillStyle = s < 0 ? '#FF8FB1' : '#7FB8FF'
+          var wv = run.reduced() ? 0 : Math.sin(run.t * 5 + s) * 4
+          c.beginPath(); c.moveTo(fx + 3, gy - 60); c.lineTo(fx + 3 + 30 * -s * -1, gy - 52 + wv); c.lineTo(fx + 3, gy - 42); c.closePath(); c.fill()
+        }
+        bunting(c, run, gy - 70, 0.6)
+      }
+      var o = arrival(run)
+      if (o >= 0) {
+        var r = Math.min(W, H) * 0.32
+        var cy = -r + o * r * 1.9
+        var cols = ['#E2463F', '#FFFFFF', '#FFB347', '#FFFFFF', '#FFD86B']
+        var i2
+        c.fillStyle = 'rgba(0,0,0,.12)'
+        c.beginPath(); c.ellipse(W * 0.5 + 8, cy + 10, r, r * 0.92, 0, 0, 6.3); c.fill()
+        for (i2 = 0; i2 < cols.length; i2++) { c.fillStyle = cols[i2]; c.beginPath(); c.ellipse(W * 0.5, cy, r * (1 - i2 * 0.19), r * 0.92 * (1 - i2 * 0.19), 0, 0, 6.3); c.fill() }
+        bunting(c, run, cy - r - 10, 0.8)
+      }
+    },
     bg: function (c, run, Z, G) {
       var sk = run.lvl.theme.sky || ['#FFE3EF', '#E3F3FF']
       gradient(c, run, sk[0], sk[1])
