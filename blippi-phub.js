@@ -11,6 +11,13 @@
     chip.hidden = false
     chip.classList.remove('pulse'); void chip.offsetWidth; chip.classList.add('pulse')
   })
+  // Home to the Dunia Emosi landing page (owner 2026-10-17: every new game has one), also on the portrait hub
+  document.getElementById('phHome').addEventListener('click', function () {
+    if (w.Blippi && w.Blippi.sfx) w.Blippi.sfx('tap')
+    var framed = false
+    try { framed = w.top !== w && w.top.location.origin === location.origin } catch (e) { framed = false }
+    if (framed) w.top.postMessage('blippi:home', location.origin); else location.href = '../Dunia-Emosi/index.html'
+  })
   document.getElementById('phSay').addEventListener('click', function () { li = (li + 1) % lines.length; this.textContent = lines[li] })
   function land () {
     if (w.innerWidth > w.innerHeight && pending && w.Blippi) {

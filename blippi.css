@@ -282,3 +282,8 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:poin
 .phf.f2{left:auto;right:30%;height:48%;z-index:0}
 .phf.f3{z-index:1}
 .glowpanel{animation:gl 1.1s ease-in-out infinite}
+
+/* portrait hub Home button (2026-10-18): same round house as the landscape hub, top-left over the title row */
+.phhome{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:12px;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:58px;height:58px;padding:0;border:3px solid #fff;border-radius:50%;background:linear-gradient(#FFD45C,#F5A623);color:#5A3300;box-shadow:0 4px 0 #B86E00,0 8px 16px rgba(0,0,0,.28);font:900 11px/1 Nunito,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.phhome svg{width:27px;height:27px;display:block}
+.phhome:active{transform:translateY(2px);box-shadow:0 2px 0 #B86E00,0 4px 10px rgba(0,0,0,.28)}
