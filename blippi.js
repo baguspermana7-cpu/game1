@@ -295,7 +295,12 @@
     return b
   }
   function topLeft (el, mode) {
-    if (mode === 'hub') { circle(el, 'gear', 22, 18, 'Pengaturan', function () { w.BlippiPanels.settings() }) } else {
+    if (mode === 'hub') {
+      circle(el, 'gear', 22, 18, 'Pengaturan', function () { w.BlippiPanels.settings() })
+      // owner 2026-10-17: every new game shows a Home button back to Dunia Emosi's landing page -- on the hub too,
+      // beside the profile in the top-right cluster (the top-left is the gear and the JELAJAH DUNIA pill)
+      circle(el, 'home', 1344, 18, 'Kembali ke Dunia Emosi', home).setAttribute('data-act', 'dunia-home')
+    } else {
       circle(el, 'back', 22, 18, 'Kembali', back)
       circle(el, 'home', 122, 18, 'Ke beranda', home)
     }
