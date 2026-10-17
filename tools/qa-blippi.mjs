@@ -9,7 +9,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const safeClick = async (p, sel) => { for (let i = 0; i < 4; i++) { try { await p.waitForSelector(sel, { timeout: 6000 }); await p.click(sel); return true; } catch (e) { await sleep(200); } } return false; };
 const aimAt = q => [Math.max(8, Math.min(q.cw - 8, q.aim[0])), Math.max(8, Math.min(q.ch - 8, q.aim[1]))];
 const waitFor = async (p, fn, ms = 15000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await p.evaluate(fn)) return true; await sleep(150); } return false; };
-const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'], protocolTimeout: 300000 });
+// --disable-audio-output (2026-10-17): with the host audio stack under heavy swap, Chrome's audio-output socket broke and
+// took the renderer down the moment a screen started a sound ("ASR: No room in socket buffer: Broken pipe"); the gate
+// tests pictures and input, so the page keeps its Web Audio API but writes no sound.
+const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output'], protocolTimeout: 300000 });
 const errors = [];
 async function fresh(w, h, clear = true) {
   const p = await b.newPage();
@@ -285,7 +288,7 @@ for (const [w, h] of [[1280, 800], [1024, 768], [844, 390], [390, 844]]) {
 // real-input play of one level per category, from the hub, with the save checked
 const tpg = await fresh(1280, 800);
 await tpg.evaluate(() => { history.replaceState(null, '', location.pathname + '?triplen=0.3'); });
-const CATS = [['darat', 'darat-1'], ['udara', 'udara-1'], ['angkasa', 'angkasa-1'], ['air', 'air-1'], ['kertas', 'kertas-1']];
+const CATS = [['darat', 'darat-1'], ['udara', 'udara-1'], ['angkasa', 'angkasa-1'], ['air', 'air-1'], ['kertas', 'kertas-1'], ['kapalkertas', 'kapalkertas-1']];
 let sessionSeen = [];
 for (const [cat, lvl] of CATS) {
   await tpg.evaluate("BlippiTrip.close()"); await sleep(250);

@@ -13,7 +13,10 @@ A pack with no sprites_diagonal/ (the aircraft download arrived without it) take
   python tools/ingest-fleet.py --grid <rear animated gif> <preview png> kertas
 The full paper-plane pack (PaperPlanes_25_Animated_Asset_Pack, owner 2026-10-15) has per-plane sheets with soft alpha and
 replaces the GIF cut: python tools/ingest-fleet.py <pack dir> kertas
-Usage: python tools/ingest-fleet.py <pack dir> <darat|air|udara|kertas>   (needs numpy + Pillow)"""
+The paper-boat pack (OrigamiShips_25_Animated_Asset_Pack, owner 2026-10-17) has 10x8-frame sheets (80 frames): the frame
+rows are read from the sheet height. Its download arrived truncated (24 of 25 sheets): a missing sheet is cut from the pack's
+5x5 rear GIF grid (200 px cells) at the same on-screen size:  python tools/ingest-fleet.py <pack dir> kapalkertas
+Usage: python tools/ingest-fleet.py <pack dir> <darat|air|udara|kertas|kapalkertas>   (needs numpy + Pillow)"""
 import glob, json, os, re, sys
 from PIL import ImageSequence
 import numpy as np
@@ -46,6 +49,11 @@ NAMES = {
              'Naga Origami', 'Kelelawar Origami', 'Bangau Origami', 'Glider Walet', 'Glider Kupu-Kupu', 'Glider Pari',
              'Elang Kertas', 'Phoenix Koral', 'Glider Albatros', 'Jet Ekor Ganda', 'Jet Canard', 'Glider Sayap Kotak',
              'Glider Kipas', 'Glider Bumerang', 'Glider Ketupat', 'Glider Bintang', 'Roket Kertas', 'Ikan Terbang'],
+  'kapalkertas': ['Perahu Kertas Klasik', 'Titanic Kertas', 'Britannic Kertas', 'Kapal Pesiar Kertas', 'Kapal Uap Kertas',
+                  'Perahu Layar Kertas', 'Sekunar Kertas', 'Clipper Kertas', 'Kapal Viking Kertas', 'Jung Kertas',
+                  'Kapal Kontainer Kertas', 'Kapal Tanker Kertas', 'Feri Kertas', 'Kapal Tunda Kertas', 'Speedboat Kertas',
+                  'Yacht Kertas', 'Katamaran Kertas', 'Trimaran Kertas', 'Kapal Roda Dayung Kertas', 'Kapal Nelayan Kertas',
+                  'Sekoci Kertas', 'Pemecah Es Kertas', 'Kapal Selam Kertas', 'Perahu Naga Kertas', 'Perahu Angsa Kertas'],
 }[CAT]
 IDS = {'kertas': ['classic-dart', 'blue-glider', 'orange-arrow', 'yellow-jet', 'green-wing', 'paper-disc', 'ring-wing', 'green-dragon',
                   'blue-bat', 'paper-crane', 'blue-swallow', 'butterfly', 'green-ray', 'brown-eagle', 'fire-bird', 'white-gull',
@@ -106,16 +114,30 @@ if GRID:
 else:
     k_play = PLAY
     sheets = sorted(glob.glob(os.path.join(PACK, 'animation_sheets', '*.png')))
-    assert len(sheets) == 25, len(sheets)
+    have = {os.path.basename(x)[:2] for x in sheets}
+    missing = ['%02d' % i for i in range(1, 26) if '%02d' % i not in have]
+    gifs = glob.glob(os.path.join(PACK, '*_25_Rear_Animated.gif'))
+    assert len(sheets) == 25 or (missing and gifs), (len(sheets), missing)
+    gframes = [grid_cells(f.convert('RGBA')) for f in ImageSequence.Iterator(Image.open(gifs[0]))] if missing else None
+    for m in missing: sheets.append('GIF:' + m)
+    sheets.sort(key=lambda x: os.path.basename(x)[:2] if not x.startswith('GIF:') else x[4:])
     previews = glob.glob(os.path.join(PACK, '*_25_Preview.png'))
     grid_stills = grid_cells(Image.open(previews[0]).convert('RGBA')) if not os.path.isdir(os.path.join(PACK, 'sprites_diagonal')) else None
+    GIF_IDS = {'kapalkertas': {'25': 'paper-swan-boat'}}.get(CAT, {})
     for n, path in enumerate(sheets):
-        base = os.path.basename(path)
-        num = base[:2]
-        vid = re.sub(r'_[a-z]+\.png$', '', base[3:]).replace('_', '-')   # 15_school_bus_drive.png -> school-bus
-        sheet = Image.open(path).convert('RGBA')
-        frames = [sheet.crop(((i % COLS) * CELL, (i // COLS) * CELL, (i % COLS + 1) * CELL, (i // COLS + 1) * CELL)) for i in range(COLS * ROWS)]
-        play = save_strip(frames, '%s/%s.webp' % (out_dir, vid))
+        if path.startswith('GIF:'):   # a sheet the download lost: the same ship from the GIF grid, scaled to the sheet size
+            num = path[4:]
+            vid = GIF_IDS.get(num, 'item-' + num)
+            gf = [fr[int(num) - 1].resize((CELL, CELL), Image.LANCZOS) for fr in gframes]
+            play = save_strip(gf, '%s/%s.webp' % (out_dir, vid))
+        else:
+            base = os.path.basename(path)
+            num = base[:2]
+            vid = re.sub(r'_[a-z]+\.png$', '', base[3:]).replace('_', '-')   # 15_school_bus_drive.png -> school-bus
+            sheet = Image.open(path).convert('RGBA')
+            rows = sheet.height // CELL   # 6 rows (60 frames) in the vehicle packs, 8 (80) in the paper-boat pack
+            frames = [sheet.crop(((i % COLS) * CELL, (i // COLS) * CELL, (i % COLS + 1) * CELL, (i // COLS + 1) * CELL)) for i in range(COLS * rows)]
+            play = save_strip(frames, '%s/%s.webp' % (out_dir, vid))
         still = grid_stills[n] if grid_stills else Image.open(glob.glob(os.path.join(PACK, 'sprites_diagonal', num + '_*.png'))[0]).convert('RGBA')
         tile = save_tile(still, '%s/%s-tile.webp' % (out_dir, vid))
         items.append({'id': vid, 'name': NAMES[n], 'play': play, 'tile': tile})

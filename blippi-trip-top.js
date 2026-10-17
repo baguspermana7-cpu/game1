@@ -79,9 +79,10 @@
     var collectibles = 0
     var gateZ = lvl.gates.map(function (f) { return f * run.len })
     function nearGate (z) { return gateZ.some(function (g) { return Math.abs(g - z) < 1.5 }) }
-    var water = skin === 'water'
-    var space = skin === 'space'
     var SK = (T.skins && T.skins[skin]) || null
+    // a 'wet' skin (the paper-boat river, owner 2026-10-17) sails on water: wake, foam, bow splash, lifebuoy gates
+    var water = skin === 'water' || !!(SK && SK.wet)
+    var space = skin === 'space'
     var craft = space && T.craft ? T.craft() : null
     var myBoat = (water || SK) && T.ride ? T.ride(SK ? SK.cat : 'air') : null
     var obsKeys = water ? th.obs : SK ? SK.obs : ['asteroid']
@@ -143,7 +144,7 @@
     var nudgeT = 0
     var dz = 0
     while (dz < run.len + 8) {
-      if (water) deco.push({ z: dz, side: r() < 0.5 ? -1 : 1, k: 'lib:tk-world/' + th.deco[(r() * th.deco.length) | 0], off: 0.04 + r() * 0.1, sc: 0.8 + r() * 0.6 })
+      if (water && th.deco && th.deco.length) deco.push({ z: dz, side: r() < 0.5 ? -1 : 1, k: 'lib:tk-world/' + th.deco[(r() * th.deco.length) | 0], off: 0.04 + r() * 0.1, sc: 0.8 + r() * 0.6 })
       dz += 2.2 + r() * 2
     }
     if (space) {
@@ -342,7 +343,7 @@
         var x = rv.x * run.W
         var ps = G.ps * 0.92
         if (water || SK) {
-          if (water) {
+          if (water && !(SK && SK.wet)) {   // the origami boats carry their own folded-paper wake in the animation
             c.fillStyle = th.foam
             c.globalAlpha = 0.5
             c.beginPath(); c.ellipse(x, y + ps * 0.75, ps * 0.22, ps * 0.08, 0, 0, 6.3); c.fill()
@@ -368,7 +369,7 @@
 
     function eSprite (e) {
       if (e.type === 'star') return 'lib:game/star'
-      if (e.type === 'big') return water ? 'lib:game/lifebuoy' : SK ? SK.big : 'lib:game/gem-blue'
+      if (e.type === 'big') return SK ? SK.big : water ? 'lib:game/lifebuoy' : 'lib:game/gem-blue'
       if (SK && SK.keys[e.type]) return SK.keys[e.type]
       if (e.type === 'barrel') return 'lib:game/barrel'
       if (e.type === 'iceberg-2') return 'lib:tk-world/iceberg-2'
@@ -549,7 +550,7 @@
       var ps = G.ps
       var alpha = run.hitT > 0 && !run.reduced() ? (Math.floor(run.t * 12) % 2 ? 0.45 : 1) : 1
       var wob = wobble > 0 ? Math.sin(run.t * 30) * 0.12 * wobble : 0
-      if (SK) {
+      if (SK && !SK.wet) {
         // the child's own aircraft / paper plane: its rear-view loop (rotor, propeller, wind lines) banking with the steering
         c.save(); c.translate(x, y); c.rotate(tilt * 0.45 + wob); c.globalAlpha = alpha
         if (!(myBoat && T.frameSpr(c, myBoat.key, myBoat.meta, run.t, 0, 0, ps * 1.3, ps * 1.3))) run.spr(c, ROCKET, 0, 0, ps, ps, {})
@@ -557,10 +558,11 @@
         return
       }
       if (water) {
-        // layered wake: wide soft foam ribbon + bright inner V, both fading and spreading with age
+        // layered wake: wide soft foam ribbon + bright inner V, both fading and spreading with age (not for the origami
+        // boats: their sheets already draw a folded-paper wake, a second one floated off the hull as white pills)
         var i
         c.fillStyle = th.foam
-        for (i = 0; i < wake.length; i++) {
+        for (i = 0; i < (SK && SK.wet ? 0 : wake.length); i++) {
           var wk = wake[i]
           var a = Math.max(0, 1 - wk.t * 0.9)
           var yy = wk.y + wk.t * G.pyu * run.rate
@@ -580,7 +582,7 @@
         c.restore()
         // bow splash
         c.fillStyle = th.foam
-        c.globalAlpha = 0.8
+        c.globalAlpha = SK && SK.wet ? 0 : 0.8
         c.beginPath(); c.ellipse(x, y - ps * 0.82 + bob, ps * 0.2 + Math.sin(run.t * 9) * 2, ps * 0.07, 0, 0, 6.3); c.fill()
         c.globalAlpha = 1
       } else {
@@ -704,4 +706,5 @@
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })
   T.engine('sky', { assets: function (l) { return assets(l, 'sky') }, make: function (run) { return make(run, 'sky') } })
   T.engine('paper', { assets: function (l) { return assets(l, 'paper') }, make: function (run) { return make(run, 'paper') } })
+  T.engine('paperboat', { assets: function (l) { return assets(l, 'paperboat') }, make: function (run) { return make(run, 'paperboat') } })
 })(window)

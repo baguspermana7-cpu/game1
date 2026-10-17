@@ -9,7 +9,9 @@
     { id: 'angkasa', name: 'LUAR ANGKASA', sub: 'Pesawat angkasa menyusuri bintang dan planet', tint: '#E3D7F7', ink: '#5B3FA8', icon: 'lib:mojo-chase/items/rocket', engine: 'space', ctl: 'Seret kiri-kanan' },
     { id: 'air', name: 'AIR', sub: 'Berlayar di laut, pulau dan es', tint: '#FFDCCB', ink: '#B4510F', icon: 'race:tugboat/blippi_peek-front-three-quarter', engine: 'water', ctl: 'Seret kiri-kanan' },
     // the 5th arena (owner 2026-10-15): a paper-plane festival, with the owner's 25 animated paper planes
-    { id: 'kertas', name: 'PESAWAT KERTAS', sub: 'Festival pesawat kertas di langit', tint: '#FFE6F2', ink: '#B0306A', icon: 'fl:kertas/classic-dart-tile', engine: 'paper', ctl: 'Seret kiri-kanan' }
+    { id: 'kertas', name: 'PESAWAT KERTAS', sub: 'Festival pesawat kertas di langit', tint: '#FFE6F2', ink: '#B0306A', icon: 'fl:kertas/classic-dart-tile', engine: 'paper', ctl: 'Seret kiri-kanan' },
+    // the 6th arena (owner 2026-10-17): paper boats on a paper river, with the owner's 25 animated origami ships
+    { id: 'kapalkertas', name: 'KAPAL KERTAS', sub: 'Berlayar di sungai kertas setelah hujan', tint: '#DDF0FA', ink: '#1F6E9C', icon: 'fl:kapalkertas/classic-paper-boat-tile', engine: 'paperboat', ctl: 'Seret kiri-kanan' }
   ]
   // theme: palette + scenery keys used by the engine; speed 1 = relaxed; dens = obstacle density 0..1
   var LEVELS = [
@@ -35,7 +37,12 @@
     { id: 'kertas-1', cat: 'kertas', name: 'Taman Festival', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 46, speed: 1, dens: 0.3, gates: [0.34, 0.68], theme: { sky: ['#FFE3EF', '#E3F3FF'] }, say: 'Festival pesawat kertas dimulai! Ayo terbang!' },
     { id: 'kertas-2', cat: 'kertas', name: 'Pita Pelangi', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 52, speed: 1.12, dens: 0.45, gates: [0.3, 0.6, 0.85], theme: { sky: ['#E9E1FF', '#FFF4D6'] }, say: 'Lihat pita warna-warni di bawah!' },
     { id: 'kertas-3', cat: 'kertas', name: 'Angin Sore', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 56, speed: 1.24, dens: 0.55, gates: [0.28, 0.55, 0.82], theme: { sky: ['#FFD9B8', '#FFF1DC'] }, say: 'Angin sore bertiup. Pesawat kertas melayang!' },
-    { id: 'kertas-4', cat: 'kertas', name: 'Lomba Juara', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 60, speed: 1.36, dens: 0.68, gates: [0.25, 0.5, 0.75, 0.9], theme: { sky: ['#CDE8FF', '#FFE6F2'] }, say: 'Lomba terakhir! Siapa pesawat kertas tercepat?' }
+    { id: 'kertas-4', cat: 'kertas', name: 'Lomba Juara', veh: 'fl:kertas/classic-dart-tile', vname: 'Pesawat Kertas', len: 60, speed: 1.36, dens: 0.68, gates: [0.25, 0.5, 0.75, 0.9], theme: { sky: ['#CDE8FF', '#FFE6F2'] }, say: 'Lomba terakhir! Siapa pesawat kertas tercepat?' },
+
+    { id: 'kapalkertas-1', cat: 'kapalkertas', name: 'Selokan Hujan', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 46, speed: 1, dens: 0.3, gates: [0.34, 0.68], theme: { water: ['#D6EEF8', '#9FD0EA'], foam: '#FFFFFF', obs: ['leaf', 'duck'] }, say: 'Hujan sudah reda. Ayo layarkan kapal kertas!' },
+    { id: 'kapalkertas-2', cat: 'kapalkertas', name: 'Sungai Taman', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 52, speed: 1.12, dens: 0.45, gates: [0.3, 0.6, 0.85], theme: { water: ['#CDEBF5', '#86C3E3'], foam: '#FFFFFF', obs: ['leaf', 'duck', 'frog'] }, say: 'Sungai taman! Awas bebek dan katak!' },
+    { id: 'kapalkertas-3', cat: 'kapalkertas', name: 'Danau Payung', weather: 'rain', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 56, speed: 1.24, dens: 0.55, gates: [0.28, 0.55, 0.82], theme: { water: ['#D9E9FB', '#93B9E8'], foam: '#FFFFFF', obs: ['duck', 'frog', 'boot', 'leaf'] }, say: 'Danau penuh payung warna-warni!' },
+    { id: 'kapalkertas-4', cat: 'kapalkertas', name: 'Lomba Kapal', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 60, speed: 1.36, dens: 0.68, gates: [0.25, 0.5, 0.75, 0.9], theme: { water: ['#CFEFF2', '#7FC6D6'], foam: '#FFFFFF', obs: ['duck', 'frog', 'boot', 'leaf'] }, say: 'Lomba kapal kertas! Siapa yang tercepat?' }
   ]
   w.BlippiTripData = { cats: CATS, levels: LEVELS, byId: LEVELS.reduce(function (m, l) { m[l.id] = l; return m }, {}) }
 })(window)

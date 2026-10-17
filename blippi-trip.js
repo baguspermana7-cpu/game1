@@ -83,7 +83,7 @@
   }
   // the child's own vehicle on DARAT / AIR (owner 2026-10-15: the 25-vehicle and 25-boat animated packs), saved per avatar
   // like the space craft; a journey with no fleet data keeps its level vehicle
-  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat', udara: 'float-seaplane', kertas: 'classic-dart' }
+  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat', udara: 'float-seaplane', kertas: 'classic-dart', kapalkertas: 'classic-paper-boat' }
   function fleet (cat) { var f = w.BlippiFleet && w.BlippiFleet[cat]; return f && f.items && f.items.length ? f : null }
   function rideItem (cat, id) { var f = fleet(cat), i; if (!f) return null; for (i = 0; i < f.items.length; i++) if (f.items[i].id === id) return f.items[i]; return null }
   // {item, key, tile, meta: [frameW, frameH, frames, frameMs]} for an item of a journey's fleet

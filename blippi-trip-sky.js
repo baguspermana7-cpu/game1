@@ -209,4 +209,89 @@
       confetti(c, run, Z, G)
     }
   }
+  // the paper-boat river (owner 2026-10-17, OrigamiShips_25 pack): the child's own paper boat sails a paper river after the
+  // rain -- folded-paper water, green paper banks with umbrellas and flower bushes; rubber ducks, leaves, frogs and boots
+  // float in the way; a message in a bottle is the big prize. wet: the top engine gives it the wake, foam and lifebuoys.
+  var PB_BANK = 0.075   // each bank's width, as a share of the screen: the lanes stay clear of it
+  T.skins.paperboat = {
+    cat: 'kapalkertas',
+    wet: true,
+    assets: function () { return ['lib:toys/rubber-duck', 'lib:nature/maple-leaf', 'lib:animals/frog', 'lib:things/rain-boot', 'lib:tk-prop/message-bottle', 'lib:things/umbrella-red', 'lib:real/things/umbrella-yellow', 'lib:mojo-prop/bush-flowers', 'lib:game/lifebuoy'] },
+    obs: ['duck', 'leaf', 'frog', 'boot'],
+    keys: { duck: 'lib:toys/rubber-duck', leaf: 'lib:nature/maple-leaf', frog: 'lib:animals/frog', boot: 'lib:things/rain-boot' },
+    big: 'lib:tk-prop/message-bottle',
+    laneCol: '255,255,255',
+    zoneLine: 'Arus sungai deras! Tekan TURBO saat lingkarannya merah!',
+    layers: ['paper-water', 'folds', 'banks', 'umbrellas', 'boat'],
+    // launched from a paper pier (planks, a striped flag); the finish is a bunting arch between two paper flag poles
+    ends: function (c, run, G) {
+      var W = run.W
+      var H = run.H
+      var k = opening(run)
+      if (k >= 0) {
+        var gy = G.py + G.ps * 0.9 + k * H * 0.9
+        c.fillStyle = '#E9D2A6'
+        c.fillRect(W * 0.3, gy, W * 0.4, H)
+        c.fillStyle = '#D2B47E'
+        var y
+        for (y = gy + 18; y < H; y += 22) c.fillRect(W * 0.3, y, W * 0.4, 3)
+        c.fillStyle = '#C49A5C'
+        c.fillRect(W * 0.3 - 6, gy, 6, H); c.fillRect(W * 0.7, gy, 6, H)
+        var s
+        for (s = -1; s <= 1; s += 2) {
+          var fx = W * 0.5 + s * W * 0.2
+          c.fillStyle = '#8A5A2B'; c.fillRect(fx - 3, gy - 56, 6, 60)
+          c.fillStyle = s < 0 ? '#FF9A3C' : '#7FC4EE'
+          var wv = run.reduced() ? 0 : Math.sin(run.t * 5 + s) * 4
+          c.beginPath(); c.moveTo(fx + 3, gy - 56); c.lineTo(fx + 3 + 30 * s, gy - 48 + wv); c.lineTo(fx + 3, gy - 38); c.closePath(); c.fill()
+        }
+      }
+      var o = arrival(run)
+      if (o >= 0) {
+        var ay = -60 + o * (G.py - G.ps * 1.6 + 60)
+        var pl = W * (PB_BANK + 0.02), pr = W * (1 - PB_BANK - 0.02)
+        c.fillStyle = '#8A5A2B'; c.fillRect(pl - 4, ay - 70, 8, 90); c.fillRect(pr - 4, ay - 70, 8, 90)
+        bunting(c, run, ay - 66, 1)
+        bunting(c, run, ay - 50, 0.8)
+      }
+    },
+    bg: function (c, run, Z, G) {
+      var W = run.W
+      var H = run.H
+      var wt = run.lvl.theme.water || ['#CDEBF7', '#8CC7E6']
+      gradient(c, run, wt[0], wt[1])
+      // folded-paper water: rows of shallow angular folds (light face + shade face) drifting down with the river
+      var gap = 0.9 * G.pyu, first = wrap(Z * G.pyu, gap), y0, i
+      for (y0 = first - gap; y0 < H + gap; y0 += gap) {
+        var row = Math.round((y0 - first) / gap), seg = W / 7, off = (row % 2) * seg * 0.5
+        for (i = -1; i < 8; i++) {
+          var x0 = i * seg + off
+          c.fillStyle = 'rgba(255,255,255,.22)'
+          c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 + seg * 0.5, y0 - gap * 0.18); c.lineTo(x0 + seg, y0); c.closePath(); c.fill()
+          c.fillStyle = 'rgba(40,110,160,.10)'
+          c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 + seg * 0.5, y0 + gap * 0.16); c.lineTo(x0 + seg, y0); c.closePath(); c.fill()
+        }
+      }
+      // the green paper banks: a zigzag folded edge, a darker fold line, umbrellas and flower bushes passing by
+      var bw = W * PB_BANK, zz = 18, side, yy
+      for (side = 0; side < 2; side++) {
+        var x0b = side ? W - bw : 0, edge = side ? W - bw : bw, dir = side ? -1 : 1
+        c.fillStyle = '#8FD07A'
+        c.fillRect(x0b, 0, bw, H)
+        c.fillStyle = '#7ABF66'
+        c.beginPath(); c.moveTo(edge, -zz)
+        for (yy = wrap(Z * G.pyu, zz * 2) - zz * 2; yy < H + zz * 2; yy += zz * 2) { c.lineTo(edge + dir * 9, yy); c.lineTo(edge, yy + zz) }
+        c.lineTo(edge - dir * bw, H + zz); c.lineTo(edge - dir * bw, -zz); c.closePath(); c.fill()
+        c.fillStyle = 'rgba(255,255,255,.35)'
+        c.fillRect(side ? edge - 3 : edge - 1, 0, 2, H)
+      }
+      var step = 2.6 * G.pyu, p0 = wrap(Z * G.pyu, step), k2
+      for (k2 = -1; p0 + k2 * step < H + step; k2++) {
+        var y = p0 + k2 * step, n = Math.floor((Z * G.pyu - p0) / step) - k2
+        var left = hash(n) < 0.5, key = hash(n + 9) < 0.4 ? 'lib:mojo-prop/bush-flowers' : hash(n + 3) < 0.5 ? 'lib:things/umbrella-red' : 'lib:real/things/umbrella-yellow'
+        var sz = Math.min(bw * 1.15, 54)
+        run.spr(c, key, left ? bw * 0.5 : W - bw * 0.5, y, sz, sz, {})
+      }
+    }
+  }
 })(window)
