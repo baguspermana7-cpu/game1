@@ -634,6 +634,8 @@
     run.slowT = 0
     B().sfx(level >= 2 ? 'turbo3' : level === 1 ? 'turbo2' : 'boost')
     if (x != null) { fx('speed', x, y, 100 + level * 20); fx('spark', x, y - 10, 90 + level * 30) }
+    // owner 2026-10-17: every turbo throws speed lines out from the centre (shared Dunia SpeedLines overlay)
+    try { if (window.SpeedLines) window.SpeedLines.burst({ dur: Math.min(2400, 600 + sec * 700), power: 0.55 + 0.2 * Math.max(0, level) }) } catch (e) {}
     run.turboN = (run.turboN || 0) + 1
     if (line) say(line)
   }
