@@ -381,6 +381,17 @@
       gift: gift, drawGift: drawGift, giftSpots: giftSpots, meter: meter, meterBar: meterBar, zones: zones, zoneAt: zoneAt, band: band, place: place, FIRE: FIRE
     }
     run.gates = lvl.gates.map(function (f) { return { f: f, done: false } })
+    // living weather (owner 2026-10-17, shared ../Dunia-Emosi/games/weather-alive.js): lvl.weather, else a pick per
+    // world from the level id; space and the paper desk have no weather
+    run.wx = null
+    var WXP = { darat: ['clear', 'rain', 'wind', 'heat', 'fog'], udara: ['clear', 'rain', 'wind', 'storm'], air: ['clear', 'rain', 'storm', 'fog'] }[lvl.cat]
+    var wk = /[?&]wx=([a-z]+)/.exec(w.location.search)
+    if (w.WeatherAlive && (WXP || lvl.weather || wk)) {
+      var hsh = 0; for (var hi = 0; hi < lvl.id.length; hi++) hsh = (hsh * 31 + lvl.id.charCodeAt(hi)) >>> 0
+      var kind = (wk && wk[1]) || lvl.weather || WXP[hsh % WXP.length]
+      if (kind !== 'clear' && kind !== 'none') run.wx = w.WeatherAlive.create({ kind: kind, view: 'top', reduced: reduced(), seed: hsh,
+        muted: function () { var st = B() && B().state && B().state(); return !(st && st.sound) || !run || run.state !== 'play' } })
+    }
     resize()
     var mine = run
     load(E.assets(lvl).concat(FXK), function () {
@@ -403,6 +414,7 @@
     if (raf) w.cancelAnimationFrame(raf)
     raf = 0
     if (run && run.cv) { unbindInput(run.cv); if (run.eng && run.eng.destroy) run.eng.destroy() }
+    if (run && run.wx) run.wx.destroy()
     run = null
   }
 
@@ -454,6 +466,11 @@
     var k = run.dpr * run.scale
     c.setTransform(k, 0, 0, k, 0, 0)
     run.eng.draw(c, dt)
+    if (run.wx) {
+      if (run.state === 'play' || run.state === 'finishing' || run.state === 'count') run.wx.step(dt, { w: run.W, h: run.H })
+      run.wx.lite(run.scale < 0.75)
+      run.wx.draw(c, { w: run.W, h: run.H })
+    }
     drawAura(c)
     drawFx(c, run.state === 'paused' ? 0 : dt)
     UI.tick(run)
@@ -900,7 +917,7 @@
   }
 
   function work90 () { if (!run || run.work.length < 10) return 0; var a = run.work.slice().sort(function (x, y) { return x - y }); return a[Math.floor(a.length * 0.9)] }
-  function pauseRun () { if (run && (run.state === 'play' || run.state === 'count')) { run.before = run.state; run.state = 'paused' } }
+  function pauseRun () { if (run && (run.state === 'play' || run.state === 'count')) { run.before = run.state; run.state = 'paused'; if (run.wx) run.wx.hush() } }
   function resumeRun () { if (run && run.state === 'paused') { run.state = run.before || 'play'; last = 0 } }
   w.document.addEventListener('visibilitychange', function () { if (w.document.hidden && run && run.state === 'play') UI.pause() })
 
@@ -916,7 +933,7 @@
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
-        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, dts: run.dts.slice(), scale: run.scale, tween: tweens > 0, obsN: run.eng && run.eng.obsN != null ? run.eng.obsN : -1, rivalKeys: run.eng && run.eng.rivals ? run.eng.rivals.map(function (v) { return v.key }) : [], rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
+        qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, dts: run.dts.slice(), scale: run.scale, tween: tweens > 0, obsN: run.eng && run.eng.obsN != null ? run.eng.obsN : -1, rivalKeys: run.eng && run.eng.rivals ? run.eng.rivals.map(function (v) { return v.key }) : [], rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, wx: run.wx ? run.wx.state() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
     reducedMotion: reduced, setRunLen: function () {}
   }
