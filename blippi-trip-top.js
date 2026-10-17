@@ -42,6 +42,7 @@
       // a sky skin (blippi-trip-sky.js): the child's own aircraft / paper plane from its fleet, the skin's scenery
       var mine = T.ride && T.ride(SK.cat)
       if (mine) a.push(mine.key)
+      if (mine && mine.item.views) a.push(mine.key + '-left', mine.key + '-right')   // banking views (BALAP PESAWAT)
       a = a.concat(SK.assets(lvl))
     } else if (skin === 'water') {
       // the child's own animated boat (25-boat pack, owner 2026-10-15); the level boat still is the fallback
@@ -552,8 +553,14 @@
       var wob = wobble > 0 ? Math.sin(run.t * 30) * 0.12 * wobble : 0
       if (SK && !SK.wet) {
         // the child's own aircraft / paper plane: its rear-view loop (rotor, propeller, wind lines) banking with the steering
-        c.save(); c.translate(x, y); c.rotate(tilt * 0.45 + wob); c.globalAlpha = alpha
-        if (!(myBoat && T.frameSpr(c, myBoat.key, myBoat.meta, run.t, 0, 0, ps * 1.3, ps * 1.3))) run.spr(c, ROCKET, 0, 0, ps, ps, {})
+        var views = myBoat && myBoat.item.views && T.img(myBoat.key + '-left') && T.img(myBoat.key + '-right')
+        c.save(); c.translate(x, y); c.rotate(tilt * (views ? 0.18 : 0.45) + wob); c.globalAlpha = alpha
+        if (views) {
+          // the plane's own banking poses: straight, and the left / right bank faded in as the steering grows
+          var bk = Math.min(1, Math.max(0, (Math.abs(tilt) - 0.06) / 0.16)), bw2 = bk * bk * (3 - 2 * bk)
+          T.frameSpr(c, myBoat.key, myBoat.meta, run.t, 0, 0, ps * 1.3, ps * 1.3, alpha * (1 - Math.max(0, bw2 - 0.5) * 2))
+          if (bw2 > 0.01) T.frameSpr(c, myBoat.key + (tilt < 0 ? '-left' : '-right'), myBoat.meta, run.t, 0, 0, ps * 1.3, ps * 1.3, alpha * bw2)
+        } else if (!(myBoat && T.frameSpr(c, myBoat.key, myBoat.meta, run.t, 0, 0, ps * 1.3, ps * 1.3))) run.spr(c, ROCKET, 0, 0, ps, ps, {})
         c.restore()
         return
       }
@@ -649,6 +656,7 @@
       drawRivals(c)
       exhaust(c)
       drawPlayer(c)
+      if (SK && SK.fg) SK.fg(c, run, Z, G)   // a skin's layer over the plane (BALAP PESAWAT: wisps rushing past)
       if (drift.on && !drift.spent) run.meterBar(c, drift, px * run.W, G.py - G.ps * 0.98, G.ps)
       if (run.boostT > 0 && !run.reduced()) {
         c.strokeStyle = 'rgba(255,255,255,.35)'
@@ -706,5 +714,6 @@
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })
   T.engine('sky', { assets: function (l) { return assets(l, 'sky') }, make: function (run) { return make(run, 'sky') } })
   T.engine('paper', { assets: function (l) { return assets(l, 'paper') }, make: function (run) { return make(run, 'paper') } })
+  T.engine('aerial', { assets: function (l) { return assets(l, 'aerial') }, make: function (run) { return make(run, 'aerial') } })
   T.engine('paperboat', { assets: function (l) { return assets(l, 'paperboat') }, make: function (run) { return make(run, 'paperboat') } })
 })(window)

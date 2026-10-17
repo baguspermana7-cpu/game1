@@ -11,7 +11,10 @@
     // the 5th arena (owner 2026-10-15): a paper-plane festival, with the owner's 25 animated paper planes
     { id: 'kertas', name: 'PESAWAT KERTAS', sub: 'Festival pesawat kertas di langit', tint: '#FFE6F2', ink: '#B0306A', icon: 'fl:kertas/classic-dart-tile', engine: 'paper', ctl: 'Seret kiri-kanan' },
     // the 6th arena (owner 2026-10-17): paper boats on a paper river, with the owner's 25 animated origami ships
-    { id: 'kapalkertas', name: 'KAPAL KERTAS', sub: 'Berlayar di sungai kertas setelah hujan', tint: '#DDF0FA', ink: '#1F6E9C', icon: 'fl:kapalkertas/classic-paper-boat-tile', engine: 'paperboat', ctl: 'Seret kiri-kanan' }
+    { id: 'kapalkertas', name: 'KAPAL KERTAS', sub: 'Berlayar di sungai kertas setelah hujan', tint: '#DDF0FA', ink: '#1F6E9C', icon: 'fl:kapalkertas/classic-paper-boat-tile', engine: 'paperboat', ctl: 'Seret kiri-kanan' },
+    // the 7th arena (owner 2026-10-18): an air race above the clouds, the land and sea far below; racers = the owner's
+    // pack when it arrives (fleet 'balap'), the UDARA pack until then. wide: the card spans the whole row (3 + 3 + 1)
+    { id: 'balap', name: 'BALAP PESAWAT', sub: 'Balapan di atas awan, daratan dan laut jauh di bawah', tint: '#D6ECFF', ink: '#0F5AA8', icon: 'fl:balap/dusty-crophopper-tile', engine: 'aerial', ctl: 'Seret kiri-kanan', wide: true }
   ]
   // theme: palette + scenery keys used by the engine; speed 1 = relaxed; dens = obstacle density 0..1
   var LEVELS = [
@@ -42,7 +45,12 @@
     { id: 'kapalkertas-1', cat: 'kapalkertas', name: 'Selokan Hujan', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 46, speed: 1, dens: 0.3, gates: [0.34, 0.68], theme: { water: ['#D6EEF8', '#9FD0EA'], foam: '#FFFFFF', obs: ['leaf', 'duck'] }, say: 'Hujan sudah reda. Ayo layarkan kapal kertas!' },
     { id: 'kapalkertas-2', cat: 'kapalkertas', name: 'Sungai Taman', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 52, speed: 1.12, dens: 0.45, gates: [0.3, 0.6, 0.85], theme: { water: ['#CDEBF5', '#86C3E3'], foam: '#FFFFFF', obs: ['leaf', 'duck', 'frog'] }, say: 'Sungai taman! Awas bebek dan katak!' },
     { id: 'kapalkertas-3', cat: 'kapalkertas', name: 'Danau Payung', weather: 'rain', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 56, speed: 1.24, dens: 0.55, gates: [0.28, 0.55, 0.82], theme: { water: ['#D9E9FB', '#93B9E8'], foam: '#FFFFFF', obs: ['duck', 'frog', 'boot', 'leaf'] }, say: 'Danau penuh payung warna-warni!' },
-    { id: 'kapalkertas-4', cat: 'kapalkertas', name: 'Lomba Kapal', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 60, speed: 1.36, dens: 0.68, gates: [0.25, 0.5, 0.75, 0.9], theme: { water: ['#CFEFF2', '#7FC6D6'], foam: '#FFFFFF', obs: ['duck', 'frog', 'boot', 'leaf'] }, say: 'Lomba kapal kertas! Siapa yang tercepat?' }
+    { id: 'kapalkertas-4', cat: 'kapalkertas', name: 'Lomba Kapal', veh: 'fl:kapalkertas/classic-paper-boat', vname: 'Kapal Kertas', len: 60, speed: 1.36, dens: 0.68, gates: [0.25, 0.5, 0.75, 0.9], theme: { water: ['#CFEFF2', '#7FC6D6'], foam: '#FFFFFF', obs: ['duck', 'frog', 'boot', 'leaf'] }, say: 'Lomba kapal kertas! Siapa yang tercepat?' },
+
+    { id: 'balap-1', cat: 'balap', name: 'Pantai Pagi', veh: 'fl:balap/dusty-crophopper-tile', vname: 'Pesawat Balap', len: 50, speed: 1.05, dens: 0.32, gates: [0.34, 0.68], theme: { world: 'coast' }, say: 'Balapan dimulai! Lihat laut dan pantai di bawah!' },
+    { id: 'balap-2', cat: 'balap', name: 'Gunung Salju', veh: 'fl:balap/dusty-crophopper-tile', vname: 'Pesawat Balap', len: 54, speed: 1.16, dens: 0.46, gates: [0.3, 0.6, 0.85], theme: { world: 'mountain' }, say: 'Kita terbang di atas gunung bersalju!' },
+    { id: 'balap-3', cat: 'balap', name: 'Pulau Tropis', veh: 'fl:balap/dusty-crophopper-tile', vname: 'Pesawat Balap', len: 58, speed: 1.28, dens: 0.56, gates: [0.28, 0.55, 0.82], theme: { world: 'islands' }, say: 'Pulau-pulau hijau dan laut biru jernih!' },
+    { id: 'balap-4', cat: 'balap', name: 'Final Senja', veh: 'fl:balap/dusty-crophopper-tile', vname: 'Pesawat Balap', len: 62, speed: 1.4, dens: 0.66, gates: [0.25, 0.5, 0.75, 0.9], theme: { world: 'sunset' }, say: 'Final! Matahari terbenam. Siapa juaranya?' }
   ]
   w.BlippiTripData = { cats: CATS, levels: LEVELS, byId: LEVELS.reduce(function (m, l) { m[l.id] = l; return m }, {}) }
 })(window)

@@ -52,7 +52,7 @@
   }
   // the child's own vehicle picture for a journey: the space craft (animated), or a fleet vehicle - its diagonal still on
   // tiles, its rear-view loop when big; null when the journey has no choice of vehicle
-  var RIDE_WORD = { angkasa: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], darat: ['Kendaraanmu', 'kendaraan', 'Pilih Kendaraanmu'], air: ['Kapalmu', 'kapal', 'Pilih Kapalmu'], udara: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], kertas: ['Pesawat kertasmu', 'pesawat kertas', 'Pilih Pesawat Kertasmu'], kapalkertas: ['Kapal kertasmu', 'kapal kertas', 'Pilih Kapal Kertasmu'] }
+  var RIDE_WORD = { angkasa: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], darat: ['Kendaraanmu', 'kendaraan', 'Pilih Kendaraanmu'], air: ['Kapalmu', 'kapal', 'Pilih Kapalmu'], udara: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], kertas: ['Pesawat kertasmu', 'pesawat kertas', 'Pilih Pesawat Kertasmu'], kapalkertas: ['Kapal kertasmu', 'kapal kertas', 'Pilih Kapal Kertasmu'], balap: ['Pesawat balapmu', 'pesawat balap', 'Pilih Pesawat Balapmu'] }
   function myRide (cat) {
     if (cat === 'angkasa') { var cr = T.craft && T.craft(); return cr ? { id: cr.id, name: cr.name, craft: cr } : null }
     var r = T.ride && T.ride(cat)
@@ -137,6 +137,7 @@
     D.cats.forEach(function (c) {
       var b = btn('tcat', grid, c.name, function () { showLevels(c.id) })
       b.setAttribute('data-cat', c.id)
+      if (c.wide) b.classList.add('wide')   // an odd last arena spans its row, so the grid stays aligned (3 + 3 + 1)
       b.style.setProperty('--tint', c.tint)
       b.style.setProperty('--ink', c.ink)
       var ic = el('span', 'tcicon', b)

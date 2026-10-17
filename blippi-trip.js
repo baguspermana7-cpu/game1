@@ -29,7 +29,11 @@
     if (k.indexOf('g:') === 0) return 'assets/blippi/' + k.slice(2) + '.webp'
     if (k.indexOf('race:') === 0) return 'assets/race/' + k.slice(5) + '.webp'
     if (k.indexOf('sp:') === 0) return 'assets/space/' + k.slice(3) + '.webp'
-    if (k.indexOf('fl:') === 0) return 'assets/fleet/' + k.slice(3) + '.webp'
+    if (k.indexOf('fl:') === 0) {
+      // a placeholder fleet reuses another pack's files (BALAP PESAWAT flies the UDARA pack until its own arrives)
+      var fc = k.slice(3).split('/')[0], FL = w.BlippiFleet && w.BlippiFleet[fc]
+      return 'assets/fleet/' + (FL && FL.dir ? FL.dir + k.slice(3 + fc.length) : k.slice(3)) + '.webp'
+    }
     if (k.indexOf('fx:') === 0) return V[k.slice(3)] ? V[k.slice(3)].file : ''
     return k
   }
@@ -83,7 +87,7 @@
   }
   // the child's own vehicle on DARAT / AIR (owner 2026-10-15: the 25-vehicle and 25-boat animated packs), saved per avatar
   // like the space craft; a journey with no fleet data keeps its level vehicle
-  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat', udara: 'float-seaplane', kertas: 'classic-dart', kapalkertas: 'classic-paper-boat' }
+  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat', udara: 'float-seaplane', kertas: 'classic-dart', kapalkertas: 'classic-paper-boat', balap: 'dusty-crophopper' }
   function fleet (cat) { var f = w.BlippiFleet && w.BlippiFleet[cat]; return f && f.items && f.items.length ? f : null }
   function rideItem (cat, id) { var f = fleet(cat), i; if (!f) return null; for (i = 0; i < f.items.length; i++) if (f.items[i].id === id) return f.items[i]; return null }
   // {item, key, tile, meta: [frameW, frameH, frames, frameMs]} for an item of a journey's fleet

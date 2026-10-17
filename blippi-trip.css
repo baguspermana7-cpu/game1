@@ -255,3 +255,9 @@ body.trip-on #stage{visibility:hidden}
 .tpos.pop{animation:tpop .45s cubic-bezier(.2,1.5,.4,1)}
 @media (prefers-reduced-motion:reduce){.tpos.pop{animation:none}}
 @media (max-width:640px){.thow{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 210px)}}
+
+/* the 7th arena (BALAP PESAWAT, 2026-10-18): from 641 px the grid is 4 columns and the new card spans two, so seven
+   cards still fill exactly two aligned rows (4 + 2 + wide), the same height as the six-card grid before */
+@media (min-width:641px){.tcats{grid-template-columns:repeat(4,minmax(0,1fr))}.tcat.wide{grid-column:span 2}}
+@media (min-width:641px) and (max-width:1100px){.tcat .tctx b{font-size:clamp(15px,1.9vw,22px)}.tcat .tctx em{font-size:12px}}
+@media (min-width:700px) and (min-height:521px){.tcat:not(.wide){flex-direction:column;text-align:center;justify-content:flex-start;gap:6px;padding:16px 14px 52px}.tcat:not(.wide) .tcicon{flex:1 1 auto;width:100%;height:auto;min-height:0}.tcat:not(.wide) .tctx{flex:0 0 auto;align-items:center}}
