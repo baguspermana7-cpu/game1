@@ -925,6 +925,21 @@
   function resumeRun () { if (run && run.state === 'paused') { run.state = run.before || 'play'; last = 0 } }
   w.document.addEventListener('visibilitychange', function () { if (w.document.hidden && run && run.state === 'play') UI.pause() })
 
+  // BALAP PESAWAT's song (owner 2026-10-18: "Nothing Can Stop Me Now", 40-60 %, all through the race): a seamless loop
+  // from ../Dunia-Emosi/games/dunia-music.js; it plays from the countdown to the finish of a 'balap' run (quiz cards
+  // included) and only while sound is on; the hub theme rests meanwhile (blippi.js bgmWanted)
+  var PLANES = null
+  function arenaMusic () {
+    var st = B() && B().state ? B().state() : null
+    return !!(run && run.lvl && run.lvl.cat === 'balap' && /^(count|play|quiz)$/.test(run.state) && st && st.sound && w.document.body.classList.contains('trip-on'))
+  }
+  w.__arenaMusic = arenaMusic
+  setInterval(function () {
+    if (!w.DuniaMusic) return
+    var on = arenaMusic()
+    if (on && !PLANES) PLANES = w.DuniaMusic.track('assets/audio/blippi-planes.mp3', { vol: 0.5 })
+    if (PLANES) PLANES.want(on)
+  }, 200)
   w.BlippiTrip = {
     engine: function (name, E) { engines[name] = E },
     setUI: function (u) { UI = u },

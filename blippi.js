@@ -83,7 +83,10 @@
   var BGM_VOL = 0.22
   var bgm = null
   var bgmFade = 0
-  function bgmWanted () { return !!(state && state.sound && BGM_SCREENS[cur] && !document.hidden) }
+  // never two songs at once: the hub theme rests while an arena plays its own song (BALAP PESAWAT, 2026-10-18)
+  function bgmWanted () { return !!(state && state.sound && BGM_SCREENS[cur] && !document.hidden && !(w.__arenaMusic && w.__arenaMusic())) }
+  var bgmLast = null
+  setInterval(function () { if (!cur) return; var v = bgmWanted(); if (v !== bgmLast) { bgmLast = v; bgmSync() } }, 250)
   function bgmRamp (to, ms, done) {
     clearInterval(bgmFade)
     var from = bgm.volume
