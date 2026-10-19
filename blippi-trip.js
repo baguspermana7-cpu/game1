@@ -87,11 +87,13 @@
   }
   // the child's own vehicle on DARAT / AIR (owner 2026-10-15: the 25-vehicle and 25-boat animated packs), saved per avatar
   // like the space craft; a journey with no fleet data keeps its level vehicle
-  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat', udara: 'float-seaplane', kertas: 'classic-dart', kapalkertas: 'classic-paper-boat', balap: 'dusty-crophopper' }
+  var RIDE0 = { darat: 'school-bus', air: 'harbor-tugboat', udara: 'float-seaplane', kertas: 'classic-dart', kapalkertas: 'classic-paper-boat', balap: 'dusty-crophopper', mobilkertas: 'school-bus' }
   function fleet (cat) { var f = w.BlippiFleet && w.BlippiFleet[cat]; return f && f.items && f.items.length ? f : null }
   function rideItem (cat, id) { var f = fleet(cat), i; if (!f) return null; for (i = 0; i < f.items.length; i++) if (f.items[i].id === id) return f.items[i]; return null }
   // {item, key, tile, meta: [frameW, frameH, frames, frameMs]} for an item of a journey's fleet
   function rideOf (cat, it) { var f = fleet(cat); return it ? { cat: cat, item: it, key: 'fl:' + cat + '/' + it.id, tile: 'fl:' + cat + '/' + it.id + '-tile', meta: [it.play[0], it.play[1], it.play[2], it.play[3], f.frameMs] } : null }
+  // a three-lane road journey (DARAT, MOBIL KERTAS): its category runs on the land engine
+  function laneCat (cat) { for (var i = 0; i < D.cats.length; i++) if (D.cats[i].id === cat) return D.cats[i].engine === 'land'; return false }
   function ride (cat) {
     var f = fleet(cat)
     if (!f) return null
@@ -388,7 +390,7 @@
     // living weather (owner 2026-10-17, shared ../Dunia-Emosi/games/weather-alive.js): lvl.weather, else a pick per
     // world from the level id; space and the paper desk have no weather
     run.wx = null
-    var WXP = { darat: ['clear', 'rain', 'wind', 'heat', 'fog'], udara: ['clear', 'rain', 'wind', 'storm'], air: ['clear', 'rain', 'storm', 'fog'] }[lvl.cat]
+    var WXP = { darat: ['clear', 'rain', 'wind', 'heat', 'fog'], udara: ['clear', 'rain', 'wind', 'storm'], air: ['clear', 'rain', 'storm', 'fog'], mobilkertas: ['clear', 'wind', 'rain'] }[lvl.cat]
     var wk = /[?&]wx=([a-z]+)/.exec(w.location.search)
     if (w.WeatherAlive && (WXP || lvl.weather || wk)) {
       var hsh = 0; for (var hi = 0; hi < lvl.id.length; hi++) hsh = (hsh * 31 + lvl.id.charCodeAt(hi)) >>> 0
@@ -504,7 +506,7 @@
     if (r.state === 'finishing') { r.finishT += dt; r.mul = lerp(r.mul, 0.55, Math.min(1, dt * 2)) }
     r.rate = r.lvl.speed * r.mul
     r.eng.update(dt)
-    if (r.lvl.cat !== 'darat') r.in.moves.length = 0
+    if (!laneCat(r.lvl.cat)) r.in.moves.length = 0
     if (r.state === 'finishing') {
       if (r.finishT > 1.6) finish()
       return
@@ -943,7 +945,7 @@
   w.BlippiTrip = {
     engine: function (name, E) { engines[name] = E },
     setUI: function (u) { UI = u },
-    D: D, craft: craft, crafts: crafts, setCraft: setCraft, frameSpr: frameSpr, frameBot: frameBot, halfSheet: halfSheet, fleet: fleet, ride: ride, setRide: setRide, rideRivals: rideRivals, start: start, stop: stop, answer: answer, resumeFromQuiz: resumeFromQuiz, pauseRun: pauseRun, resumeRun: resumeRun,
+    D: D, craft: craft, crafts: crafts, setCraft: setCraft, frameSpr: frameSpr, frameBot: frameBot, halfSheet: halfSheet, fleet: fleet, ride: ride, laneCat: laneCat, setRide: setRide, rideRivals: rideRivals, start: start, stop: stop, answer: answer, resumeFromQuiz: resumeFromQuiz, pauseRun: pauseRun, resumeRun: resumeRun,
     scaled: scaled, levelState: levelState, unlocked: unlocked, catStars: catStars, url: url, load: load, img: img, spr: spr, rng: rng, clamp: clamp, lerp: lerp,
     running: function () { return !!run },
     // QA seam: jump the run to a progress (0..1) so a gate can look at the opening and the arrival

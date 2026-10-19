@@ -52,7 +52,7 @@
   }
   // the child's own vehicle picture for a journey: the space craft (animated), or a fleet vehicle - its diagonal still on
   // tiles, its rear-view loop when big; null when the journey has no choice of vehicle
-  var RIDE_WORD = { angkasa: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], darat: ['Kendaraanmu', 'kendaraan', 'Pilih Kendaraanmu'], air: ['Kapalmu', 'kapal', 'Pilih Kapalmu'], udara: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], kertas: ['Pesawat kertasmu', 'pesawat kertas', 'Pilih Pesawat Kertasmu'], kapalkertas: ['Kapal kertasmu', 'kapal kertas', 'Pilih Kapal Kertasmu'], balap: ['Pesawat balapmu', 'pesawat balap', 'Pilih Pesawat Balapmu'] }
+  var RIDE_WORD = { angkasa: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], darat: ['Kendaraanmu', 'kendaraan', 'Pilih Kendaraanmu'], mobilkertas: ['Mobilmu', 'mobil', 'Pilih Mobil Kertasmu'], air: ['Kapalmu', 'kapal', 'Pilih Kapalmu'], udara: ['Pesawatmu', 'pesawat', 'Pilih Pesawatmu'], kertas: ['Pesawat kertasmu', 'pesawat kertas', 'Pilih Pesawat Kertasmu'], kapalkertas: ['Kapal kertasmu', 'kapal kertas', 'Pilih Kapal Kertasmu'], balap: ['Pesawat balapmu', 'pesawat balap', 'Pilih Pesawat Balapmu'] }
   function myRide (cat) {
     if (cat === 'angkasa') { var cr = T.craft && T.craft(); return cr ? { id: cr.id, name: cr.name, craft: cr } : null }
     var r = T.ride && T.ride(cat)
@@ -205,8 +205,9 @@
     $.lev.style.setProperty('--ink', cat.ink)
     header($.lev, cat.name, showPick, cat.ctl)
     if (myRide(catId)) craftBar($.lev, catId)
-    var grid = el('div', 'tlvls', $.lev)
-    D.levels.filter(function (l) { return l.cat === catId }).forEach(function (l, i) {
+    var lvs = D.levels.filter(function (l) { return l.cat === catId })
+    var grid = el('div', 'tlvls' + (lvs.length > 8 ? ' many' : ''), $.lev)   // 12 levels (BALAP PESAWAT): the grid scrolls on a phone, 3 / 4 columns on a wide screen
+    lvs.forEach(function (l, i) {
       var open = T.unlocked(l)
       var st = T.levelState(l.id)
       var b = btn('tlvl' + (open ? '' : ' lk'), grid, l.name, function () {
@@ -290,7 +291,7 @@
     $.say = el('p', '', sp, '')
     $.sayBox = sp
     // lane arrows (land only): real buttons, same effect as a swipe
-    if (run.lvl.cat === 'darat') {
+    if (T.laneCat ? T.laneCat(run.lvl.cat) : run.lvl.cat === 'darat') {
       var ar = el('div', 'tarrows', $.run)
       // the lane moves on the PRESS (a click fires only on release, ~100-200 ms late on a tablet); the click that follows a
       // press is ignored, so a keyboard Enter / Space still works through the click

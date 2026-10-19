@@ -27,8 +27,8 @@
     var a = ['lib:mojo-chase/cfar/' + t.far, 'lib:mojo-chase/cmid/' + t.mid, 'lib:nature/cloud', lvl.veh, KEYS.coin, KEYS.star, KEYS.boost, KEYS.ramp]
     // the child's own animated vehicle and three rivals from the same 25-vehicle pack (owner 2026-10-15); the old stills stay
     // as the fallback when the fleet data is missing
-    var me = T.ride && T.ride('darat')
-    if (me) { a.push(me.key); T.rideRivals('darat', lvl.id).forEach(function (rv) { a.push(rv.key) }) } else rivalIds(lvl).forEach(function (v) { a.push('race:' + v + '/standard-rear') })
+    var me = T.ride && T.ride(lvl.cat)
+    if (me) { a.push(me.key); T.rideRivals(lvl.cat, lvl.id).forEach(function (rv) { a.push(rv.key) }) } else rivalIds(lvl).forEach(function (v) { a.push('race:' + v + '/standard-rear') })
     OBST.forEach(function (o) { a.push('lib:mojo-chase/items/' + o) })
     t.props.forEach(function (p) { a.push('lib:mojo-chase/props/' + p) })
     return a
@@ -139,8 +139,8 @@
     }
     ents.sort(function (a, b) { return a.z - b.z })
     // rivals start ahead (the child starts last and races up the field); CTR-style rubber band keeps them near
-    var me = T.ride && T.ride('darat')
-    var rides = me ? T.rideRivals('darat', lvl.id) : []
+    var me = T.ride && T.ride(lvl.cat)
+    var rides = me ? T.rideRivals(lvl.cat, lvl.id) : []
     var rivals = (me ? rides.map(function (x) { return x.item.id }) : rivalIds(lvl).slice(0, 3)).map(function (v, i) { return { id: v, ride: rides[i] || null, key: rides[i] ? rides[i].key : 'race:' + v + '/standard-rear', z: 2.6 + i * 2.8, lane: [0, 2, 1][i], lp: [0, 2, 1][i], f: [0.86, 0.9, 0.95][i] * (0.96 + r() * 0.08), cool: 0, ph: r() * 6 } })
     run.pos = run.racers = rivals.length + 1
     var hop = 0
