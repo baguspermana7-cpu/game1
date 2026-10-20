@@ -19,7 +19,7 @@ for (const c of C) for (const [f, m] of [[`assets/space/${c.id}.webp`, c.play], 
   if (fs.existsSync(f)) ok(webpW(f) === m[0] * (m[3] || m[2]), `${f} is ${webpW(f)} px wide, frames say ${m[0] * (m[3] || m[2])}`)
 }
 ok(fs.existsSync('assets/space/asteroid.webp'), 'missing assets/space/asteroid.webp')
-const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
+const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output'] })
 const errs = []
 for (const [w, h] of [[1280, 800], [844, 390]]) {
   const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e))); p.on('response', r => { if (r.status() >= 400) errs.push(r.status() + ' ' + r.url()) })
@@ -110,12 +110,13 @@ for (const [w, h] of [[1280, 800], [844, 390]]) {
   ok(await ask() === '0', 'quiz after a key: the first answer is not focused for keyboard play')
   await p.close()
 }
+// (the road levels now run on the Mojo chase engine, which has no obs0 / count probe: ?land=old keeps the engine this check reads)
 // the opening of every road / space level is obstacle free while the how-to chip is up (2026-10-14: a crash 2.5 s in).
 // Checked on the generated level for 12 seeds each: the first obstacle sits at least 6 world units (about 6 s at speed 1) in.
 {
   const p = await b.newPage(); await p.setViewport({ width: 844, height: 390 })
-  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' })
-  for (const id of ['darat-1', 'darat-4', 'air-1', 'air-4', 'angkasa-1', 'angkasa-4']) {
+  await p.goto('http://localhost:8090/game1/?land=old', { waitUntil: 'load' })
+  for (const id of ['darat-1', 'darat-4', 'air-1', 'air-4', 'air-8', 'angkasa-1', 'angkasa-4', 'angkasa-8']) {
     let worst = Infinity
     for (let seed = 1; seed <= 12; seed++) {
       await p.evaluate((id, seed) => { BlippiTrip.open(id.split('-')[0]); BlippiTrip.start(id, { seed }) }, id, seed)

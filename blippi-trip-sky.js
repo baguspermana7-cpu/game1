@@ -101,7 +101,16 @@
         }
       }
     },
+    // UDARA's rich worlds (blippi-trip-rich-sky.js): built once per run; without the module the plain sky below draws
+    rich: function (run) {
+      if (run._rs === undefined) { try { run._rs = T.rich && T.rich.sky ? T.rich.sky(run, run.lvl.theme) : null } catch (e) { run._rs = null } }
+      return run._rs
+    },
+    layersFor: function (run) { var r = T.skins.sky.rich(run); return r ? r.layers : T.skins.sky.layers },
+    fg: function (c, run, Z, G) { var r = T.skins.sky.rich(run); if (r) r.fg(c, run, Z, G) },
     bg: function (c, run, Z, G) {
+      var rs = T.skins.sky.rich(run)
+      if (rs) { rs.bg(c, run, Z, G); return }
       var th = run.lvl.theme
       var sk = th.sky || ['#BFE6FF', '#EAF7FF']
       gradient(c, run, sk[0], sk[1])

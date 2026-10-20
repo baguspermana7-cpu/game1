@@ -84,6 +84,9 @@
     // a 'wet' skin (the paper-boat river, owner 2026-10-17) sails on water: wake, foam, bow splash, lifebuoy gates
     var water = skin === 'water' || !!(SK && SK.wet)
     var space = skin === 'space'
+    // rich procedural worlds (blippi-trip-rich-*.js): AIR and ANGKASA; a missing module leaves the plain scenery
+    var rich = null
+    try { if (skin === 'water' && T.rich && T.rich.sea) rich = T.rich.sea(run, th); else if (space && T.rich && T.rich.space) rich = T.rich.space(run, th) } catch (e) { rich = null }
     var craft = space && T.craft ? T.craft() : null
     var myBoat = (water || SK) && T.ride ? T.ride(SK ? SK.cat : 'air') : null
     var obsKeys = water ? th.obs : SK ? SK.obs : ['asteroid']
@@ -461,13 +464,14 @@
         bgCv = { id: bid, cv: cv }
       }
       c.drawImage(bgCv.cv, 0, 0, W, H)
+      if (rich) rich.under(c, Z, G, px)
       // 3 three wave bands at three speeds (slow broad swell, mid ripples, fast glints)
       band(c, 'w3', waves3, 340, 0.55, 18)
       band(c, 'w1', waves, 256, 0.9, 30)
       band(c, 'w2', waves2, 180, 1.35, 60, 0)
       // 4 slow cloud shadows / drifting clouds at the horizon edge
       var ci
-      for (ci = 0; ci < 3; ci++) {
+      for (ci = 0; ci < (rich ? 0 : 3); ci++) {
         var cyy = ((ci * 0.41 + Z * G.pyu * 0.0006 * (ci + 1) + 0.1) % 1.3) * (H + 200) - 100
         run.spr(c, 'lib:nature/cloud', ((ci * 0.37 + 0.2) % 1) * W - (px - 0.5) * 18, cyy, 260 + ci * 60, 150 + ci * 30, { alpha: 0.2 })
       }
@@ -480,6 +484,7 @@
         var x = d.side < 0 ? sz * 0.28 - (d.off * W * 0.5) : W - sz * 0.28 + d.off * W * 0.5
         run.spr(c, d.k, x - (px - 0.5) * 24, yy, sz, sz, {})
       }
+      if (rich) rich.over(c, Z, G, px)
     }
 
     function drawBgSpace (c) {
@@ -496,6 +501,7 @@
       c.drawImage(nebBig, 0, 0, nebBig.width, nebBig.height, -((px - 0.5) * 20), oy - nebBig.height, nebBig.width, nebBig.height)
       c.drawImage(nebBig, 0, 0, nebBig.width, nebBig.height, -((px - 0.5) * 20), oy, nebBig.width, nebBig.height)
       c.globalAlpha = 1
+      if (rich) rich.under(c, Z, G, px)
       var li
       for (li = 0; li < 3; li++) {
         var arr = starTiles[li]
@@ -526,6 +532,7 @@
         var rad = p.rad * Math.min(W, H) * 1.5
         if (yy < -rad * 2 || yy > H + rad * 2) continue
         var xx = p.x * W - (px - 0.5) * 40
+        if (rich && rich.planet) { rich.planet(c, p, xx, yy, rad, i); continue }
         var g = c.createRadialGradient(xx - rad * 0.35, yy - rad * 0.35, rad * 0.1, xx, yy, rad)
         g.addColorStop(0, '#FFFFFF')
         g.addColorStop(0.25, p.col)
@@ -543,6 +550,7 @@
         c.restore()
         if (p.ring) { c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = Math.max(3, rad * 0.14); c.beginPath(); c.ellipse(xx, yy, rad * 1.7, rad * 0.45, -0.4, 0, 6.3); c.stroke() }
       }
+      if (rich) rich.over(c, Z, G, px)
     }
 
     function drawPlayer (c) {
@@ -656,6 +664,7 @@
       drawRivals(c)
       exhaust(c)
       drawPlayer(c)
+      if (rich && rich.fg) rich.fg(c, Z, G, px)
       if (SK && SK.fg) SK.fg(c, run, Z, G)   // a skin's layer over the plane (BALAP PESAWAT: wisps rushing past)
       if (drift.on && !drift.spent) run.meterBar(c, drift, px * run.W, G.py - G.ps * 0.98, G.ps)
       if (run.boostT > 0 && !run.reduced()) {
@@ -708,7 +717,7 @@
       } else run.spr(c, eSprite(e), x, y, sz, sz, { alpha: alpha, rot: rot })
     }
 
-    return { update: update, draw: draw, resize: geo, layers: SK ? SK.layers : water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), obsN: ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: px * run.W, y: G.py, s: G.ps * 1.15 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
+    return { update: update, draw: draw, resize: geo, layers: rich ? rich.layers : SK ? (SK.layersFor ? SK.layersFor(run) : SK.layers) : water ? ['gradient', 'glow', 'waves-swell', 'waves-mid', 'waves-glint', 'clouds', 'islands', 'wake', 'boat'] : ['gradient', 'nebula', 'stars-far', 'stars-mid', 'stars-near', 'planets', 'asteroids', 'trail', 'rocket', 'pad-orbit'], get lane () { return null }, obs0: firstObs(), obsN: ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && e.type !== 'gift' }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return { x: px * run.W, y: G.py, s: G.ps * 1.15 } }, get pos () { return run.pos }, turbo: turbo, drift: function () { return drift }, rivals: rivals, corners: lanes, cornerObs: function () { return ents.filter(function (e) { return e.type !== 'star' && e.type !== 'big' && laneAt(e.z) >= 0 }).length } }
   }
   T.engine('water', { assets: function (l) { return assets(l, 'water') }, make: function (run) { return make(run, 'water') } })
   T.engine('space', { assets: function (l) { return assets(l, 'space') }, make: function (run) { return make(run, 'space') } })
