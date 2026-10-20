@@ -26,10 +26,12 @@ for (const [w, h, lvs] of [[390, 844, ['darat-1', 'mobilkertas-3']], [1280, 800,
     // start: the intro card's go button, skip the cut-in
     for (let i = 0; i < 60; i++) { const s = await fr.evaluate(() => window.__mojoChase && __mojoChase.state().state).catch(() => null); if (s === 'active') break; await fr.evaluate(() => { const g = document.querySelector('.mcp-go, #mc-go'); if (g) g.click(); const k = document.querySelector('.mc-skip'); if (k) k.click() }).catch(() => {}); await sleep(400) }
     await sleep(1500)
-    const s = await fr.evaluate(() => { const s = __mojoChase.state(); return { state: s.state, racer: s.racerSheet, target: s.targetSheet, missing: s.missing, teamK: s.teamK, prog: s.prog, caller: document.querySelector('.mc-call img').src } })
+    const s = await fr.evaluate(() => { const s = __mojoChase.state(); return { state: s.state, racer: s.racerSheet, target: s.targetSheet, missing: s.missing, teamK: s.teamK, prog: s.prog, caller: document.querySelector('.mc-call img').src, place: document.querySelector('.mc-loc').textContent } })
     ok(s.state === 'active' && s.racer && s.target && !s.missing.length, `${tag} ${lv}: the child's ${cat} vehicle and a ${cat} rival race as sheets, all art decoded (${JSON.stringify({ st: s.state, missing: s.missing })})`)
     ok(Math.abs(s.teamK - 0.8) < 0.03, `${tag} ${lv}: road speed ${(s.teamK * 100).toFixed(0)} % of the Mojo race at the start`)
     ok(/blippi-profil/.test(s.caller), `${tag} ${lv}: Blippi is the caller, not Bo`)
+    const lname = await p.evaluate(l => BlippiTripData.byId[l].name, lv)
+    ok(s.place === lname, `${tag} ${lv}: the place label is the level's own name (${s.place})`)
     const ln = await fr.evaluate(async () => { const l0 = __mojoChase.state().lane; document.dispatchEvent(new KeyboardEvent('keydown', { key: l0 < 2 ? 'ArrowRight' : 'ArrowLeft', bubbles: true })); await new Promise(r => setTimeout(r, 500)); return [l0, __mojoChase.state().lane] })
     ok(ln[0] !== ln[1], `${tag} ${lv}: a lane change answers (${ln[0]} -> ${ln[1]})`)
     await fr.evaluate(() => __mojoChase.force({ prog: 0.95, best: 0.95 })); await sleep(400)

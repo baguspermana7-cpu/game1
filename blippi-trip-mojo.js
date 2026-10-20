@@ -47,7 +47,7 @@
     var st = w.Blippi && w.Blippi.state && w.Blippi.state()
     var q = {
       fleet: abs('data/blippi-fleet-' + lvl.cat + '.js'), cat: lvl.cat, me: me.item.id, rival: rivals[0] ? rivals[0].item.id : '',
-      stage: STAGE[lvl.id] || 'kota', title: lvl.name, intro: lvl.say || '', seconds: String(Math.round(60 + Math.max(0, idx) * 5)),
+      stage: STAGE[lvl.id] || 'kota', title: lvl.name, place: lvl.name, intro: lvl.say || '', seconds: String(Math.round(60 + Math.max(0, idx) * 5)),
       pace: '0.8,0.9', hero: me.item.name, caller: abs(T.url('g:blippi-profil')), sound: st && st.sound === false ? '0' : '1'
     }
     var qs = Object.keys(q).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(q[k]) }).join('&')
