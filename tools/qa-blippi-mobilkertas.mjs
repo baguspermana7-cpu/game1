@@ -8,7 +8,7 @@ let pass = 0, fail = 0
 const ok = (c, m) => { if (c) { pass++; console.log('  ✓ ' + m) } else { fail++; console.log('  ✗ ' + m) } }
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output'] })
 const errs = []
-for (const [w, h] of [[390, 844], [1280, 800]]) {
+for (const [w, h] of [[412, 915], [390, 844], [844, 390], [1280, 800]]) {
   const tag = w + 'x' + h
   const p = await b.newPage(); await p.setBypassServiceWorker(true)
   p.on('pageerror', e => errs.push(tag + ' ' + e)); p.on('response', r => { if (r.status() >= 400) errs.push(r.status() + ' ' + r.url()) })
@@ -20,6 +20,19 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await p.evaluate(() => BlippiTrip.open('mobilkertas')); await sleep(700)
   const lv = await p.evaluate(() => [...document.querySelectorAll('.tlvl')].map(e => e.textContent.trim().slice(0, 30)))
   ok(lv.length === 8, `${tag}: 8 levels (${lv.length})`)
+  // owner 2026-10-20 (phone screenshot): the 8 cards were squeezed over each other and over the MOBILMU bar, no scroll.
+  // Every card keeps its height, none overlaps another or the ride bar, and the last one is reachable by scrolling.
+  const lay = await p.evaluate(async () => {
+    const grid = document.querySelector('.tlvls'), cards = [...document.querySelectorAll('.tlvl')], bar = document.querySelector('.tcbar')
+    const R = e => e.getBoundingClientRect(), ov = (a, b) => Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)) * Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+    let overlap = 0; const rs = cards.map(R)
+    for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) overlap += ov(rs[i], rs[j])
+    const br = bar ? R(bar) : null; let barHit = 0; if (br) rs.forEach(r => { barHit += ov(r, br) })
+    grid.scrollTop = grid.scrollHeight; await new Promise(z => setTimeout(z, 150))
+    const last = R(cards[cards.length - 1]), gr = R(grid)
+    return { minH: Math.round(Math.min(...rs.map(r => r.height))), overlap: Math.round(overlap), barHit: Math.round(barHit), lastIn: last.bottom <= gr.bottom + 2 && last.bottom <= innerHeight + 1 }
+  })
+  ok(lay.minH >= 80 && lay.overlap === 0 && lay.barHit === 0 && lay.lastIn, `${tag}: level cards stand apart, clear of the MOBILMU bar, the last reachable by scrolling (${JSON.stringify(lay)})`)
   const fl = await p.evaluate(() => { const f = BlippiFleet.mobilkertas; return { n: f.items.length, dir: f.dir || null, me: BlippiTrip.ride('mobilkertas') } })
   ok(fl.n === 25 && !fl.dir && fl.me && /^fl:mobilkertas\//.test(fl.me.key), `${tag}: the fleet is the owner's 25 origami cars (own files), default ride ${fl.me && fl.me.item.id}`)
   await p.evaluate(() => BlippiTrip.start('mobilkertas-1', { seed: 3 })); await sleep(5500)

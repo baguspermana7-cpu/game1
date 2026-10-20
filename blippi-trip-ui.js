@@ -206,7 +206,7 @@
     header($.lev, cat.name, showPick, cat.ctl)
     if (myRide(catId)) craftBar($.lev, catId)
     var lvs = D.levels.filter(function (l) { return l.cat === catId })
-    var grid = el('div', 'tlvls' + (lvs.length > 8 ? ' many' : ''), $.lev)   // 12 levels (BALAP PESAWAT): the grid scrolls on a phone, 3 / 4 columns on a wide screen
+    var grid = el('div', 'tlvls' + (lvs.length > 4 ? ' many' : ''), $.lev)   // more than 4 levels (BALAP PESAWAT 12, MOBIL KERTAS 8): the grid scrolls on a phone, 3 / 4 columns on a wide screen
     lvs.forEach(function (l, i) {
       var open = T.unlocked(l)
       var st = T.levelState(l.id)
