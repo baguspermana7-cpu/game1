@@ -505,6 +505,8 @@
     r.mul += (target - r.mul) * Math.min(1, dt * acc)
     if (r.state === 'finishing') { r.finishT += dt; r.mul = lerp(r.mul, 0.55, Math.min(1, dt * 2)) }
     r.rate = r.lvl.speed * r.mul
+    // a road race speeds up over the run (owner 2026-10-20: 80 % of the Mojo pace at the start, 90 % by the end)
+    if (laneCat(r.lvl.cat)) r.rate *= 1 + 0.125 * Math.min(1, r.progress || 0)
     r.eng.update(dt)
     if (!laneCat(r.lvl.cat)) r.in.moves.length = 0
     if (r.state === 'finishing') {
@@ -956,6 +958,8 @@
         gates: run.gates.map(function (g) { return g.done }), quiz: run.quiz ? { prompt: run.quiz.q.prompt, answerIdx: run.quiz.q.choices.indexOf(run.quiz.q.answer), tries: run.quiz.tries, id: run.quiz.q.id } : null,
         qlog: run.qlog.slice(), seen: seenQ.slice(), lane: run.eng && run.eng.lane != null ? run.eng.lane : null, len: run.len, workP90: work90(), layers: run.eng && run.eng.layers ? run.eng.layers.slice() : [], reserves: run.reserves, fire: run.fire, pos: run.pos || 0, air: !!(run.eng && run.eng.air), corners: run.eng && run.eng.corners ? run.eng.corners.length : 0, cornerObs: run.eng && run.eng.cornerObs ? run.eng.cornerObs() : 0, ramps: run.eng && run.eng.ramps ? run.eng.ramps() : 0, rivals: run.eng && run.eng.rivals ? run.eng.rivals.length : 0, dts: run.dts.slice(), scale: run.scale, tween: tweens > 0, obsN: run.eng && run.eng.obsN != null ? run.eng.obsN : -1, rivalKeys: run.eng && run.eng.rivals ? run.eng.rivals.map(function (v) { return v.key }) : [], rivalArt: !!(run.eng && run.eng.rivals && run.eng.rivals.length && run.eng.rivals.every(function (v) { return !!img(v.key) })), turboGone: !!w.document.querySelector('[data-act=turbo].gone'), teach: !!w.document.querySelector('[data-act=turbo].teach'), meterN: run.meterN || 0, stretch: !!run.stretch, gifts: (run.gifts || []).slice(), giftBoxes: run.eng && run.eng.gifts ? run.eng.gifts() : 0, shieldT: run.shieldT || 0, magnetT: run.magnetT || 0, mulNow: run.mul, juiced: run.juiced, turboN: run.turboN || 0, drift: run.eng && run.eng.drift ? run.eng.drift() : null, wx: run.wx ? run.wx.state() : null, obs0: run.eng && run.eng.obs0 != null ? run.eng.obs0 : null } : null
     },
+    flow: function () { return run && run.qaFlow ? run.qaFlow() : null },
+    put: function (type, ahead, ln) { return run && run.qaPut ? run.qaPut(type, ahead, ln) : null },
     reducedMotion: reduced, setRunLen: function () {}
   }
 })(window)

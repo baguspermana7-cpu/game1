@@ -11,9 +11,16 @@
   // owner 2026-10-13 "superslow" + "object terlalu rapat": the world streams SPD world units per level-second (the run still
   // lasts the same), and items are drawn only up to EMAX ahead, so the road reads fast and the horizon is not a pile of things
   var SPD = 2.2
+  // owner 2026-10-20 "too slow -- at least 80 % of the Mojo race at the start, rising to 90 % by the end": the road's
+  // flow past the vehicle is v / D0 (the depth where the perspective halves). Mojo: 4760 u/s over its 1250-unit player
+  // depth = 3.81 /s; here SPD is set per level so v / D0 = 0.8 x that at the level's own speed, and the core lifts the
+  // rate 12.5 % over the run (0.8 -> 0.9). K = how much faster than the old 2.2 world: every length that is really a
+  // TIME (a ~3 s corner, the gap between corners, the floor spacing) scales by K, a purely visual one does not.
+  var MOJO_FLOW = 4760 / 1250, FLOW0 = 0.8
+  var K = 1
   // world units (about seconds at speed 1) at the start with no obstacles: the how-to chip shows for 3.6 s
   var GRACE = 6.5
-  var EMAX = 30
+  var EMAX = 44
   var BAND = 1.8
   var OBST = ['cone', 'crate', 'barrel', 'tyres-2']
   var KEYS = { coin: 'lib:mojo-chase/items/coin', star: 'lib:mojo-chase/items/star', boost: 'lib:mojo-chase/items/boost-pad', ramp: 'lib:mojo-chase/items/ramp' }
@@ -36,6 +43,8 @@
 
   function make (run) {
     var lvl = run.lvl
+    SPD = D0 * MOJO_FLOW * FLOW0 / Math.max(0.5, lvl.speed)
+    K = SPD / 2.2
     var th = lvl.theme
     var r = run.rnd
     var ents = []
@@ -87,55 +96,55 @@
     // question gates. Inside one the vehicle drifts on its own and the TURBO meter runs; obstacles stay out of the corner so
     // the child watches the meter, coins line the inside lane.
     var corners = []
-    var cz = GRACE * SPD + 8
-    while (cz < endZ - 16) {
-      var clen = 7.5 + r() * 2.5
+    var cz = GRACE * SPD + 8 * K
+    while (cz < endZ - 16 * K) {
+      var clen = (7.5 + r() * 2.5) * K
       var czz = cz
-      if (gateZ.some(function (g) { return g > czz - 6 && g < czz + clen + 4 })) { cz += 4; continue }
+      if (gateZ.some(function (g) { return g > czz - 6 * K && g < czz + clen + 4 * K })) { cz += 4 * K; continue }
       corners.push({ z0: cz, z1: cz + clen, dir: r() < 0.5 ? -1 : 1 })
-      cz += clen + 16 + r() * 12
+      cz += clen + (16 + r() * 12) * K
     }
     function cornerAt (z) { for (var ci = 0; ci < corners.length; ci++) if (z >= corners[ci].z0 && z < corners[ci].z1) return ci; return -1 }
     for (var oi = ents.length - 1; oi >= 0; oi--) if (OBST.indexOf(ents[oi].type) >= 0 && cornerAt(ents[oi].z) >= 0) ents.splice(oi, 1)
     corners.forEach(function (cn) {
       var inner = cn.dir < 0 ? 0 : 2
-      for (var q = cn.z0 + 1.5; q < cn.z1 - 0.5; q += 1.4) { ents.push({ z: q, lane: inner, type: 'coin', st: 0, t: 0 }); collectibles++ }
+      for (var q = cn.z0 + 1.5 * K; q < cn.z1 - 0.5 * K; q += 1.4 * K) { ents.push({ z: q, lane: inner, type: 'coin', st: 0, t: 0 }); collectibles++ }
     })
     // jump ramps (Mojo Chase's hop, CTR's hang-time turbo): a ramp across all three lanes on a straight, then two obstacles
     // the vehicle sails over and a star line in the air
     var ramps = 0
-    var rz = GRACE * SPD + 14
-    while (rz < endZ - 12 && ramps < 2) {
+    var rz = GRACE * SPD + 14 * K, RK = Math.max(1, K * 0.35)
+    while (rz < endZ - 12 * K && ramps < 2) {
       var rzz = rz
-      var clear = cornerAt(rz) < 0 && cornerAt(rz + 5) < 0 && !gateZ.some(function (g) { return Math.abs(g - rzz - 2) < 6 })
+      var clear = cornerAt(rz) < 0 && cornerAt(rz + 5 * RK) < 0 && !gateZ.some(function (g) { return Math.abs(g - rzz - 2 * RK) < 6 * K })
       if (clear) {
-        for (var oj = ents.length - 1; oj >= 0; oj--) if (ents[oj].z > rz - 2.5 && ents[oj].z < rz + 5) ents.splice(oj, 1)
+        for (var oj = ents.length - 1; oj >= 0; oj--) if (ents[oj].z > rz - 2.5 * RK && ents[oj].z < rz + 5 * RK) ents.splice(oj, 1)
         for (var ln = 0; ln < 3; ln++) ents.push({ z: rz, lane: ln, type: 'ramp', st: 0, t: 0 })
-        ents.push({ z: rz + 2.6, lane: 0, type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
-        ents.push({ z: rz + 2.6, lane: 2, type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
-        for (var sq = 0; sq < 3; sq++) { ents.push({ z: rz + 1.4 + sq * 0.8, lane: 1, type: 'star', st: 0, t: 0, air: true }); collectibles++ }
+        ents.push({ z: rz + 2.6 * RK, lane: 0, type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
+        ents.push({ z: rz + 2.6 * RK, lane: 2, type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
+        for (var sq = 0; sq < 3; sq++) { ents.push({ z: rz + (1.4 + sq * 0.8) * RK, lane: 1, type: 'star', st: 0, t: 0, air: true }); collectibles++ }
         ramps++
         rz += endZ * 0.38
-      } else rz += 3
+      } else rz += 3 * K
     }
     // gift boxes on straights, clear of corners, ramps and gates; the lane around a box is kept free of obstacles
     run.giftSpots(function (zl) {
       var zz = zl * SPD
-      return cornerAt(zz) >= 0 || cornerAt(zz + 3) >= 0 || gateT.some(function (g) { return Math.abs(g - zl) < 2.5 }) || ents.some(function (e) { return e.type === 'ramp' && Math.abs(e.z - zz) < 7 })
+      return cornerAt(zz) >= 0 || cornerAt(zz + 3 * K) >= 0 || gateT.some(function (g) { return Math.abs(g - zl) < 2.5 }) || ents.some(function (e) { return e.type === 'ramp' && Math.abs(e.z - zz) < 7 * K })
     }).forEach(function (zl) {
       var gl = 1 // the middle lane: reachable from either side in one move
-      ents = ents.filter(function (e) { return !(OBST.indexOf(e.type) >= 0 && e.lane === gl && Math.abs(e.z - zl * SPD) < 3) })
+      ents = ents.filter(function (e) { return !(OBST.indexOf(e.type) >= 0 && e.lane === gl && Math.abs(e.z - zl * SPD) < 3 * K) })
       ents.push({ z: zl * SPD, lane: gl, type: 'gift', st: 0, t: 0 })
     })
     // corners, ramps and gift boxes take obstacles away; top the road up to a floor on the open straights left
     var isObs = function (e) { return OBST.indexOf(e.type) >= 0 }
     var floor = Math.round(4 + lvl.dens * 6)
     var fz = (GRACE + 1) * SPD
-    while (ents.filter(isObs).length < floor && fz < endZ - 6) {
+    while (ents.filter(isObs).length < floor && fz < endZ - 6 * K) {
       var fzz = fz
-      var open = !gateZ.some(function (g) { return Math.abs(g - fzz) < 4 }) && cornerAt(fz) < 0 && cornerAt(fz + 2) < 0 && !ents.some(function (e) { return (isObs(e) || e.type === 'gift' || e.type === 'ramp') && Math.abs(e.z - fzz) < 3.5 })
+      var open = !gateZ.some(function (g) { return Math.abs(g - fzz) < 4 * K }) && cornerAt(fz) < 0 && cornerAt(fz + 2 * K) < 0 && !ents.some(function (e) { return (isObs(e) || e.type === 'gift' || e.type === 'ramp') && Math.abs(e.z - fzz) < 3.5 })
       if (open) ents.push({ z: fz, lane: [0, 2, 1][(r() * 3) | 0], type: OBST[(r() * OBST.length) | 0], st: 0, t: 0 })
-      fz += open ? 5.5 : 1.5
+      fz += (open ? 5.5 : 1.5) * K
     }
     ents.sort(function (a, b) { return a.z - b.z })
     // rivals start ahead (the child starts last and races up the field); CTR-style rubber band keeps them near
@@ -150,7 +159,7 @@
       var key = th.props[(r() * th.props.length) | 0]
       props.push({ z: pz, side: -1, k: 'lib:mojo-chase/props/' + key, off: 1.35 + r() * 0.9, sc: 0.8 + r() * 0.5 })
       props.push({ z: pz + r() * 0.8, side: 1, k: 'lib:mojo-chase/props/' + th.props[(r() * th.props.length) | 0], off: 1.35 + r() * 0.9, sc: 0.8 + r() * 0.5 })
-      pz += 1.5 + r() * 1.1
+      pz += (1.5 + r() * 1.1) * Math.max(1, Math.sqrt(K) * 0.8)
     }
     props.sort(function (a, b) { return a.z - b.z })
     run.starTotal = Math.round(collectibles * 0.55)
@@ -168,11 +177,11 @@
     // curvature of the road at z: a gentle sway plus the authored corners (eased in and out over 3 units), so in a corner the
     // road keeps curving away ahead (OutRun-style) instead of straightening under the vehicle
     function curve (z) {
-      var k = Math.sin(z * 0.05) * 0.18
+      var k = Math.sin(z * 0.05 / K) * 0.18
       for (var ci = 0; ci < corners.length; ci++) {
         var cn = corners[ci]
-        if (z < cn.z0 - 3 || z > cn.z1 + 1) continue
-        var e = z < cn.z0 ? (z - cn.z0 + 3) / 3 : z > cn.z1 - 2 ? Math.max(0, (cn.z1 + 1 - z) / 3) : 1
+        if (z < cn.z0 - 3 * K || z > cn.z1 + K) continue
+        var e = z < cn.z0 ? (z - cn.z0 + 3 * K) / (3 * K) : z > cn.z1 - 2 * K ? Math.max(0, (cn.z1 + K - z) / (3 * K)) : 1
         k += cn.dir * 1.15 * (0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, e)))
       }
       return k
@@ -221,10 +230,14 @@
         if (e.st === 1) { e.t += dt; continue }
         if (e.st === 2) continue
         if (d > 0.5) break // sorted: nothing nearer further on
-        if (d < -0.5) { e.st = 2; continue }
+        if (d < -0.5 && e.chk) { e.st = 2; continue }
         // the star magnet reaches every lane
         var reach = run.magnetT > 0 && (e.type === 'star' || e.type === 'coin') && !e.air ? 2.1 : 0.55
-        if (Math.abs(d) < 0.38 && Math.abs(lanePos - e.lane) < reach) {
+        // swept: the first frame the item is at or past the bumper counts, however far the road moved this frame
+        var hitNow = d < 0.38 && (d > -0.38 || e.pd == null || e.pd >= 0.38)
+        e.pd = d
+        if (d < 0.38) e.chk = true
+        if (hitNow && Math.abs(lanePos - e.lane) < reach) {
           var sx = G.cx + (e.lane - 1) * LS()
           if (e.type === 'star' || e.type === 'coin') { e.st = 2; T0.collect(sx, G.ny - G.rw * 0.2, e.type === 'star') } else if (e.type === 'boost') { e.st = 2; T0.boost(sx, G.ny - 20) } else if (e.type === 'gift') { e.st = 2; T0.gift(sx, G.ny - 60) } else if (e.type === 'ramp') {
             if (hop <= 0) { hopMax = hop = 0.75 + Math.max(0, run.mul - 1) * 0.9; e.st = 2; run.say('Wuuush! Terbang!'); if (w.Blippi) w.Blippi.sfx('boost') }
@@ -621,6 +634,9 @@
       if (drift.on && !drift.spent) run.meterBar(c, drift, vx, G.ny - sz * 0.98, sz)
     }
 
+    // QA seams: the road's flow as a share of the Mojo race's (0.8 -> 0.9 over a run at mul 1), and an item put on the road
+    run.qaFlow = function () { return run.rate * SPD / D0 / MOJO_FLOW }
+    run.qaPut = function (type, ahead, ln) { var it = { z: Z + ahead, lane: ln, type: type, st: 0, t: 0 }; ents.push(it); ents.sort(function (a, b) { return a.z - b.z }); return it }
     return { update: update, draw: draw, resize: geo, layers: ['sky', 'panorama', 'clouds', 'skyline', 'road', 'props', 'items', 'vehicle'], get lane () { return lane }, get pos () { return run.pos }, get air () { return hop > 0 }, ents: ents, turbo: turbo, rivals: rivals, cornerObs: function () { return ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 && cornerAt(e.z) >= 0 }).length }, ramps: function () { return ents.filter(function (e) { return e.type === 'ramp' }).length / 3 }, drift: function () { return drift }, corners: corners, obsN: ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 }).length, gifts: function () { return ents.filter(function (e) { return e.type === 'gift' }).length }, vpos: function () { return vp }, obs0: (ents.filter(function (e) { return OBST.indexOf(e.type) >= 0 })[0] || { z: Infinity }).z / SPD }
   }
   T.engine('land', { assets: assets, make: make })
