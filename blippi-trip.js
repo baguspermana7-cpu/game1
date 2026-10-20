@@ -372,6 +372,8 @@
     var lvl = D.byId[id]
     if (!lvl) return false
     opts = opts || {}
+    // the road races run on the shared Mojo chase engine (blippi-trip-mojo.js); ?land=old keeps the Blippi land engine
+    if (laneCat(lvl.cat) && w.BlippiTrip.mojoRace && w.BlippiTrip.mojoRace.on() && !opts.landEngine) return w.BlippiTrip.mojoRace.start(lvl, opts)
     if (opts.len == null) { var mm = /[?&]triplen=([0-9.]+)/.exec(w.location.search); if (mm) opts.len = parseFloat(mm[1]) }
     var E = engineFor(lvl)
     if (!E) return false

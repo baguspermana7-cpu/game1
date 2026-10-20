@@ -9,13 +9,13 @@ import puppeteer from 'puppeteer'
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 let pass = 0, fail = 0
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m) } }
-const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
+const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output'] })
 const errs = []
 const med = a => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(s.length / 2)] }
 for (const [cat, lvl] of [['darat', 'darat-2'], ['udara', 'udara-2'], ['angkasa', 'angkasa-2'], ['air', 'air-2'], ['kertas', 'kertas-2']]) {
   const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e)))
   await p.setViewport({ width: 844, height: 390, isMobile: true, hasTouch: true })
-  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' })
+  await p.goto('http://localhost:8090/game1/?land=old', { waitUntil: 'load' })
   await p.evaluate((c, l) => { BlippiTrip.open(c); BlippiTrip.start(l, { seed: 3 }) }, cat, lvl)
   await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
   await sleep(1500)

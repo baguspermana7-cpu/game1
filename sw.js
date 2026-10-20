@@ -51,6 +51,7 @@ const SHELL = [
  "./blippi-trip-sky.js?v=g1-20261020b",
  "./blippi-trip-aerial.js?v=g1-20261020b",
  "./blippi-trip-ui.js?v=g1-20261020b",
+ "./blippi-trip-mojo.js?v=g1-20261020b",
  "./blippi-trip.css?v=g1-20261020b",
  "./blippi-trip.js?v=g1-20261020b",
  "./blippi-warna.js?v=g1-20261020b",

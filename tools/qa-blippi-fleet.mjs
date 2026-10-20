@@ -24,9 +24,9 @@ for (const cat of ['darat', 'air', 'udara', 'kertas']) {
     ok(fs.existsSync(t), `missing ${t}`)
   }
 }
-const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
+const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output'] })
 const errs = []
-const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e))); await p.setViewport({ width: w, height: h, isMobile: true, hasTouch: true }); await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); return p }
+const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e))); await p.setViewport({ width: w, height: h, isMobile: true, hasTouch: true }); await p.goto('http://localhost:8090/game1/?land=old', { waitUntil: 'load' }); return p }
 // art: decoded in the browser, alpha > 40; bodies of 60+ px counted 8-connected (a puff of smoke or spray under that is fine;
 // a boat's wake below the hull is its own animation, so on AIR only pieces starting in the upper half count)
 {

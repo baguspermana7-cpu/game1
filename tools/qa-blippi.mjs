@@ -1,7 +1,7 @@
 // G32 Blippi gate. Server: serve ~/rz-work on port 8090 (setsid nohup python3 -m http.server 8090 --directory ~/rz-work &) so /game1 and /Dunia-Emosi both resolve.
 //   node tools/qa-blippi.mjs      -> prints failures, last line is the summary.
 import puppeteer from 'puppeteer';
-const URL_ = 'http://localhost:8090/game1/';
+const URL_ = 'http://localhost:8090/game1/?land=old';
 const fails = []; let checks = 0;
 process.on('uncaughtException', e => { console.log(fails.map(f => 'FAIL ' + f).join('\n')); console.log('ABORT after check #' + checks + ' (' + lastMsg + ') ' + String(e.stack).split('\n').slice(0,4).join(' | ')); process.exit(1); });
 let lastMsg = ''; const ok = (c, m) => { lastMsg = m; checks++; if (!c) fails.push(m); };

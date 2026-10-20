@@ -14,7 +14,7 @@ let pass = 0, fail = 0
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m) } }
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
 const errs = []
-const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e))); await p.setViewport({ width: w, height: h, isMobile: true, hasTouch: true }); await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); return p }
+const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e))); await p.setViewport({ width: w, height: h, isMobile: true, hasTouch: true }); await p.goto('http://localhost:8090/game1/?land=old', { waitUntil: 'load' }); return p }
 const q = p => p.evaluate(() => BlippiTrip.qa())
 const tapTurbo = async p => { const bb = await (await p.$('[data-act=turbo]')).boundingBox(); await p.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2) }
 const answerIfQuiz = async p => { const s = await q(p); if (s && s.state === 'quiz' && s.quiz) { await p.evaluate(i => document.querySelector('[data-ans="' + i + '"]').click(), s.quiz.answerIdx); await sleep(2600); return true } return false }

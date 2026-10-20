@@ -13,7 +13,7 @@ for (const [w, h] of [[412, 915], [390, 844], [844, 390], [1280, 800]]) {
   const p = await b.newPage(); await p.setBypassServiceWorker(true)
   p.on('pageerror', e => errs.push(tag + ' ' + e)); p.on('response', r => { if (r.status() >= 400) errs.push(r.status() + ' ' + r.url()) })
   await p.setViewport({ width: w, height: h, isMobile: w < 900, hasTouch: w < 900 })
-  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); await sleep(1200)
+  await p.goto('http://localhost:8090/game1/?land=old', { waitUntil: 'load' }); await sleep(1200)
   await p.evaluate(() => BlippiTrip.open()); await sleep(800)
   const cat = await p.evaluate(() => { const e = document.querySelector('.tcat[data-cat="mobilkertas"]'); if (!e) return null; const im = e.querySelector('img'); return { txt: e.textContent, img: im ? im.complete && im.naturalWidth > 0 : false } })
   ok(cat && /MOBIL KERTAS/.test(cat.txt) && cat.img, `${tag}: the MOBIL KERTAS arena card shows its paper-car picture`)

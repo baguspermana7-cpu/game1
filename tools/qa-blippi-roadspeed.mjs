@@ -12,7 +12,7 @@ const errs = []
 const p = await b.newPage(); await p.setBypassServiceWorker(true)
 p.on('pageerror', e => errs.push(String(e)))
 await p.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true })
-await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); await sleep(1200)
+await p.goto('http://localhost:8090/game1/?land=old', { waitUntil: 'load' }); await sleep(1200)
 const q = () => p.evaluate(() => { const s = BlippiTrip.qa(); return s && { state: s.state, lane: s.lane, bumps: s.bumps, stars: s.stars, mul: s.mul, progress: s.progress, flow: BlippiTrip.flow() } })
 async function play () { for (let i = 0; i < 60; i++) { const s = await q(); if (s && s.state === 'play') return s; await sleep(150) } return q() }
 for (const lv of ['darat-1', 'darat-4', 'mobilkertas-1', 'mobilkertas-8']) {
