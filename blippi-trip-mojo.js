@@ -12,6 +12,7 @@
   // each level drives a Mojo place that matches its name
   var STAGE = {
     'darat-1': 'kota', 'darat-2': 'hutan', 'darat-3': 'pantai', 'darat-4': 'gurun',
+    'darat-5': 'salju', 'darat-6': 'gunung-api', 'darat-7': 'tol-malam', 'darat-8': 'stadion',
     'mobilkertas-1': 'kota', 'mobilkertas-2': 'perumahan', 'mobilkertas-3': 'desa', 'mobilkertas-4': 'sakura',
     'mobilkertas-5': 'musim-gugur', 'mobilkertas-6': 'resor', 'mobilkertas-7': 'salju', 'mobilkertas-8': 'permen'
   }

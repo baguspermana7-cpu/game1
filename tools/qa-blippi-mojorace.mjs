@@ -23,6 +23,9 @@ for (const [w, h, lvs] of [[390, 844, ['darat-1', 'mobilkertas-3']], [1280, 800,
     ok(!!fr, `${tag} ${lv}: the level opens the Mojo race frame`)
     if (!fr) continue
     await fr.waitForFunction(() => window.__mojoChase && document.querySelector('#chase-host'), { timeout: 60000 }).catch(() => {})
+    // the crash quiz pauses the race until it is answered (Mojo's own gates cover it); here the race must run on so the
+    // pace and the save flow are what is measured
+    await fr.evaluate(() => { window.__mcNoCrashQuiz = 1 }).catch(() => {})
     // start: the intro card's go button, skip the cut-in
     for (let i = 0; i < 60; i++) { const s = await fr.evaluate(() => window.__mojoChase && __mojoChase.state().state).catch(() => null); if (s === 'active') break; await fr.evaluate(() => { const g = document.querySelector('.mcp-go, #mc-go'); if (g) g.click(); const k = document.querySelector('.mc-skip'); if (k) k.click() }).catch(() => {}); await sleep(400) }
     await sleep(1500)
