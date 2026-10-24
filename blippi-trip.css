@@ -267,3 +267,12 @@ body.trip-on #stage{visibility:hidden}
 .tlvls.many .tlvl{min-height:clamp(88px,12vh,124px)}
 @media (min-width:700px){.tlvls.many{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(100px,auto);align-content:start}}
 @media (min-width:700px) and (max-width:899px){.tlvls.many{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* 2026-10-24 polish (qa-blippi text gate + owner screenshots): 8 arenas and 8-12 levels per arena */
+/* a locked card keeps its name clear of the padlock */
+.tlvl.lk .tltx{padding-right:46px}
+/* phones: the 8 arena cards scroll from the top instead of centring and spilling over the PETUALANGAN title */
+@media (max-width:640px){.tcats{overflow-y:auto;overscroll-behavior:contain;align-content:start;padding-right:4px}}
+/* tablets: a long level list keeps two roomy columns; three only on a wide screen */
+@media (min-width:900px) and (max-width:1199px){.tlvls.many{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* the level number sits above the vehicle picture (in landscape the picture's wing ran over the digit) */
+.tnum{z-index:3}

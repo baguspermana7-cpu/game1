@@ -105,6 +105,9 @@ async function textCheck(p, label, rootSel = '#stage .scr.on, #stage .scrim') {
           const acs = getComputedStyle(a);
           if (acs.overflow === 'visible' && acs.overflowX === 'visible' && acs.overflowY === 'visible') continue;
           const ar = a.getBoundingClientRect();
+          // a list that scrolls (8-12 levels, 8 arenas on a phone): text above or below its fold is reached by scrolling,
+          // so only a sideways cut counts there (2026-10-24)
+          if (/(auto|scroll)/.test(acs.overflowY) && a.scrollHeight > a.clientHeight + 1 && bb.left >= ar.left - 1 && bb.right <= ar.right + 1) continue
           if (bb.left < ar.left - 1 || bb.right > ar.right + 1 || bb.top < ar.top - 1 || bb.bottom > ar.bottom + 1 || !inRound(bb, ar, acs)) { out.push('clipped ' + name + ' by ' + (a.className || a.tagName)); break; }
         }
         const r0 = rects[0], r1 = rects[rects.length - 1];
@@ -287,7 +290,7 @@ for (const [w, h] of [[1280, 800], [1024, 768], [844, 390], [390, 844]]) {
 
 // real-input play of one level per category, from the hub, with the save checked
 const tpg = await fresh(1280, 800);
-await tpg.evaluate(() => { history.replaceState(null, '', location.pathname + '?triplen=0.3'); });
+await tpg.evaluate(() => { history.replaceState(null, '', location.pathname + '?triplen=0.3&land=old'); });
 const CATS = [['darat', 'darat-1'], ['udara', 'udara-1'], ['angkasa', 'angkasa-1'], ['air', 'air-1'], ['kertas', 'kertas-1'], ['kapalkertas', 'kapalkertas-1']];
 let sessionSeen = [];
 for (const [cat, lvl] of CATS) {

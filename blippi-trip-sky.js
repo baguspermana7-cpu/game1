@@ -231,7 +231,7 @@
     big: 'lib:tk-prop/message-bottle',
     laneCol: '255,255,255',
     zoneLine: 'Arus sungai deras! Tekan TURBO saat lingkarannya merah!',
-    layers: ['paper-water', 'folds', 'banks', 'umbrellas', 'boat'],
+    layers: ['paper-water', 'folds', 'reflections', 'rain-rings', 'paper-fish', 'petals', 'banks', 'umbrellas', 'boat'],
     // launched from a paper pier (planks, a striped flag); the finish is a bunting arch between two paper flag poles
     ends: function (c, run, G) {
       var W = run.W
@@ -281,8 +281,46 @@
           c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 + seg * 0.5, y0 + gap * 0.16); c.lineTo(x0 + seg, y0); c.closePath(); c.fill()
         }
       }
+      var bw = W * PB_BANK, zz = 18, side, yy, rm = run.reduced(), t = run.t, q
+      // reflections (2026-10-24 polish): soft clouds mirrored in the river, drifting with it a little slower
+      c.fillStyle = 'rgba(255,255,255,.2)'
+      for (q = 0; q < 4; q++) {
+        var rx = bw + hash(q + 700) * (W - bw * 2), ry = wrap(hash(q + 710) * (H + 220) + Z * G.pyu * 0.6, H + 220) - 110
+        c.beginPath(); c.ellipse(rx, ry, W * (0.16 + hash(q + 720) * 0.1), 26 + hash(q + 730) * 22, 0, 0, 6.3); c.fill()
+      }
+      // paper fish under the surface: folded triangles (body + tail) swimming across, faint
+      for (q = 0; q < 3; q++) {
+        var fd = hash(q + 900) < 0.5 ? 1 : -1, fs = 20 + hash(q + 905) * 10
+        var fxx = bw + wrap(hash(q + 901) * W + (rm ? 0 : t * (14 + q * 5)) * fd, W - bw * 2 + 60) - 30
+        var fyy = wrap(hash(q + 910) * (H + 80) + Z * G.pyu * 0.85, H + 80) - 40
+        c.save(); c.translate(fxx, fyy); c.scale(fd, 1); c.globalAlpha = 0.55
+        c.fillStyle = ['#FFB28A', '#9AD6FF', '#FFE08A'][q]
+        c.beginPath(); c.moveTo(fs, 0); c.lineTo(-fs * 0.4, -fs * 0.5); c.lineTo(-fs * 0.4, fs * 0.5); c.closePath(); c.fill()
+        c.beginPath(); c.moveTo(-fs * 0.4, 0); c.lineTo(-fs, -fs * 0.42); c.lineTo(-fs, fs * 0.42); c.closePath(); c.fill()
+        c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.moveTo(fs, 0); c.lineTo(-fs * 0.4, -fs * 0.5); c.lineTo(0, 0); c.closePath(); c.fill()
+        c.restore()
+      }
+      // rain rings: drops still falling from the leaves after the rain -- a ring opens and fades, then a new one elsewhere
+      c.lineWidth = 2
+      for (q = 0; q < 7; q++) {
+        var ph = rm ? 0.4 : (t * 0.55 + hash(q + 800)) % 1, cyc = rm ? 0 : Math.floor(t * 0.55 + hash(q + 800))
+        var rgx = bw + 14 + hash(q * 13 + cyc * 7) * (W - bw * 2 - 28), rgy = wrap(hash(q * 17 + cyc * 5 + 3) * H + Z * G.pyu, H)
+        var rr = 4 + ph * 28
+        c.strokeStyle = 'rgba(255,255,255,' + (0.5 * (1 - ph)).toFixed(3) + ')'
+        c.beginPath(); c.ellipse(rgx, rgy, rr, rr * 0.42, 0, 0, 6.3); c.stroke()
+        if (ph < 0.6) { c.beginPath(); c.ellipse(rgx, rgy, rr * 0.5, rr * 0.21, 0, 0, 6.3); c.stroke() }
+      }
+      // petals: little folded paper petals afloat, carried down by the river and rocking
+      for (q = 0; q < 10; q++) {
+        var px = bw + 10 + hash(q + 950) * (W - bw * 2 - 20) + (rm ? 0 : Math.sin(t * 1.3 + q) * 6)
+        var py = wrap(hash(q + 960) * (H + 40) + Z * G.pyu, H + 40) - 20
+        c.save(); c.translate(px, py); c.rotate(hash(q + 970) * 6.3 + (rm ? 0 : Math.sin(t * 0.9 + q * 2) * 0.4))
+        c.fillStyle = q % 3 === 0 ? '#FFC9DC' : q % 3 === 1 ? '#FFE9A6' : '#FFFFFF'
+        c.beginPath(); c.moveTo(0, -9); c.lineTo(6, 0); c.lineTo(0, 9); c.lineTo(-6, 0); c.closePath(); c.fill()
+        c.fillStyle = 'rgba(0,0,0,.1)'; c.beginPath(); c.moveTo(0, -9); c.lineTo(6, 0); c.lineTo(0, 9); c.closePath(); c.fill()
+        c.restore()
+      }
       // the green paper banks: a zigzag folded edge, a darker fold line, umbrellas and flower bushes passing by
-      var bw = W * PB_BANK, zz = 18, side, yy
       for (side = 0; side < 2; side++) {
         var x0b = side ? W - bw : 0, edge = side ? W - bw : bw, dir = side ? -1 : 1
         c.fillStyle = '#8FD07A'
