@@ -58,6 +58,16 @@ for (const [w, h, lvs] of [[390, 844, ['darat-1', 'mobilkertas-3']], [1280, 800,
     }
     const sv = await p.evaluate(l => ((Blippi.state().trip || {}).lv || {})[l] || null, lv)
     ok(done && sv && sv.stars >= 1, `${tag} ${lv}: a finished race saves ${sv && sv.stars} star(s) and returns to the level list`)
+    // the list it returns to points the way on: a first win names the new badge and marks the level it opened (or, after
+    // the last level, the one just won), scrolled into view in the level grid (8 cards scroll on a phone)
+    await sleep(600)
+    const nx = await p.evaluate(l => {
+      const L = BlippiTripData.levels, i = L.findIndex(x => x.id === l), n = L[i + 1] && L[i + 1].cat === L[i].cat ? L[i + 1] : L[i]
+      const c = document.querySelector('.tlvl[data-level="' + n.id + '"]'), note = document.querySelector('.tnote.tdone'); if (!c) return null
+      const r = c.getBoundingClientRect(), g = c.closest('.tlvls').getBoundingClientRect()
+      return { id: n.id, mark: c.classList.contains('tnew') || c.classList.contains('tjust'), seen: r.top >= g.top - 1 && r.bottom <= g.bottom + 1 && r.bottom <= innerHeight + 1, note: note ? note.textContent : '' }
+    }, lv)
+    ok(nx && nx.mark && nx.seen && /Lencana baru/.test(nx.note) && nx.note.indexOf(lname) >= 0, `${tag} ${lv}: back on the list, the new badge is named and ${nx && nx.id} is marked and in view (${JSON.stringify(nx)})`)
   }
   await p.close()
 }

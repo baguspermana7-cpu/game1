@@ -195,7 +195,7 @@
     var on = grid.querySelector('.tct.on')
     if (on) setTimeout(function () { on.scrollIntoView({ block: 'nearest' }); on.focus({ preventScroll: true }) }, 60)
   }
-  function showLevels (catId) {
+  function showLevels (catId, won) {
     T.stop()
     build()
     curCat = catId
@@ -232,6 +232,22 @@
       else { var lk = el('span', 'tlock', b); lk.innerHTML = LOCK }
     })
     swap($.lev)
+    if (won) wonNote(grid, lvs, won)
+  }
+  // back from a won race (the shared Mojo race has no Blippi result card): name the new badge and point at the level it
+  // opened, or at the level just won when it was the last one, scrolled into view in the grid
+  function wonNote (grid, lvs, won) {
+    var i = lvs.map(function (l) { return l.id }).indexOf(won.id)
+    if (i < 0) return
+    var nx = lvs[i + 1] && T.unlocked(lvs[i + 1]) ? lvs[i + 1] : null
+    var txt = won.first ? 'Lencana baru: ' + lvs[i].name + '! ' + (nx ? 'Level ' + nx.name + ' terbuka.' : 'Semua level selesai. Hebat!') : won.improved ? 'Bintangmu bertambah. Hebat!' : ''
+    var to = grid.querySelector('.tlvl[data-level="' + (won.first && nx ? nx.id : won.id) + '"]')
+    if (to) to.classList.add(won.first && nx ? 'tnew' : 'tjust')
+    if (txt) { var n = el('p', 'tnote tdone', grid.parentNode); grid.parentNode.insertBefore(n, grid); n.textContent = txt }
+    if (!to) return
+    // centre it in the scrolling grid (by its centre: the pop-in scale does not move it, a rect edge would)
+    if (grid.scrollHeight > grid.clientHeight + 1) { var gr = grid.getBoundingClientRect(), r = to.getBoundingClientRect(); grid.scrollTop += r.top + r.height / 2 - (gr.top + gr.height / 2) }
+    else to.scrollIntoView({ block: 'nearest' })
   }
   function hintLocked (grid) {
     var n = grid.parentNode.querySelector('.tnote')
@@ -534,13 +550,13 @@
   }
 
   /* ---------- open / close ---------- */
-  function open (catId) {
+  function open (catId, won) {
     build()
     var B = w.Blippi
     if (w.BlippiFX) w.BlippiFX.stop()
     doc.body.classList.add('trip-on')
     root.hidden = false
-    if (catId) showLevels(catId)
+    if (catId) showLevels(catId, won)
     else showPick()
     B.stage.setAttribute('aria-hidden', 'true')
   }

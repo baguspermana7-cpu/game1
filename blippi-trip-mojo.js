@@ -46,9 +46,9 @@
     w.removeEventListener('message', cur.onMsg)
     clearTimeout(cur.wait)
     if (cur.box && cur.box.parentNode) cur.box.parentNode.removeChild(cur.box)
-    var cat = cur.lvl.cat
+    var cat = cur.lvl.cat, won = cur.result ? { id: cur.lvl.id, first: cur.result.first, improved: cur.result.improved } : null
     cur = null
-    if (!stay && T.open) T.open(cat)   // back to the level list (stars and unlocks refreshed)
+    if (!stay && T.open) T.open(cat, won)   // back to the level list (stars and unlocks refreshed; a win points the way on)
   }
   // the shared race failed to load (offline before the Mojo files were cached, a broken fleet file): the child still
   // gets the level, on the Blippi land engine, instead of being dropped back on the list
