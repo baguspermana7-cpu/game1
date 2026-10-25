@@ -16,6 +16,14 @@
     'mobilkertas-1': 'kota', 'mobilkertas-2': 'perumahan', 'mobilkertas-3': 'desa', 'mobilkertas-4': 'sakura',
     'mobilkertas-5': 'musim-gugur', 'mobilkertas-6': 'resor', 'mobilkertas-7': 'salju', 'mobilkertas-8': 'permen'
   }
+  // the Mojo place's own card picture (Dunia-Emosi assets/db/lib/mojo-chase/biome25/): the level list shows where the
+  // race runs, the child's vehicle standing in it
+  var CARD = {
+    kota: '01-town', hutan: '03-forest', pantai: '02-coastal', gurun: '04-desert', salju: '05-snow', 'gunung-api': '12-volcano',
+    'tol-malam': '13-night-highway', stadion: '23-stadium', perumahan: '21-suburb', desa: '09-farm', sakura: '15-cherry-blossom',
+    'musim-gugur': '14-autumn', resor: '17-beach-resort', permen: '25-candy-land'
+  }
+  function pic (id) { var c = CARD[STAGE[id]]; return c && on() ? abs('../Dunia-Emosi/assets/db/lib/mojo-chase/biome25/' + c + '.webp') : null }
   var cur = null
   function READY_MS () { var m = /[?&]mojowait=(\d+)/.exec(w.location.search); return m ? +m[1] : 30000 }   // QA seam: ?mojowait=ms
   function abs (u) { return new URL(u, w.location.href).href }
@@ -86,5 +94,5 @@
     fr.focus()
     return true
   }
-  T.mojoRace = { on: on, start: start, close: close, stage: function (id) { return STAGE[id] || null }, frame: function () { return cur && cur.frame }, state: function () { return cur ? { lvl: cur.lvl.id, last: cur.last } : null } }
+  T.mojoRace = { on: on, start: start, close: close, stage: function (id) { return STAGE[id] || null }, pic: pic, frame: function () { return cur && cur.frame }, state: function () { return cur ? { lvl: cur.lvl.id, last: cur.last } : null } }
 })(window)

@@ -84,6 +84,24 @@ for (const [w, h, lvs] of [[390, 844, ['darat-1', 'mobilkertas-3']], [1280, 800,
   ok(!e2.frame && e2.running && e2.fell && e2.fell.why === 'timeout' && e2.fell.lvl === 'mobilkertas-2', `fallback: a frame that never says ready runs mobilkertas-2 on the land engine (${JSON.stringify(e2)})`)
   await p.close()
 }
+// the level list shows the Mojo place each road level runs in: every DARAT / MOBIL KERTAS card has its place picture,
+// and the picture loads (a renamed Dunia asset would leave a blank card)
+{
+  const p = await b.newPage(); await p.setBypassServiceWorker(true)
+  await p.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true })
+  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); await sleep(1200)
+  for (const cat of ['darat', 'mobilkertas']) {
+    await p.evaluate(c => BlippiTrip.open(c), cat); await sleep(700)
+    const r = await p.evaluate(async () => {
+      const cards = [...document.querySelectorAll('.tlvl')]
+      const urls = cards.map(c => { const ph = c.querySelector('.tlpic.place'); const m = ph && /url\("?([^")]+)"?\)/.exec(ph.style.backgroundImage); return m ? m[1] : null })
+      const ok = await Promise.all(urls.map(u => u ? new Promise(res => { const i = new Image(); i.onload = () => res(i.naturalWidth > 0); i.onerror = () => res(false); i.src = u }) : false))
+      return { n: cards.length, places: new Set(urls.filter(Boolean)).size, loaded: ok.filter(Boolean).length }
+    })
+    ok(r.n === 8 && r.loaded === 8 && r.places >= 7, `level list ${cat}: all 8 cards show the place the race runs in, every picture loads (${JSON.stringify(r)})`)
+  }
+  await p.close()
+}
 ok(!errs.length, `no page errors or 404s ${errs.slice(0, 3).join(' | ')}`)
 await b.close()
 console.log(`\nqa-blippi-mojorace: ${pass}/${pass + fail} checks passed`)

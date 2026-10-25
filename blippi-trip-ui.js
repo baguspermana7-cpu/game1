@@ -220,6 +220,8 @@
       var num = el('span', 'tnum', b, String(i + 1))
       void num
       var ph = el('span', 'tlpic', b)
+      var place = T.mojoRace && T.mojoRace.pic ? T.mojoRace.pic(l.id) : null   // a road race: the place it runs in
+      if (place) { ph.className += ' place'; ph.style.backgroundImage = 'url("' + place + '")' }
       var cr = myRide(catId)
       if (cr) ridePic(ph, cr, false)
       else imgEl(l.vui || (typeof l.veh === 'string' && l.veh.indexOf(':') > 0 ? l.veh : cat.icon), '', ph)

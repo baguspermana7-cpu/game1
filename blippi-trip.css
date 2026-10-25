@@ -276,3 +276,7 @@ body.trip-on #stage{visibility:hidden}
 @media (min-width:900px) and (max-width:1199px){.tlvls.many{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* the level number sits above the vehicle picture (in landscape the picture's wing ran over the digit) */
 .tnum{z-index:3}
+/* a road race's level card: the Mojo place it runs in behind the child's vehicle, the vehicle on the road at the bottom */
+.tlpic.place{background-color:#9fc4e8;background-size:cover;background-position:center 40%;align-items:flex-end;padding-bottom:6px;overflow:hidden}
+.tlpic.place img,.tlpic.place .tanim{max-height:72%}
+.tlvl.lk .tlpic.place{filter:saturate(.45) brightness(1.05)}
