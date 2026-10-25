@@ -265,7 +265,11 @@
       S.sx += (run.in.x - S.sx) * 0.08
       var par = R.par(S.sx, 30)
       R.full(S, c, run, 'sky', sky)
-      if (C.ground) R.band(S, c, run, 'ground', groundTile(C.ground, hz, C.hazeA), 512, Z * k * 0.12, par * 0.35)
+      // the ground: the GPU height field (blippi-trip-gl.js, rendered as a strip, re-rendered when it scrolls out) or the baked tile
+      var gd = C.ground && T.gl && !S.glOff ? T.gl.land(run, S, C.ground, hz, C.hazeA * 0.35, C.sun, -par * 0.35, Z * k * 0.12) : null
+      if (C.ground && T.gl && !gd) S.glOff = true
+      if (gd) c.drawImage(gd.cv, gd.x, gd.y, W, gd.cv.height * W / gd.cv.width)
+      else if (C.ground) R.band(S, c, run, 'ground', groundTile(C.ground, hz, C.hazeA), 512, Z * k * 0.12, par * 0.35)
       if (C.stars) {
         c.fillStyle = '#FFFFFF'
         for (i = 0; i < (lite ? 30 : 64); i++) { c.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(t * 1.3 + i)); c.fillRect(hash(i + 7) * W + par * 0.2, hash(i + 77) * H * 0.9, i % 7 === 0 ? 3 : 2, i % 7 === 0 ? 3 : 2) }
@@ -401,6 +405,7 @@
       }
       c.globalAlpha = 1
     }
+    if (C.ground && T.gl && T.gl.ok()) layers.splice(layers.indexOf('ground-map') + 1, 0, 'gpu-ground')
     return { layers: layers, bg: bg, fg: fg, key: key }
   }
 })(window)

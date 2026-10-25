@@ -444,7 +444,9 @@
       // canvas (a full-screen gradient fill every frame was the other big cost on a slow tablet)
       var k = run.dpr * run.scale
       var bid = W + 'x' + H + '@' + k
-      if (!bgCv || bgCv.id !== bid) {
+      var gsea = rich && rich.surface ? rich.surface(Z, G, px) : null   // the GPU sea replaces 1-3 when it runs
+      if (gsea) c.drawImage(gsea, 0, 0, W, H)
+      else if (!bgCv || bgCv.id !== bid) {
         var cv = w.document.createElement('canvas')
         cv.width = Math.ceil(W * k)
         cv.height = Math.ceil(H * k)
@@ -463,12 +465,14 @@
         }
         bgCv = { id: bid, cv: cv }
       }
-      c.drawImage(bgCv.cv, 0, 0, W, H)
+      if (!gsea) c.drawImage(bgCv.cv, 0, 0, W, H)
       if (rich) rich.under(c, Z, G, px)
       // 3 three wave bands at three speeds (slow broad swell, mid ripples, fast glints)
-      band(c, 'w3', waves3, 340, 0.55, 18)
-      band(c, 'w1', waves, 256, 0.9, 30)
-      band(c, 'w2', waves2, 180, 1.35, 60, 0)
+      if (!gsea) {
+        band(c, 'w3', waves3, 340, 0.55, 18)
+        band(c, 'w1', waves, 256, 0.9, 30)
+        band(c, 'w2', waves2, 180, 1.35, 60, 0)
+      }
       // 4 slow cloud shadows / drifting clouds at the horizon edge
       var ci
       for (ci = 0; ci < (rich ? 0 : 3); ci++) {

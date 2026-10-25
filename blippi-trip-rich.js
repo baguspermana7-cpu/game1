@@ -88,6 +88,7 @@
       var x = cv.getContext('2d'); x.scale(k, k); fn(x, run.W, run.H)
       b = st.bands[key] = { id: id, cv: cv }
     }
+    if (a === 0) return b   // bake only: the caller draws it its own way
     if (a != null && a < 1) { c.globalAlpha = a; c.drawImage(b.cv, 0, 0, run.W, run.H); c.globalAlpha = 1 } else c.drawImage(b.cv, 0, 0, run.W, run.H)
   }
 
@@ -107,7 +108,7 @@
           x.beginPath(); x.moveTo(sx * W - wd * 0.15, -10); x.lineTo(sx * W + wd * 0.15, -10); x.lineTo(bx + wd * 3 + (bx - sx * W) * 1.6, H); x.lineTo(bx - wd * 3 + (bx - sx * W) * 1.6, H); x.closePath(); x.fill()
         }
       }
-    }, null, 0.5)
+    }, 0, 0.5)   // bake only (it was also drawn here at full strength: every sun ray twice, the bright copy washing the world out)
     c.globalAlpha = a * 0.55 * (0.78 + 0.22 * Math.sin(run.t * 0.5))
     c.drawImage(st.bands.rays.cv, Math.sin(run.t * 0.17) * 14, 0, run.W, run.H)
     c.globalAlpha = 1

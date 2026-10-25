@@ -322,10 +322,17 @@
     layers.push('vignette', 'spray')
 
     function col (a) { return R.css(th.water ? R.rgb(th.water[0]) : [160, 220, 240], a) }
+    // the GPU sea (blippi-trip-gl.js): the surface, its waves, the bed seen through the shallows and the caustics in one
+    // pass; null (no WebGL) keeps the baked bands below
+    function surface (Z, G, px) {
+      S.gl = T.gl && !S.glOff ? T.gl.sea(run, key, -R.par(px, 26), Z * G.pyu) : null
+      if (!S.gl && T.gl) S.glOff = true
+      return S.gl
+    }
     function under (c, Z, G, px) {
       var W_ = run.W, H = run.H, t = run.t, k = G.pyu, par = R.par(px, 26), i, j, lite = R.lite(run)
-      if (C.bed) R.band(S, c, run, 'bed', bedTile(C.bed), 320, Z * k * 0.5, par, C.bedA)
-      if (C.caust) {
+      if (C.bed && !S.gl) R.band(S, c, run, 'bed', bedTile(C.bed), 320, Z * k * 0.5, par, C.bedA)
+      if (C.caust && !S.gl) {
         R.band(S, c, run, 'caust', causticTile(), 256, Z * k * 0.3 + t * 9, par * 0.6 + t * 7, C.caust)
         if (!lite) R.band(S, c, run, 'caust', causticTile(), 256, Z * k * 0.38 - t * 6, par * 0.8 - t * 5 + 90, C.caust * 0.6)   // the same baked canvas, a second drift
       }
@@ -552,7 +559,8 @@
         c.globalAlpha = 1
       }
     }
-    S.hooks = { under: under, over: over, fg: fg, layers: layers, key: key }
+    if (T.gl && T.gl.ok()) layers.splice(1, 0, 'gpu-sea')
+    S.hooks = { surface: surface, under: under, over: over, fg: fg, layers: layers, key: key }
     return S.hooks
   }
 })(window)
