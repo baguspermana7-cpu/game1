@@ -61,6 +61,29 @@ for (const [w, h, lvs] of [[390, 844, ['darat-1', 'mobilkertas-3']], [1280, 800,
   }
   await p.close()
 }
+// the race frame failing (offline before the Mojo files were cached, a broken fleet): the level still runs, on the
+// Blippi land engine, instead of the child being dropped back on the list. Two ways in: an 'error' from the frame, and
+// no 'ready' in time (?mojowait=ms shortens the 30 s wait)
+{
+  const p = await b.newPage(); await p.setBypassServiceWorker(true)
+  p.on('pageerror', e => errs.push('fallback ' + e))
+  await p.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true })
+  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); await sleep(1200)
+  await p.evaluate(() => { BlippiTrip.open('darat'); BlippiTrip.start('darat-2', { seed: 4 }) })
+  let fr = null
+  for (let i = 0; i < 40 && !fr; i++) { await sleep(250); fr = p.frames().find(f => /mojo-chase-embed\.html/.test(f.url())) || null }
+  if (fr) await fr.evaluate(() => parent.postMessage({ type: 'shared-race', event: 'error', why: 'qa' }, location.origin)).catch(() => {})
+  await sleep(1500)
+  const e1 = await p.evaluate(() => ({ frame: !!document.querySelector('.tmojo'), running: BlippiTrip.running(), lvl: BlippiTrip.state && BlippiTrip.state() && BlippiTrip.state().id, fell: BlippiTrip.mojoRace.fellBack }))
+  ok(!!fr && !e1.frame && e1.running && e1.fell && e1.fell.why === 'qa', `fallback: an error from the race frame runs darat-2 on the land engine (${JSON.stringify(e1)})`)
+  await p.evaluate(() => BlippiTrip.stop())
+  await p.goto('http://localhost:8090/game1/?mojowait=1', { waitUntil: 'load' }); await sleep(1200)
+  await p.evaluate(() => { BlippiTrip.open('mobilkertas'); BlippiTrip.start('mobilkertas-2', { seed: 4 }) })
+  await sleep(2500)
+  const e2 = await p.evaluate(() => ({ frame: !!document.querySelector('.tmojo'), running: BlippiTrip.running(), fell: BlippiTrip.mojoRace.fellBack }))
+  ok(!e2.frame && e2.running && e2.fell && e2.fell.why === 'timeout' && e2.fell.lvl === 'mobilkertas-2', `fallback: a frame that never says ready runs mobilkertas-2 on the land engine (${JSON.stringify(e2)})`)
+  await p.close()
+}
 ok(!errs.length, `no page errors or 404s ${errs.slice(0, 3).join(' | ')}`)
 await b.close()
 console.log(`\nqa-blippi-mojorace: ${pass}/${pass + fail} checks passed`)

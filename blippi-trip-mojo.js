@@ -17,6 +17,7 @@
     'mobilkertas-5': 'musim-gugur', 'mobilkertas-6': 'resor', 'mobilkertas-7': 'salju', 'mobilkertas-8': 'permen'
   }
   var cur = null
+  function READY_MS () { var m = /[?&]mojowait=(\d+)/.exec(w.location.search); return m ? +m[1] : 30000 }   // QA seam: ?mojowait=ms
   function abs (u) { return new URL(u, w.location.href).href }
   function on () { return !/[?&]land=old\b/.test(w.location.search) }
   function save (lvl, stars, collected) {
@@ -32,13 +33,21 @@
     })
     return { first: first, improved: improved }
   }
-  function close () {
+  function close (stay) {
     if (!cur) return
     w.removeEventListener('message', cur.onMsg)
+    clearTimeout(cur.wait)
     if (cur.box && cur.box.parentNode) cur.box.parentNode.removeChild(cur.box)
     var cat = cur.lvl.cat
     cur = null
-    if (T.open) T.open(cat)   // back to the level list (stars and unlocks refreshed)
+    if (!stay && T.open) T.open(cat)   // back to the level list (stars and unlocks refreshed)
+  }
+  // the shared race failed to load (offline before the Mojo files were cached, a broken fleet file): the child still
+  // gets the level, on the Blippi land engine, instead of being dropped back on the list
+  function fallback (lvl, why) {
+    T.mojoRace.fellBack = { lvl: lvl.id, why: why }
+    close(true)
+    T.start(lvl.id, { landEngine: true })
   }
   function start (lvl, opts) {
     if (cur) close()
@@ -66,10 +75,13 @@
       if (e.origin !== w.location.origin || !e.data || e.data.type !== 'shared-race' || !cur || e.source !== fr.contentWindow) return
       var d = e.data
       cur.last = d.event
-      if (d.event === 'done') { cur.result = save(lvl, Math.max(1, Math.min(3, d.stars | 0)), d.collected | 0); close() }
-      else if (d.event === 'exit' || d.event === 'error') { cur.error = d.why || null; close() }
+      if (d.event === 'ready') clearTimeout(cur.wait)
+      else if (d.event === 'done') { cur.result = save(lvl, Math.max(1, Math.min(3, d.stars | 0)), d.collected | 0); close() }
+      else if (d.event === 'error') fallback(lvl, d.why || 'error')
+      else if (d.event === 'exit') close()
     }
     cur = { lvl: lvl, box: box, frame: fr, onMsg: onMsg, last: null }
+    cur.wait = setTimeout(function () { if (cur && cur.lvl === lvl) fallback(lvl, 'timeout') }, READY_MS())
     w.addEventListener('message', onMsg)
     fr.focus()
     return true
