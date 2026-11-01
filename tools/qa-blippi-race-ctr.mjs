@@ -12,7 +12,7 @@ import puppeteer from 'puppeteer'
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 let pass = 0, fail = 0
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL', m) } }
-const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio'] })
+const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output'] })
 const errs = []
 const page = async (w, h) => { const p = await b.newPage(); p.on('pageerror', e => errs.push(String(e))); await p.setViewport({ width: w, height: h, isMobile: true, hasTouch: true }); await p.goto('http://localhost:8090/game1/?land=old', { waitUntil: 'load' }); return p }
 const q = p => p.evaluate(() => BlippiTrip.qa())
@@ -68,6 +68,14 @@ async function race (cat, id, seed) {
   const p = await page(844, 390)
   await p.evaluate((cat, id, seed) => { BlippiTrip.open(cat); BlippiTrip.start(id, { seed }) }, cat, id, seed)
   await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })
+  // record in the page what the game saw at the moment of each press, and whether TEKAN! ever showed: a poll from node
+  // lags the page by a few hundred ms on a slow headless frame, so a tap aimed at the green can land in the red
+  await p.evaluate(() => {
+    const tb = document.querySelector('[data-act=turbo]')
+    window.__ctr = { teach: false, presses: [] }
+    new MutationObserver(() => { if (tb.classList.contains('teach')) window.__ctr.teach = true }).observe(tb, { attributes: true, attributeFilter: ['class'] })
+    tb.addEventListener('pointerdown', () => { const d = BlippiTrip.qa().drift; window.__ctr.presses.push(d ? { red: d.red, meter: d.meter, idx: d.idx } : null) }, true)
+  })
   let fires = [], greenTested = false, greenOk = null, greenWhy = "", sawAir = false, bumpsAtAir = -1, airTurbo = false, posSeen = new Set(), capMax = 0, gone = false, teachSeen = false, teachAfter = false, stretch = false, last = null, shieldSeen = false, magnetSeen = false
   const t0 = Date.now()
   while (Date.now() - t0 < 150000) {
@@ -87,10 +95,12 @@ async function race (cat, id, seed) {
     const d = s.drift
     if (d && d.on && !d.spent) {
       if (!greenTested && !d.red && d.meter > 0.15 && d.meter < 0.4) {
-        greenTested = true; await tapTurbo(p); await sleep(60)
-        const s2 = await q(p); greenWhy = JSON.stringify([d, s2.drift, s2.state]); greenOk = s2.drift.idx === d.idx && s2.drift.boosts === d.boosts && s2.drift.tries === d.tries + 1
+        const n = await p.evaluate(() => window.__ctr.presses.length)
+        await tapTurbo(p); await sleep(60)
+        const s2 = await q(p), at = await p.evaluate(i => window.__ctr.presses[i], n)
+        // judge only a press the game itself saw in the green of this zone; one that landed in the red is retried later
+        if (at && !at.red && at.idx === d.idx) { greenTested = true; greenWhy = JSON.stringify([at, d, s2.drift, s2.state]); greenOk = s2.drift.idx === d.idx && s2.drift.boosts === d.boosts && s2.drift.tries === d.tries + 1 }
       } else if (d.red) {
-        if (!s.meterN && !teachSeen) { await sleep(80); teachSeen = (await q(p)).teach }
         const n0 = s.turboN; await tapTurbo(p); await sleep(60)
         const s2 = await q(p); if (s2.turboN > n0) fires.push(s2.fire)
       }
@@ -98,6 +108,7 @@ async function race (cat, id, seed) {
     } else await sleep(60)
     if (s.progress > 0.999) break
   }
+  teachSeen = await p.evaluate(() => window.__ctr.teach)
   ok(!gone, `${id}: the TURBO button left the run`)
   ok(teachSeen, `${id}: no TEKAN! hint on the first red meter`)
   ok(!teachAfter, `${id}: the TEKAN! hint stayed after the first meter turbo`)
