@@ -308,6 +308,8 @@
     run.fxs.push({ k: 'fx:' + name, x: x, y: y, s: size || 120, t: 0, d: o.dur || 0.8, rise: o.rise || 0, blend: V[name].blend })
     if (cache['fx:' + name] === undefined) load(['fx:' + name], function () {})
   }
+  // a moment drawn with layered effects from the shared Dunia VFX database (blippi-trip-vfx.js); the owner's sprite stays
+  function vx (m, x, y, size) { var X = w.BlippiTrip && w.BlippiTrip.vfx; if (X && run) X.play(m, x, y, size, run.lvl.cat, reduced()) }
   // a five-point star path (vector, so it needs no sprite in any journey)
   function starPath (c, x, y, r) {
     c.beginPath()
@@ -339,6 +341,7 @@
   }
   function drawFx (c, dt) {
     drawFly(c, dt)
+    if (w.BlippiTrip && w.BlippiTrip.vfx) w.BlippiTrip.vfx.draw(c, dt)
     var i
     for (i = run.fxs.length - 1; i >= 0; i--) {
       var f = run.fxs[i]
@@ -384,7 +387,7 @@
       progress: 0, mul: 1, slowT: 0, boostT: 0, hitT: 0, rate: lvl.speed, t: 0, reserves: 0, fire: 0, countT: 0, startPress: -9, juiced: false,
       stars: 0, starTotal: 0, bumps: 0, state: 'loading', fxs: [], fly: [], gates: [], quiz: null, qlog: [], bonus: 0,
       in: { down: false, x: 0.5, y: 0.5, tx: 0.5, ty: 0.5, moves: [], kx: 0, ky: 0 },
-      work: [], dts: [], slowFrames: 0, fastFrames: 0, raiseNeed: 120, raisedAt: 0, dtS: 0, finishT: 0, say: say, fx: fx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
+      work: [], dts: [], slowFrames: 0, fastFrames: 0, raiseNeed: 120, raisedAt: 0, dtS: 0, finishT: 0, say: say, fx: fx, vx: vx, spr: spr, img: img, cover: coverC, scaled: scaled, grad: grad, rrect: rrect, clamp: clamp, lerp: lerp, reduced: reduced,
       collect: collect, bump: bump, boost: boost, turbo: turbo, press: pressTurbo, ctr: CTR,
       gift: gift, drawGift: drawGift, giftSpots: giftSpots, meter: meter, meterBar: meterBar, zones: zones, zoneAt: zoneAt, band: band, place: place, FIRE: FIRE
     }
@@ -405,6 +408,7 @@
     load(E.assets(lvl).concat(FXK), function () {
       if (!run || run !== mine) return
       run.eng = E.make(run)
+      if (w.BlippiTrip.vfx) w.BlippiTrip.vfx.preload(lvl.cat)
       // 3-2-1-GO before the run (CTR's start lights): a TURBO press just before GO gives a start turbo
       run.state = 'count'
       run.countT = 0
@@ -423,6 +427,7 @@
     raf = 0
     if (run && run.cv) { unbindInput(run.cv); if (run.eng && run.eng.destroy) run.eng.destroy() }
     if (run && run.wx) run.wx.destroy()
+    if (w.BlippiTrip && w.BlippiTrip.vfx) w.BlippiTrip.vfx.clear()
     run = null
   }
 
@@ -527,6 +532,7 @@
       r.finishT = 0
       B().sfx('win')
       fx('gold-star', r.W / 2, r.H * 0.42, 260)
+      vx('finish', r.W / 2, r.H * 0.42, 170)
       fx('confetti', r.W * 0.3, r.H * 0.5, 240, { rise: 40 })
       fx('confetti', r.W * 0.7, r.H * 0.5, 240, { rise: 40 })
       say('Garis finis! Kamu hebat sekali!')
@@ -626,12 +632,13 @@
     if (!run) return
     run.combo = (run.combo || 0) + 1
     run.stars += (big ? 2 : 1) + (run.combo % 5 === 0 ? 1 : 0)
-    if (run.combo % 5 === 0) { say('Kombo ' + run.combo + '! Bintang bonus!'); fx('gold-star', x, y - 30, 180) }
+    if (run.combo % 5 === 0) { say('Kombo ' + run.combo + '! Bintang bonus!'); fx('gold-star', x, y - 30, 180); vx('combo', x, y - 30, 120) }
     run.comboT = 3
     B().sfx('collect')
     // CTR: ten wumpa make the kart a little faster - here ten stars, with Blippi saying so once
     if (!run.juiced && run.stars >= 10) { run.juiced = true; say('Sepuluh bintang! Kendaraanmu jadi lebih ngebut!') }
     fx('spark', x, y, 120)
+    vx('collect', x, y, big ? 90 : 70)
     // the star FLIES to the star counter (an arc, 0.55 s), which pops when it lands: the child sees where it went
     if (!reduced() && run.fly.length < 12) run.fly.push({ x: x, y: y, t: 0, d: 0.55, n: big ? 2 : 1 })
     if (run.lvl.cat === 'air') fx('droplets', x, y + 10, 130)
@@ -640,7 +647,7 @@
   function bump (x, y) {
     if (!run || run.slowT > 0.2) return
     // the bubble shield takes the knock: the obstacle bounces off, nothing is lost
-    if (run.shieldT > 0) { run.shieldT = 0; run.hitT = 0.6; B().sfx('ok'); fx('spark', x, y, 160); say('Pelindungnya pecah. Kamu tetap aman!'); return }
+    if (run.shieldT > 0) { run.shieldT = 0; run.hitT = 0.6; B().sfx('ok'); fx('spark', x, y, 160); vx('shield', x, y, 110); say('Pelindungnya pecah. Kamu tetap aman!'); return }
     run.bumps++
     run.combo = 0
     run.slowT = 1.1
@@ -648,6 +655,7 @@
     run.reserves = 0 // CTR: a hit costs the stored turbo
     B().sfx('bump')
     if (run.lvl.cat === 'air') { fx('splash', x, y, 190); fx('ripple', x, y + 30, 200) } else fx('dust', x, y, 130)
+    vx('bump', x, y, 110)
     say(LINES_BUMP[run.bumps % LINES_BUMP.length])
   }
   // a turbo pad / pickup: a level-1 turbo (CTR turbo pads add reserves at the single-turbo cap)
@@ -660,7 +668,7 @@
     run.boostT = run.reserves
     run.slowT = 0
     B().sfx(level >= 2 ? 'turbo3' : level === 1 ? 'turbo2' : 'boost')
-    if (x != null) { fx('speed', x, y, 100 + level * 20); fx('spark', x, y - 10, 90 + level * 30) }
+    if (x != null) { fx('speed', x, y, 100 + level * 20); fx('spark', x, y - 10, 90 + level * 30); vx('turbo', x, y, 80 + level * 20) }
     // owner 2026-10-17: every turbo throws speed lines out from the centre (shared Dunia SpeedLines overlay)
     try { if (window.SpeedLines) window.SpeedLines.burst({ dur: Math.min(2400, 600 + sec * 700), power: 0.55 + 0.2 * Math.max(0, level) }) } catch (e) {}
     run.turboN = (run.turboN || 0) + 1
@@ -759,6 +767,7 @@
     run.giftN = (run.giftN || 0) + 1
     run.gifts = (run.gifts || []).concat(k)
     fx('gold-star', x, y, 170)
+    vx('gift', x, y, 110)
     B().sfx('collect')
     if (k === 'shield') { run.shieldT = 9; say('Gelembung pelindung! Aman dari satu benturan.') }
     else if (k === 'magnet') { run.magnetT = 8; say('Magnet bintang! Bintang datang sendiri.') }
@@ -877,6 +886,7 @@
       run.stars += 2
       boost(run.W / 2, run.H * 0.62)
       fx('gold-star', run.W / 2, run.H * 0.4, 240)
+      vx('right', run.W / 2, run.H * 0.4, 150)
     } else {
       say('Tidak apa-apa. Kita belajar bersama. Ayo lanjut!')
     }

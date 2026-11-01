@@ -218,6 +218,7 @@
           hop = 0
           var gainH = 0.5 + Math.min(1, Math.max(0, (hopMax - 0.7) / 0.5)) * 0.65
           run.fx('dust', G.cx + (lanePos - 1) * LS(), G.ny - 10, 160)
+          if (run.vx) run.vx('land', G.cx + (lanePos - 1) * LS(), G.ny - 10, 110)
           land = 0.35
           run.turbo(gainH, 0, G.cx + (lanePos - 1) * LS(), G.ny + 14, 'Mendarat! Turbo!')
         }
