@@ -268,7 +268,7 @@
       // the ground: the GPU height field (blippi-trip-gl.js, rendered as a strip, re-rendered when it scrolls out) or the baked tile
       var gd = C.ground && T.gl && !S.glOff ? T.gl.land(run, S, C.ground, hz, C.hazeA * 0.35, C.sun, -par * 0.35, Z * k * 0.12) : null
       if (C.ground && T.gl && !gd) S.glOff = true
-      if (gd) c.drawImage(gd.cv, gd.x, gd.y, W, gd.cv.height * W / gd.cv.width)
+      if (gd) c.drawImage(gd.cv, gd.x, gd.y, gd.w, gd.h)
       else if (C.ground) R.band(S, c, run, 'ground', groundTile(C.ground, hz, C.hazeA), 512, Z * k * 0.12, par * 0.35)
       if (C.stars) {
         c.fillStyle = '#FFFFFF'
