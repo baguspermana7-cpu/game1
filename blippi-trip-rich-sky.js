@@ -362,8 +362,12 @@
         c.fillStyle = '#FFFFFF'; c.beginPath(); c.moveTo(0, 0); c.lineTo(520, -34); c.lineTo(520, 34); c.closePath(); c.fill(); c.restore(); c.globalAlpha = 1
       }
       if (C.shimmer && !lite) {
-        c.strokeStyle = 'rgba(255,240,200,.1)'; c.lineWidth = 3
-        for (i = 0; i < 6; i++) { var yy = H * (0.45 + i * 0.09); c.beginPath(); var xx; for (xx = 0; xx <= W; xx += 18) { var wy = yy + Math.sin(xx * 0.03 + t * 2 + i * 1.7) * 5; if (!xx) c.moveTo(xx, wy); else c.lineTo(xx, wy) } c.stroke() }
+        // heat haze: three soft warm bands that breathe and drift, no drawn lines (strokes read as scribbles on the sand)
+        for (i = 0; i < 3; i++) {
+          var yy = H * (0.5 + i * 0.16) + Math.sin(t * 0.8 + i * 2.1) * 14, hb = 46 + i * 10, hg = c.createLinearGradient(0, yy - hb, 0, yy + hb)
+          hg.addColorStop(0, 'rgba(255,236,196,0)'); hg.addColorStop(0.5, 'rgba(255,236,196,' + (0.07 + 0.03 * Math.sin(t * 1.3 + i)).toFixed(3) + ')'); hg.addColorStop(1, 'rgba(255,236,196,0)')
+          c.fillStyle = hg; c.fillRect(0, yy - hb, W, hb * 2)
+        }
       }
       if (C.dust) for (i = 0; i < 2; i++) {
         var dx = W * (0.25 + 0.5 * hash(i + 180)) + par * 0.35, dy = wrap(hash(i + 181) * (H + 300) + Z * k * 0.12, H + 300) - 100

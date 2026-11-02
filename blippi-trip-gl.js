@@ -143,14 +143,16 @@
     'float terr(vec2 p){ vec2 q = vec2(fbm3(p * 0.22), fbm3(p * 0.22 + vec2(5.2, 1.3))); return fbm(p * 0.3 + q * 1.6); }',
     'float ridge(vec2 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * (1.0 - abs(nz(p) * 2.0 - 1.0)); p = RT * p; a *= 0.5; } return s; }',
     'float detail(vec2 p){ return (fbm3(p * 2.6) - 0.5) * 0.06 + (nz(p * 9.0) - 0.5) * 0.008; }',
-    'float dune(vec2 p){ vec2 w = vec2(fbm3(p * 0.18), fbm3(p * 0.21 + 7.0)); float d = 0.5 + 0.5 * (0.72 * sin(p.x * 4.6 + p.y * 1.4 + w.x * 9.0) + 0.38 * sin(p.x * 1.7 - p.y * 3.6 + w.y * 7.0)); return pow(clamp(d, 0.0, 1.0), 2.0); }',
+    'float dune(vec2 p){ vec2 d = vec2(0.94, 0.34); float w = fbm3(p * 0.22) * 2.4 + 0.45 * sin(dot(p, vec2(-d.y, d.x)) * 1.6 + fbm3(p * 0.5) * 3.0);',   // transverse dunes: a long gentle windward slope, a short steep slip face, sinuous crests that break
+    '  float f = fract(dot(p, d) * 0.8 + w); float pr = smoothstep(0.0, 0.7, f) * (1.0 - smoothstep(0.7, 1.0, f));',
+    '  return pr * (0.5 + 0.5 * smoothstep(0.25, 0.75, fbm3(p * 0.3 + 5.0))); }',
     'float height(vec2 p){',
     '  if (uKind < 0.5) return terr(p) + detail(p) * 0.6;',                                               // bay
     '  if (uKind < 1.5) return terr(p * 0.8) * 0.6;',                                                     // candy
     '  if (uKind < 2.5) return terr(p) * 0.7;',                                                           // night lights
     '  if (uKind < 3.5) { float r = ridge(p * 0.42 + vec2(fbm3(p * 0.2) * 1.5)); return pow(r, 2.6) + detail(p) * 0.7; }',   // valley
     '  if (uKind < 4.5) { float w = fbm3(p * 0.18); float rp = sin(p.x * 30.0 + p.y * 11.0 + w * 20.0 + nz(p * 3.0) * 3.0) * 0.003;',
-    '    return dune(p) * 0.3 + dune(p * 1.9 + 3.3) * 0.05 + rp + detail(p) * 0.3 + smoothstep(0.66, 0.7, terr(p * 0.6)) * 0.5; }',   // desert
+    '    return dune(p) * 0.3 + dune(p * 2.3 + 3.3) * 0.025 + rp + detail(p) * 0.3 + smoothstep(0.66, 0.7, terr(p * 0.6)) * 0.5; }',   // desert
     '  return 0.0;',                                                                                       // city: flat
     '}',
     // one round tree per cell: cover, sun shade on the round canopy, its cast shadow, an id
@@ -284,14 +286,15 @@
     '    float rd = road(p, 0.2, vec2(13.0, 7.0)) * smoothstep(0.35, 0.2, h) * (1.0 - lake); col = mix(col, vec3(0.6, 0.58, 0.54), rd);',
     '  } else if (uKind < 4.5) {',                                                           // desert: dunes with crests and wind ripples, mesas, rocks, an oasis, a track
     '    float du = dune(p);',
-    '    col = mix(vec3(0.86, 0.6, 0.36), vec3(0.99, 0.85, 0.6), clamp(h * 4.5, 0.0, 1.0)) * (0.95 + 0.08 * fine2); sh = (0.42 + 0.8 * dif) * ao;',
-    '    float crest = smoothstep(0.9, 0.99, du); col = mix(col, vec3(1.0, 0.92, 0.74), crest * 0.5);',
+    '    col = mix(vec3(0.86, 0.6, 0.36), vec3(0.99, 0.85, 0.6), clamp(h * 4.5, 0.0, 1.0)) * (0.95 + 0.08 * fine2); sh = (0.6 + 0.6 * dif) * ao;',
+    '    float crest = smoothstep(0.8, 0.97, du); col = mix(col, vec3(1.0, 0.93, 0.78), crest * 0.35);',
     '    float rip = 0.5 + 0.5 * sin(p.x * 120.0 + p.y * 40.0 + fbm3(p * 2.0) * 9.0); col *= 0.97 + 0.04 * rip * smoothstep(0.2, 0.6, du);',
     '    float mesa = smoothstep(0.66, 0.7, terr(p * 0.6)); float mstr = 0.9 + 0.1 * sin(h * 70.0 + fine * 2.0);',
     '    col = mix(col, vec3(0.74, 0.42, 0.28) * (0.85 + 0.3 * fine) * mstr, mesa);',
-    '    vec2 rk = vor(p * 4.0, 0.0); float rock = step(0.965, hsh(floor(p * 4.0) + 1.0)) * (1.0 - smoothstep(0.12, 0.17, rk.x));',
-    '    col *= 1.0 - 0.3 * step(0.965, hsh(floor(p * 4.0) + 1.0)) * (1.0 - smoothstep(0.18, 0.26, length(fract(p * 4.0) - 0.5 + L.xy * 0.06))) * (1.0 - rock);',
-    '    col = mix(col, vec3(0.5, 0.36, 0.28) * (0.8 + 0.4 * nz(p * 30.0)), rock);',
+    '    vec2 rc4 = floor(p * 4.0), rq4 = fract(p * 4.0) - (0.5 + (hsh2(rc4 + 3.0) - 0.5) * 0.4); float on4 = step(0.982, hsh(rc4 + 1.0));',   // a rare boulder: one lumpy stone with its own shadow cast away from the sun
+    '    float rr = 0.1 + 0.06 * hsh(rc4 + 9.0) + 0.02 * nz(p * 22.0); float rock = on4 * (1.0 - smoothstep(rr - 0.02, rr, length(rq4)));',
+    '    col *= 1.0 - 0.32 * on4 * (1.0 - smoothstep(rr - 0.03, rr + 0.03, length(rq4 + L.xy * 0.07))) * (1.0 - rock);',
+    '    col = mix(col, vec3(0.56, 0.4, 0.3) * (0.75 + 0.5 * clamp(0.5 - dot(rq4 / rr, L.xy) * 0.5, 0.0, 1.0)) * (0.85 + 0.3 * nz(p * 30.0)), rock);',
     '    float oz = fbm3(p * 0.5 + 11.0); float oa = smoothstep(0.76, 0.8, oz);',
     '    col = mix(col, vec3(0.55, 0.62, 0.3), oa * 0.8); col = mix(col, canopy(vec4(tr.x * oa, tr.yzw), vec3(0.12, 0.34, 0.14), vec3(0.4, 0.66, 0.26), col), oa);',
     '    col = mix(col, mix(vec3(0.16, 0.56, 0.7), vec3(0.3, 0.75, 0.8), fine), smoothstep(0.85, 0.87, oz));',
