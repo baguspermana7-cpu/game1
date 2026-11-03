@@ -305,9 +305,11 @@ for (const [cat, lvl] of CATS) {
   await tpg.evaluate("Blippi.go('hub')"); await sleep(150);
   await tpg.click('[data-act=petualangan]'); await sleep(250);
   ok(await tpg.$('[data-cat=' + cat + ']') !== null, `trip ${cat}: category card missing`);
+  // the card flies into its world first (blippi-trip-portal: a short flash, then a view transition): wait for the REBUILT level
+  // screen to settle (a level list left from an earlier step is marked, so it cannot satisfy the wait)
+  await tpg.evaluate(() => document.querySelectorAll('.tlev .tlvl').forEach(e => { e.dataset.stale = '1' }));
   await tpg.click('[data-cat=' + cat + ']');
-  // the card flies into its world first (blippi-trip-portal: a short flash, then a view transition): wait for the level screen to settle
-  await tpg.waitForSelector('.tlev.on [data-level=' + lvl + ']', { timeout: 5000 }); await sleep(450);
+  await tpg.waitForSelector('.tlev.on [data-level=' + lvl + ']:not([data-stale])', { timeout: 5000 }); await sleep(450);
   await tpg.click('[data-level=' + lvl + ']');
   for (let i = 0; i < 30 && (await tpg.evaluate("(BlippiTrip.qa()||{}).state")) !== 'play'; i++) await sleep(200);
   ok(await tpg.evaluate("(BlippiTrip.qa()||{}).state") === 'play', `trip ${cat}: run did not start`);
