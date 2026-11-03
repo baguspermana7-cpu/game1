@@ -79,3 +79,5 @@
   .tcat.tportal::after{background:linear-gradient(90deg,rgba(6,18,60,0) 22%,rgba(6,18,60,.55) 48%,rgba(6,18,60,.72)),linear-gradient(105deg,transparent 30%,rgba(255,255,255,.22) 48%,transparent 62%);background-size:100% 100%,260% 100%}
   .tcat.tportal .tcst{top:auto;right:auto;left:10px;bottom:8px;min-height:26px;padding:2px 9px;font-size:14px}
   .tcat.tportal .tcst svg{width:16px;height:16px}}
+/* a tablet held upright: the route fills the screen, so each level shows more of its world instead of half the screen empty */
+@media (min-width:700px) and (orientation:portrait){.tlvls.many{align-content:stretch;grid-auto-rows:minmax(110px,1fr)}.tlvls.many .tlvl{min-height:0}}
