@@ -282,6 +282,35 @@
         }
       }
       var bw = W * PB_BANK, zz = 18, side, yy, rm = run.reduced(), t = run.t, q
+      // depth (2026-11-03): a deeper channel in the middle, bright shallows along the banks
+      var dg = c.createLinearGradient(bw, 0, W - bw, 0)
+      dg.addColorStop(0, 'rgba(255,255,255,.28)'); dg.addColorStop(0.18, 'rgba(255,255,255,0)'); dg.addColorStop(0.5, 'rgba(20,70,130,.12)')
+      dg.addColorStop(0.82, 'rgba(255,255,255,0)'); dg.addColorStop(1, 'rgba(255,255,255,.28)')
+      c.fillStyle = dg; c.fillRect(bw, 0, W - bw * 2, H)
+      // the trees over the river: soft dappled shade drifting slower than the water
+      c.fillStyle = 'rgba(30,80,90,.08)'
+      for (q = 0; q < 5; q++) {
+        var sx = (q % 2 ? W - bw : bw) + (q % 2 ? -1 : 1) * hash(q + 600) * W * 0.22, sy = wrap(hash(q + 610) * (H + 300) + Z * G.pyu * 0.45, H + 300) - 150
+        c.beginPath(); c.ellipse(sx, sy, W * (0.14 + hash(q + 620) * 0.08), 50 + hash(q + 630) * 40, 0.3, 0, 6.3); c.fill()
+      }
+      // paper lily pads: a green disc with its notch and fold lines, some carrying a folded pink lotus (many on the lotus pond)
+      var lotus = run.lvl.id === 'kapalkertas-6', npad = lotus ? 9 : 5
+      for (q = 0; q < npad; q++) {
+        var lr = (lotus ? 16 : 13) + hash(q + 1000) * 10, lx = bw + lr + 6 + hash(q + 1001) * (W - bw * 2 - lr * 2 - 12)
+        var ly = wrap(hash(q + 1002) * (H + 120) + Z * G.pyu, H + 120) - 60, la = hash(q + 1003) * 6.3 + (rm ? 0 : Math.sin(t * 0.6 + q) * 0.12)
+        c.save(); c.translate(lx, ly); c.rotate(la)
+        c.fillStyle = 'rgba(20,60,40,.16)'; c.beginPath(); c.ellipse(3, 4, lr, lr * 0.9, 0, 0, 6.3); c.fill()
+        c.fillStyle = q % 2 ? '#7CCB6E' : '#8FD67F'
+        c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, lr, 0.35, 6.0); c.closePath(); c.fill()
+        c.strokeStyle = 'rgba(40,110,50,.35)'; c.lineWidth = 1.5
+        c.beginPath(); c.moveTo(-lr * 0.8, 0); c.lineTo(lr * 0.6, 0); c.moveTo(0, -lr * 0.8); c.lineTo(0, lr * 0.8); c.stroke()
+        if (hash(q + 1004) < (lotus ? 0.6 : 0.3)) {   // a folded paper lotus: two rings of pointed petals and a yellow heart
+          var pk, pr2 = lr * 0.55
+          for (pk = 0; pk < 6; pk++) { c.save(); c.rotate(pk * 1.047); c.fillStyle = pk % 2 ? '#FF9EC2' : '#FFC1D8'; c.beginPath(); c.moveTo(0, 0); c.lineTo(-pr2 * 0.32, -pr2 * 0.6); c.lineTo(0, -pr2); c.lineTo(pr2 * 0.32, -pr2 * 0.6); c.closePath(); c.fill(); c.restore() }
+          c.fillStyle = '#FFE07A'; c.beginPath(); c.arc(0, 0, pr2 * 0.25, 0, 6.3); c.fill()
+        }
+        c.restore()
+      }
       // reflections (2026-10-24 polish): soft clouds mirrored in the river, drifting with it a little slower
       c.fillStyle = 'rgba(255,255,255,.2)'
       for (q = 0; q < 4; q++) {
@@ -331,6 +360,22 @@
         c.lineTo(edge - dir * bw, H + zz); c.lineTo(edge - dir * bw, -zz); c.closePath(); c.fill()
         c.fillStyle = 'rgba(255,255,255,.35)'
         c.fillRect(side ? edge - 3 : edge - 1, 0, 2, H)
+        // folded paper grass along the water, little paper flowers and pebbles on the bank, all moving with the river
+        var gstep = 14, gy0 = wrap(Z * G.pyu, gstep)
+        c.fillStyle = '#5FAE52'
+        for (yy = gy0 - gstep; yy < H + gstep; yy += gstep) {
+          var gi = Math.round((Z * G.pyu - yy) / gstep) + side * 31, gh = 8 + hash(gi + 40) * 10
+          c.beginPath(); c.moveTo(edge - dir * 3, yy); c.lineTo(edge - dir * (3 + gh), yy - 4); c.lineTo(edge - dir * 3, yy + 6); c.closePath(); c.fill()
+        }
+        var fstep = 0.9 * G.pyu, fy0 = wrap(Z * G.pyu, fstep)
+        for (yy = fy0 - fstep; yy < H + fstep; yy += fstep) {
+          var fi = Math.round((Z * G.pyu - yy) / fstep) + side * 57, fxx2 = x0b + bw * (0.2 + hash(fi + 70) * 0.5)
+          if (hash(fi + 71) < 0.5) { c.fillStyle = 'rgba(120,110,95,.5)'; c.beginPath(); c.ellipse(fxx2, yy, 4 + hash(fi + 72) * 3, 3, 0.4, 0, 6.3); c.fill(); continue }
+          var fc = ['#FFFFFF', '#FFD84D', '#FF9EC2', '#9AD6FF'][Math.floor(hash(fi + 73) * 4)], fr = 4 + hash(fi + 74) * 2, pk2
+          c.fillStyle = fc
+          for (pk2 = 0; pk2 < 5; pk2++) { var aa = pk2 * 1.2566; c.beginPath(); c.arc(fxx2 + Math.cos(aa) * fr * 0.7, yy + Math.sin(aa) * fr * 0.7, fr * 0.55, 0, 6.3); c.fill() }
+          c.fillStyle = '#F2A33A'; c.beginPath(); c.arc(fxx2, yy, fr * 0.35, 0, 6.3); c.fill()
+        }
       }
       var step = 2.6 * G.pyu, p0 = wrap(Z * G.pyu, step), k2
       for (k2 = -1; p0 + k2 * step < H + step; k2++) {
