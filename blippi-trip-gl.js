@@ -159,9 +159,10 @@
     'vec4 tree(vec2 p, float sz, float dens, vec3 L){',
     '  vec2 g = p * sz, c = floor(g), f = fract(g) - 0.5; vec2 o = (hsh2(c) - 0.5) * 0.36; float r = 0.22 + 0.1 * hsh(c + 3.7);',
     '  float on = step(1.0 - dens, hsh(c + 1.3)); vec2 d = (f - o) / r; float qq = dot(d, d);',
-    '  float cov = on * (1.0 - smoothstep(0.72, 1.0, qq));',
-    '  vec3 n = normalize(vec3(d * 0.9, sqrt(max(0.0, 1.0 - qq)) + 0.15)); float lit = clamp(dot(n, L), 0.0, 1.0);',
-    '  vec2 ds = (f - o + L.xy * r * 0.7) / r; float shd = on * (1.0 - smoothstep(0.6, 1.0, dot(ds, ds)));',
+    '  float fd = smoothstep(7.0, 16.0, uS / sz);',   // crowns only a few pixels wide on a small screen: merge them into a canopy and calm light and shadow, or the wood reads as noise
+    '  float cov = on * (1.0 - smoothstep(mix(0.2, 0.72, fd), mix(1.8, 1.0, fd), qq));',
+    '  vec3 n = normalize(vec3(d * 0.9, sqrt(max(0.0, 1.0 - qq)) + 0.15)); float lit = mix(0.55, clamp(dot(n, L), 0.0, 1.0), 0.35 + 0.65 * fd);',
+    '  vec2 ds = (f - o + L.xy * r * 0.7) / r; float shd = on * (1.0 - smoothstep(0.6, 1.0, dot(ds, ds))) * (0.3 + 0.7 * fd);',
     '  return vec4(cov, lit, shd, hsh(c + 5.1)); }',
     'vec3 canopy(vec4 a, vec3 dark, vec3 light, vec3 base){ vec3 c = mix(base, base * 0.55, a.z); vec3 cc = mix(dark, light, a.y) * (0.85 + 0.3 * a.w); return mix(c, cc, a.x); }',
     // a house per cell: cover, the lit or shaded half of its pitched roof, its shadow, an id; ridge = on the ridge line
@@ -258,8 +259,12 @@
     '    vec3 warm = vec3(1.0, 0.75, 0.4), cool = vec3(0.75, 0.85, 1.0);',
     '    col += warm * (st * 0.16 + lamp * 1.4) + mix(warm, cool, hsh(wc + 1.0)) * win * 0.7 + vec3(1.0, 0.9, 0.7) * hw * 0.35 + vec3(1.0, 0.3, 0.25) * hwL * 0.5;',
     '    col += warm * city * 0.08 * fbm3(p * 1.5);',
-    '    vec2 vg = p * 9.0, vc = floor(vg), vf = fract(vg) - 0.5 - (hsh2(vc) - 0.5) * 0.6; float vil = step(0.55, hsh(vc + 3.3)) * (1.0 - city) * (1.0 - riv);',   // villages: little clusters of house lights
-    '    vec2 hg2 = vf * 7.0; vec2 hc2 = floor(hg2); float hl = step(0.55, hsh(hc2 + vc)) * (1.0 - smoothstep(0.05, 0.16, length(fract(hg2) - 0.5))) * (1.0 - smoothstep(0.25, 0.45, length(vf)));',
+    '    vec2 mp = p * 2.6 + vec2(fbm3(p * 0.7), fbm3(p * 0.7 + 3.0)) * 0.8; vec2 mc = floor(mp), mf = fract(mp);',   // moonlit fields: a faint patchwork with darker hedge lines
+    '    col *= (0.9 + 0.2 * hsh(mc + 2.0)) * (1.0 - 0.25 * (1.0 - smoothstep(0.0, 0.04, min(min(mf.x, 1.0 - mf.x), min(mf.y, 1.0 - mf.y)))) * (1.0 - city));',
+    '    vec2 vg = p * 6.0, vc = floor(vg), vf = fract(vg) - 0.5 - (hsh2(vc) - 0.5) * 0.5;',   // villages: rare irregular clusters of house lights, more of them where the land is settled
+    '    float vil = step(0.78 - 0.25 * smoothstep(0.35, 0.6, fbm3(p * 0.5 + 4.0)), hsh(vc + 3.3)) * (1.0 - city) * (1.0 - riv);',
+    '    vec2 hg2 = vf * 8.0; vec2 hc2 = floor(hg2); vec2 hq = fract(hg2) - 0.5 - (hsh2(hc2 + vc * 7.0) - 0.5) * 0.6;',
+    '    float hl = step(0.62, hsh(hc2 + vc)) * (1.0 - smoothstep(0.04, 0.11, length(hq))) * (1.0 - smoothstep(0.12, 0.4, length(vf) + 0.12 * nz(vf * 6.0 + vc)));',
     '    col += mix(warm, vec3(1.0, 0.95, 0.8), hsh(hc2 + vc + 1.0)) * hl * vil * 1.2;',
     '    col += warm * vil * 0.06 * (1.0 - smoothstep(0.1, 0.45, length(vf)));',                                                    // the city's glow
     '    col += warm * riv * city * 0.25 * smoothstep(0.6, 0.9, nz(vec2(p.x * 40.0, p.y * 4.0)));',      // lights rippling in the river
