@@ -639,11 +639,12 @@
     function draw (c, dt) {
       geo()
       if (SK) SK.bg(c, run, Z, G); else if (water) drawBgWater(c); else drawBgSpace(c)
-      drawLanes(c)
+      var still = !!run.still   // a still for the landing screens (tools/make-trip-previews): the world and the vehicle only
+      if (!still) drawLanes(c)
       var W = run.W
       var H = run.H
       var i
-      for (i = 0; i < ents.length; i++) {
+      for (i = 0; i < (still ? 0 : ents.length); i++) {
         var e = ents[i]
         if (e.st === 2) continue
         var d = e.z - Z
@@ -662,15 +663,13 @@
         else drawObs(c, e, ex, ey, sz, 1, Math.sin(run.t * 1.6 + e.ph) * 0.06)
       }
       var gl = gateZ.concat([run.len])
-      for (i = 0; i < gl.length; i++) drawGate(c, gl[i], i === gl.length - 1)
+      for (i = 0; i < (still ? 0 : gl.length); i++) drawGate(c, gl[i], i === gl.length - 1)
       if (space) drawIntroOutro(c)
       else if (SK && SK.ends) SK.ends(c, run, G)
-      drawRivals(c)
-      exhaust(c)
-      drawPlayer(c)
+      if (!still) { drawRivals(c); exhaust(c); drawPlayer(c) }
       if (rich && rich.fg) rich.fg(c, Z, G, px)
       if (SK && SK.fg) SK.fg(c, run, Z, G)   // a skin's layer over the plane (BALAP PESAWAT: wisps rushing past)
-      if (drift.on && !drift.spent) run.meterBar(c, drift, px * run.W, G.py - G.ps * 0.98, G.ps)
+      if (!still && drift.on && !drift.spent) run.meterBar(c, drift, px * run.W, G.py - G.ps * 0.98, G.ps)
       if (run.boostT > 0 && !run.reduced()) {
         c.strokeStyle = 'rgba(255,255,255,.35)'
         c.lineWidth = 3

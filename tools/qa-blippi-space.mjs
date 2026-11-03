@@ -43,9 +43,10 @@ for (const [w, h] of [[1280, 800], [844, 390]]) {
   ok(await p.evaluate(() => BlippiTrip.craft().id) === last, `${w}: the choice did not survive a reload`)
   // the category screen: the space tile shows the chosen craft moving, and no craft-bar style leaks onto the tiles' text
   // (2026-10-14: the bar's .tctx rules painted every tile title pale yellow on its pale tile)
+  // since 2026-11-03 a tile is a window into its world (blippi-trip-portal): its title is white over the world's scrim, a plain tile keeps its ink
   await p.evaluate(() => BlippiTrip.open()); await sleep(500)
   ok(await p.evaluate(id => { const e = document.querySelector('.tcat[data-cat=angkasa] .tanim'); return !!e && getComputedStyle(e).backgroundImage.includes(id) }, last), `${w}: the space tile does not show the chosen craft`)
-  const ink = await p.evaluate(() => [...document.querySelectorAll('.tcat')].map(t => { const c = document.createElement('i'); c.style.color = t.style.getPropertyValue('--ink'); document.body.appendChild(c); const want = getComputedStyle(c).color; c.remove(); return [t.getAttribute('data-cat'), getComputedStyle(t.querySelector('.tctx b')).color, want] }))
+  const ink = await p.evaluate(() => [...document.querySelectorAll('.tcat')].map(t => { const c = document.createElement('i'); c.style.color = t.style.getPropertyValue('--ink'); document.body.appendChild(c); const portal = t.classList.contains('tportal') && /url\(/.test(t.style.getPropertyValue('--pv')); const want = portal ? 'rgb(255, 255, 255)' : getComputedStyle(c).color; c.remove(); return [t.getAttribute('data-cat'), getComputedStyle(t.querySelector('.tctx b')).color, want] }))
   ink.forEach(([cat, got, want]) => ok(got === want, `${w}: ${cat} tile title is ${got}, its ink is ${want}`))
   await p.evaluate(() => { BlippiTrip.open('angkasa'); BlippiTrip.start('angkasa-1', { seed: 3 }) })
   await p.waitForFunction(() => BlippiTrip.qa() && BlippiTrip.qa().state === 'play', { timeout: 30000 })

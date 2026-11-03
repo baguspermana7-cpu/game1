@@ -964,6 +964,8 @@
     running: function () { return !!run },
     // QA seam: jump the run to a progress (0..1) so a gate can look at the opening and the arrival
     qaSeek: function (p) { if (run) run.progress = clamp(p, 0, 0.999) },
+    // QA seam: draw only the world and the vehicle (no items, gates or meter), for the landing previews
+    qaStill: function (on) { if (run) run.still = !!on },
     // QA seam: read-only snapshot for the gate
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,

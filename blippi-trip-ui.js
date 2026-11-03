@@ -132,10 +132,13 @@
     T.stop()
     build()
     $.pick.innerHTML = ''
+    var PT = T.portal
+    if (PT) PT.world($.pick, D.cats.map(function (c) { var l = PT.cur(c.id); return l ? PT.pv(l.id) : null }))
     header($.pick, 'PETUALANGAN KENDARAAN', close, 'Pilih tempat bermain')
     var grid = el('div', 'tcats', $.pick)
-    D.cats.forEach(function (c) {
-      var b = btn('tcat', grid, c.name, function () { showLevels(c.id) })
+    D.cats.forEach(function (c, ci) {
+      var b = btn('tcat', grid, c.name, function () { if (PT) PT.go(b, function () { showLevels(c.id) }); else showLevels(c.id) })
+      if (PT) PT.card(b, c.id, ci)
       b.setAttribute('data-cat', c.id)
       if (c.wide) b.classList.add('wide')   // an odd last arena spans its row, so the grid stays aligned (3 + 3 + 1)
       b.style.setProperty('--tint', c.tint)
@@ -201,6 +204,8 @@
     curCat = catId
     var cat = D.cats.filter(function (c) { return c.id === catId })[0]
     $.lev.innerHTML = ''
+    var PT = T.portal, curL = PT ? PT.cur(catId) : null
+    if (PT) PT.world($.lev, [curL ? PT.pv(curL.id) : null])
     $.lev.style.setProperty('--tint', cat.tint)
     $.lev.style.setProperty('--ink', cat.ink)
     header($.lev, cat.name, showPick, cat.ctl)
@@ -216,6 +221,7 @@
       })
       b.setAttribute('data-level', l.id)
       b.setAttribute('aria-disabled', open ? 'false' : 'true')
+      if (PT) PT.level(b, l, i, open && curL && curL.id === l.id)
       b.style.setProperty('--hue', String(i * 22))
       var num = el('span', 'tnum', b, String(i + 1))
       void num
@@ -256,6 +262,7 @@
   }
 
   function swap (scr) {
+    if (scr === $.run && T.portal) T.portal.stop()
     ;[$.pick, $.lev, $.run].forEach(function (s) { s.classList.toggle('on', s === scr) })
   }
 

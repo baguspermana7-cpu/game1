@@ -112,8 +112,15 @@ async function textCheck(p, label, rootSel = '#stage .scr.on, #stage .scrim') {
         }
         const r0 = rects[0], r1 = rects[rects.length - 1];
         const pts = [[r0.left + 2, r0.top + r0.height / 2], [(bb.left + bb.right) / 2, r0.top + r0.height / 2], [r1.right - 2, r1.top + r1.height / 2]];
+        // the same fold as above: a point a scrolling list hides (below or above its visible box) is reached by scrolling, not covered
+        let fold = null;
+        for (let a = el.parentElement; a && a.id !== 'stage' && a.id !== 'trip' && a.id !== 'race'; a = a.parentElement) {
+          const acs = getComputedStyle(a);
+          if (/(auto|scroll)/.test(acs.overflowY) && a.scrollHeight > a.clientHeight + 1) { fold = a.getBoundingClientRect(); break; }
+        }
         for (const [x, y] of pts) {
           if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) continue;
+          if (fold && (y < fold.top || y > fold.bottom)) continue;
           const top = document.elementsFromPoint(x, y)[0];
           if (top && top !== el && !el.contains(top) && !top.contains(el)) { out.push('covered ' + name + ' by ' + (typeof top.className === 'string' ? top.className : top.tagName)); break; }
         }
@@ -298,7 +305,9 @@ for (const [cat, lvl] of CATS) {
   await tpg.evaluate("Blippi.go('hub')"); await sleep(150);
   await tpg.click('[data-act=petualangan]'); await sleep(250);
   ok(await tpg.$('[data-cat=' + cat + ']') !== null, `trip ${cat}: category card missing`);
-  await tpg.click('[data-cat=' + cat + ']'); await sleep(250);
+  await tpg.click('[data-cat=' + cat + ']');
+  // the card flies into its world first (blippi-trip-portal: a short flash, then a view transition): wait for the level screen to settle
+  await tpg.waitForSelector('.tlev.on [data-level=' + lvl + ']', { timeout: 5000 }); await sleep(450);
   await tpg.click('[data-level=' + lvl + ']');
   for (let i = 0; i < 30 && (await tpg.evaluate("(BlippiTrip.qa()||{}).state")) !== 'play'; i++) await sleep(200);
   ok(await tpg.evaluate("(BlippiTrip.qa()||{}).state") === 'play', `trip ${cat}: run did not start`);
