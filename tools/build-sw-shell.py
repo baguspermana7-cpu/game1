@@ -41,7 +41,7 @@ for f in sorted(glob.glob(os.path.join(ROOT, 'data', '*.js'))): files.append('./
 files.append('./vendor/parallax-js/3.1.0/parallax.min.js' + vq)
 files += ['../Dunia-Emosi/games/data/save-engine.js' + vq, '../Dunia-Emosi/games/data/soal-engine.js' + vq, '../Dunia-Emosi/games/data/soal-gen-matematika.js' + vq,
           '../Dunia-Emosi/assets/apple-touch-icon.png', '../Dunia-Emosi/assets/favicon-32.png']
-for f in sorted(glob.glob(os.path.join(ROOT, 'assets', 'blippi', '*.webp')) + glob.glob(os.path.join(ROOT, 'assets', 'vfx', '*.webp'))):
+for f in sorted(glob.glob(os.path.join(ROOT, 'assets', 'blippi', '*.webp')) + glob.glob(os.path.join(ROOT, 'assets', 'blippi', 'trip', '*.webp')) + glob.glob(os.path.join(ROOT, 'assets', 'vfx', '*.webp'))):
     files.append('./' + os.path.relpath(f, ROOT))
 for f in sorted(glob.glob(os.path.join(ROOT, 'assets', 'race', '*', '*.webp')) + glob.glob(os.path.join(ROOT, 'assets', 'arena', '*.webp'))):
     files.append('./' + os.path.relpath(f, ROOT))
