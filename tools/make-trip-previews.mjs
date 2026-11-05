@@ -11,7 +11,7 @@ mkdirSync(OUT, { recursive: true })
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output', '--use-angle=gl', '--enable-gpu', '--ignore-gpu-blocklist'] })
 const p = await b.newPage(); await p.setBypassServiceWorker(true)
 const errs = []; p.on('pageerror', e => errs.push(e.message))
-await p.setViewport({ width: 420, height: 600, deviceScaleFactor: 1, isMobile: true, hasTouch: true })
+await p.setViewport({ width: 420, height: 600, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
 await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); await sleep(1500)
 let fail = 0
 const ids = process.argv[2] ? process.argv[2].split(',') : await p.evaluate(() => BlippiTrip.D.levels.filter(l => !BlippiTrip.laneCat(l.cat)).map(l => l.id))
@@ -24,7 +24,7 @@ for (const id of ids) {
   const png = `${OUT}${id}.png`
   await p.screenshot({ path: png })
   await p.evaluate(() => { const s = [...document.querySelectorAll('style')].pop(); s.remove(); BlippiTrip.stop() })
-  execFileSync('python3', ['-c', `from PIL import Image; im=Image.open('${png}').convert('RGB').resize((300,428), Image.LANCZOS); im.save('${OUT}${id}.webp', quality=70, method=6)`])
+  execFileSync('python3', ['-c', `from PIL import Image; im=Image.open('${png}').convert('RGB').resize((480,686), Image.LANCZOS); im.save('${OUT}${id}.webp', quality=62, method=6)`])
   execFileSync('rm', [png])
   console.log(id)
 }

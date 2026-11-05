@@ -464,12 +464,12 @@
     else run.slowFrames = Math.max(0, run.slowFrames - 1)
     // a single late frame only sets the count back a little (a reset on every one kept a heavier road blurry for good)
     run.fastFrames = raw < 0.02 ? run.fastFrames + 1 : Math.max(0, run.fastFrames - 4)
-    if (run.slowFrames > 40 && run.scale > 0.61) {
+    if (!run.still && run.slowFrames > 40 && run.scale > 0.61) {
       run.scale = Math.max(0.6, run.scale - 0.15); run.slowFrames = 0; run.fastFrames = 0
       if (run.raisedAt && run.t - run.raisedAt < 4) run.raiseNeed *= 2
       resize()
     }
-    if (run.fastFrames > run.raiseNeed && run.scale < 0.79) { run.scale = Math.min(0.8, run.scale + 0.15); run.fastFrames = 0; run.raisedAt = run.t; resize() }
+    if (!run.still && run.fastFrames > run.raiseNeed && run.scale < 0.79) { run.scale = Math.min(0.8, run.scale + 0.15); run.fastFrames = 0; run.raisedAt = run.t; resize() }
     run.dts.push(dt)
     if (run.dts.length > 240) run.dts.shift()
     var w0 = w.performance.now()
@@ -965,7 +965,7 @@
     // QA seam: jump the run to a progress (0..1) so a gate can look at the opening and the arrival
     qaSeek: function (p) { if (run) run.progress = clamp(p, 0, 0.999) },
     // QA seam: draw only the world and the vehicle (no items, gates or meter), for the landing previews
-    qaStill: function (on) { if (run) run.still = !!on },
+    qaStill: function (on) { if (!run) return; run.still = !!on; if (on) { run.scale = 1; resize() } },   // full resolution, held: the still is a picture, not a frame budget
     // QA seam: read-only snapshot for the gate
     qa: function () {
       return run ? { state: run.state, progress: run.progress, stars: run.stars, bumps: run.bumps, mul: run.mul, scale: run.scale, W: run.W, H: run.H,
