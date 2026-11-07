@@ -51,6 +51,22 @@ for (const [W, H] of [[390, 844], [844, 390], [1180, 820]]) {
   }))
   const bad = clash.filter(c => overlap(c.b, c.st) || overlap(c.em, c.st))
   ok(!bad.length, `${tag}: words collide with the star chip on ${bad.map(c => c.id).join(', ')}`)
+  // 4b. cards in one row read as one row: same title line, one-line titles, same picture height (2026-11-07 polish)
+  const rows = await p.evaluate(() => {
+    const out = {}
+    for (const c of document.querySelectorAll('.tpick .tcats .tcat')) {
+      const q = c.getBoundingClientRect(), b = c.querySelector('.tctx b').getBoundingClientRect(), ic = c.querySelector('.tcicon').getBoundingClientRect()
+      const k = Math.round(q.top); (out[k] = out[k] || []).push({ id: c.dataset.cat, bt: b.top - q.top, bh: b.height, lh: parseFloat(getComputedStyle(c.querySelector('.tctx b')).lineHeight) || b.height, ih: ic.height })
+    }
+    return Object.values(out)
+  })
+  for (const r of rows) {
+    if (r.length < 2) continue
+    const spread = k => Math.max(...r.map(c => c[k])) - Math.min(...r.map(c => c[k]))
+    ok(spread('bt') <= 3, `${tag}: titles in a row are ragged by ${spread('bt').toFixed(0)} px (${r.map(c => c.id + ':' + c.bt.toFixed(0)).join(' ')})`)
+    ok(spread('ih') <= 3, `${tag}: pictures in a row differ by ${spread('ih').toFixed(0)} px (${r.map(c => c.id + ':' + c.ih.toFixed(0)).join(' ')})`)
+    ok(r.every(c => c.bh < c.lh * 1.6), `${tag}: a title wraps to two lines (${r.filter(c => c.bh >= c.lh * 1.6).map(c => c.id).join(' ')})`)
+  }
   for (const cat of ['udara', 'air', 'balap']) {
     await p.evaluate(c => document.querySelector(`.tcat[data-cat=${c}]`).click(), cat)
     let shown = false
