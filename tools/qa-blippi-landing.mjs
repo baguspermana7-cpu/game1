@@ -133,6 +133,43 @@ for (const [W, H] of [[390, 844], [844, 390], [1180, 820]]) {
   ok(run === 0, `reduced motion: ${run} drift / bob / particle animations still run`)
   await p.close()
 }
+// 8. a phone on its side shows the route as one row of whole postcards that slides sideways; on every screen the next
+//    level (MAIN!) is in view when the route opens, even far down a 12-level route (2026-11-07 polish)
+for (const [W, H] of [[844, 390], [667, 375], [390, 844]]) {
+  const tag = `${W}x${H}`
+  const p = await page(W, H)
+  await p.evaluate(() => Blippi.commit(s => { s.trip = s.trip || { lv: {}, rw: {} }; s.trip.lv = s.trip.lv || {}; for (let i = 1; i <= 8; i++) s.trip.lv['balap-' + i] = { stars: 2, best: 2, n: 1 } }))
+  for (const cat of ['udara', 'balap']) {
+    await p.evaluate(() => BlippiTrip.open()); await sleep(700)
+    await p.evaluate(c => document.querySelector(`.tcat[data-cat=${c}]`).click(), cat)
+    await p.waitForSelector('.tlev.on .tlvl', { timeout: 5000 }).catch(() => {})
+    await sleep(400)
+    await p.waitForFunction(() => !document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity), { timeout: 5000 }).catch(() => {})
+    const g = await p.evaluate(() => {
+      const grid = document.querySelector('.tlev.on .tlvls'), gr = grid.getBoundingClientRect()
+      const cards = [...grid.querySelectorAll('.tlvl')].map(c => { const r = c.getBoundingClientRect(), n = c.querySelector('.tnum'); return { t: r.top, b: r.bottom, l: r.left, r: r.right, nt: n ? n.getBoundingClientRect().top : r.top, cur: c.classList.contains('tcur') } })
+      return { gt: gr.top, gb: gr.bottom, gl: gr.left, gr: gr.right, sw: grid.scrollWidth, cw: grid.clientWidth, cards, H: innerHeight }
+    })
+    const bar = await p.evaluate(() => { const r = s => { const e = document.querySelector('.tlev.on .tcbar ' + s); if (!e) return null; if (s === '.tcgo') return e.getBoundingClientRect().toJSON(); const g = document.createRange(); g.selectNodeContents(e); return g.getBoundingClientRect().toJSON() }; return { name: r('.tctx b'), kind: r('.tctx em'), btn: r('.tcgo') } })
+    ok(bar.btn && !overlap(bar.name, bar.btn) && !overlap(bar.kind, bar.btn), `${tag} ${cat}: the vehicle name runs under its GANTI button ${JSON.stringify(bar)}`)
+    const cur = g.cards.find(c => c.cur)
+    ok(cur && cur.l >= g.gl - 1 && cur.r <= g.gr + 1 && cur.t >= g.gt - 1 && cur.b <= g.gb + 1, `${tag} ${cat}: the MAIN! level is not fully in view when the route opens ${JSON.stringify(cur)} in ${g.gl},${g.gt}-${g.gr},${g.gb}`)
+    if (W > H) {
+      const tops = g.cards.map(c => c.t)
+      ok(Math.max(...tops) - Math.min(...tops) <= 1, `${tag} ${cat}: the route is not one row (tops ${Math.min(...tops).toFixed(0)}..${Math.max(...tops).toFixed(0)})`)
+      ok(g.cards.every(c => c.b <= g.H + 1 && c.t >= g.gt - 1), `${tag} ${cat}: a postcard is cut top or bottom`)
+      ok(g.cards.every(c => c.nt >= g.gt - 1), `${tag} ${cat}: a number badge is clipped by the strip`)
+      ok(g.sw > g.cw + 20, `${tag} ${cat}: the strip does not slide sideways (${g.sw} vs ${g.cw})`)
+      const end = await p.evaluate(async () => {
+        const grid = document.querySelector('.tlev.on .tlvls'); grid.scrollLeft = grid.scrollWidth; await new Promise(r => setTimeout(r, 300))
+        const gr = grid.getBoundingClientRect(), c = [...grid.querySelectorAll('.tlvl')].pop().getBoundingClientRect(), t = c && grid.querySelector('.tlvl:last-child .tltx b').getBoundingClientRect()
+        return { in: c.left >= gr.left - 1 && c.right <= gr.right + 1, tx: t.left >= gr.left - 1 && t.right <= gr.right + 1 }
+      })
+      ok(end.in && end.tx, `${tag} ${cat}: slid to the end, the last postcard is not whole ${JSON.stringify(end)}`)
+    }
+  }
+  await p.close()
+}
 ok(!errs.length, 'page errors: ' + errs.slice(0, 3).join(' | '))
 await b.close()
 console.log(`qa-blippi-landing: ${pass}/${pass + fail} checks passed`)

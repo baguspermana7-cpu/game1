@@ -108,6 +108,8 @@ async function textCheck(p, label, rootSel = '#stage .scr.on, #stage .scrim') {
           // a list that scrolls (8-12 levels, 8 arenas on a phone): text above or below its fold is reached by scrolling,
           // so only a sideways cut counts there (2026-10-24)
           if (/(auto|scroll)/.test(acs.overflowY) && a.scrollHeight > a.clientHeight + 1 && bb.left >= ar.left - 1 && bb.right <= ar.right + 1) continue
+          // the same for a strip that slides sideways (a phone on its side, 2026-11-07): left or right of its fold is reached by sliding
+          if (/(auto|scroll)/.test(acs.overflowX) && a.scrollWidth > a.clientWidth + 1 && bb.top >= ar.top - 1 && bb.bottom <= ar.bottom + 1) continue
           if (bb.left < ar.left - 1 || bb.right > ar.right + 1 || bb.top < ar.top - 1 || bb.bottom > ar.bottom + 1 || !inRound(bb, ar, acs)) { out.push('clipped ' + name + ' by ' + (a.className || a.tagName)); break; }
         }
         const r0 = rects[0], r1 = rects[rects.length - 1];
@@ -116,11 +118,11 @@ async function textCheck(p, label, rootSel = '#stage .scr.on, #stage .scrim') {
         let fold = null;
         for (let a = el.parentElement; a && a.id !== 'stage' && a.id !== 'trip' && a.id !== 'race'; a = a.parentElement) {
           const acs = getComputedStyle(a);
-          if (/(auto|scroll)/.test(acs.overflowY) && a.scrollHeight > a.clientHeight + 1) { fold = a.getBoundingClientRect(); break; }
+          if ((/(auto|scroll)/.test(acs.overflowY) && a.scrollHeight > a.clientHeight + 1) || (/(auto|scroll)/.test(acs.overflowX) && a.scrollWidth > a.clientWidth + 1)) { fold = a.getBoundingClientRect(); break; }
         }
         for (const [x, y] of pts) {
           if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) continue;
-          if (fold && (y < fold.top || y > fold.bottom)) continue;
+          if (fold && (y < fold.top || y > fold.bottom || x < fold.left || x > fold.right)) continue;
           const top = document.elementsFromPoint(x, y)[0];
           if (top && top !== el && !el.contains(top) && !top.contains(el)) { out.push('covered ' + name + ' by ' + (typeof top.className === 'string' ? top.className : top.tagName)); break; }
         }

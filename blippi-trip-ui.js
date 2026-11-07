@@ -190,7 +190,8 @@
     el('em', '', tx, wd[0])
     el('b', '', tx, cr.name)
     var go = btn('tobtn blue tcgo', bar, 'Ganti ' + wd[1], function () { craftPicker(cat) })
-    go.textContent = 'GANTI ' + wd[1].toUpperCase()
+    go.textContent = 'GANTI'
+    el('span', 'tcgow', go, ' ' + wd[1].toUpperCase())   // the noun folds away on a narrow phone; aria-label keeps it
     go.setAttribute('data-act', 'ganti-' + wd[1].replace(/ /g, '-'))
   }
   function craftPicker (cat) {

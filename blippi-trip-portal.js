@@ -86,7 +86,17 @@
       go.textContent = 'MAIN!'
       go.setAttribute('aria-hidden', 'true')
       b.appendChild(go)
+      w.requestAnimationFrame(function () { w.requestAnimationFrame(function () { reveal(b) }) })
     }
+  }
+  // the next level is in view when the route opens: a long route scrolls to it, down on a phone, sideways on its side
+  function reveal (b) {
+    var g = b.parentNode
+    if (!g || !g.isConnected) return
+    var x = b.offsetParent === g ? b.offsetLeft : b.offsetLeft - g.offsetLeft
+    var y = b.offsetParent === g ? b.offsetTop : b.offsetTop - g.offsetTop
+    if (g.scrollWidth > g.clientWidth + 1) g.scrollLeft = Math.max(0, x - (g.clientWidth - b.offsetWidth) / 2)
+    if (g.scrollHeight > g.clientHeight + 1) g.scrollTop = Math.max(0, y - (g.clientHeight - b.offsetHeight) / 2)
   }
   // the tap: the card lights up with a burst, then the screen flies into its world
   function go (b, then) {

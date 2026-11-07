@@ -31,10 +31,14 @@ for (const [w, h] of [[844, 390], [390, 844], [1280, 800]]) {
   await p.evaluate(() => BlippiTrip.open('balap')); await sleep(700)
   const lg = await p.evaluate(async () => {
     const grid = document.querySelector('.tlvls'), cards = [...document.querySelectorAll('.tlvl')]
-    grid.scrollTop = grid.scrollHeight; await new Promise(r => setTimeout(r, 150))
+    // a phone on its side slides the route sideways (2026-11-07): whole cards top to bottom, the last one whole at the end
+    const side = grid.scrollWidth > grid.clientWidth + 2
+    grid.scrollTop = grid.scrollHeight; grid.scrollLeft = grid.scrollWidth; await new Promise(r => setTimeout(r, 150))
     const gr = grid.getBoundingClientRect(), last = cards[cards.length - 1].getBoundingClientRect()
     const rects = cards.map(e => e.getBoundingClientRect())
-    return { n: cards.length, many: grid.classList.contains('many'), inX: rects.every(r => r.left >= -1 && r.right <= innerWidth + 1 && r.width > 80), lastIn: last.bottom <= innerHeight + 1 && last.bottom <= gr.bottom + 2, cols: new Set(rects.map(r => Math.round(r.left))).size, scrolls: grid.scrollHeight > grid.clientHeight + 2 }
+    const inX = side ? rects.every(r => r.width > 80 && r.top >= gr.top - 1 && r.bottom <= innerHeight + 1) : rects.every(r => r.left >= -1 && r.right <= innerWidth + 1 && r.width > 80)
+    const lastIn = last.bottom <= innerHeight + 1 && last.bottom <= gr.bottom + 2 && (!side || (last.left >= gr.left - 1 && last.right <= gr.right + 1))
+    return { n: cards.length, many: grid.classList.contains('many'), inX, lastIn, cols: new Set(rects.map(r => Math.round(r.left))).size, scrolls: side ? 'sideways' : grid.scrollHeight > grid.clientHeight + 2 }
   })
   ok(lg.n === 12 && lg.many && lg.inX && lg.lastIn, `${tag}: level picker shows 12 levels, ${lg.cols} column(s), none cut sideways, the last reachable (scrolls ${lg.scrolls})`)
   const list = w === 390 ? LVLS : w === 1280 ? ['balap-1', 'balap-4', 'balap-8', 'balap-12'] : ['balap-1', 'balap-12']
