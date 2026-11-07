@@ -5,11 +5,16 @@
 //   3. exactly one level per journey is marked MAIN!: the first open level without a star
 //   4. a card's words do not collide with its star chip, and a level's number badge is not clipped
 //   5. a tap on a journey opens its levels; reduced motion stops the drift, bob and particles; no page error
+//   6. postcards (FigCraft mockup 2026-11-07): the child's vehicle shows on the next level only, a locked level keeps its
+//      world in full colour behind a lock coin, the vehicle bar is a slim pill
+//   7. a phone held upright opens with LANJUT: the next level of the journey played last, one tap starts it; hidden on a
+//      wide screen
 // Server: ~/rz-work on port 8090.   node tools/qa-blippi-landing.mjs
 import puppeteer from 'puppeteer'
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 let pass = 0, fail = 0
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  ✗', m) } }
+const BASE = process.env.BASE || 'http://localhost:8090/game1/'
 const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--mute-audio', '--disable-audio-output'] })
 const errs = []
 async function page (W, H, reduced) {
@@ -17,7 +22,7 @@ async function page (W, H, reduced) {
   p.on('pageerror', e => errs.push(String(e)))
   await p.setViewport({ width: W, height: H, isMobile: true, hasTouch: true })
   if (reduced) await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
-  await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); await sleep(800)
+  await p.goto(BASE, { waitUntil: 'load' }); await sleep(800)
   await p.evaluate(() => BlippiTrip.open()); await sleep(900)
   return p
 }
@@ -65,11 +70,46 @@ for (const [W, H] of [[390, 844], [844, 390], [1180, 820]]) {
       return y < 0 || (hit && n.contains(hit))
     }))
     ok(clip.every(Boolean), `${tag} ${cat}: a level number badge is clipped or covered (${JSON.stringify(clip)})`)
+    const pc = await p.evaluate(() => [...document.querySelectorAll('.tlev .tlvl')].map(c => {
+      const pic = c.querySelector('.tlpic'), lk = c.querySelector('.tlock')
+      const r = c.getBoundingClientRect(), q = lk && lk.getBoundingClientRect()
+      return { cur: c.classList.contains('tcur'), locked: c.classList.contains('lk'), veh: !!pic && getComputedStyle(pic).display !== 'none' && pic.getBoundingClientRect().height > 20,
+        filter: getComputedStyle(c).filter, coin: !q || (q.left > r.left + r.width * 0.25 && q.right < r.right - r.width * 0.25 && q.width >= 48) }
+    }))
+    ok(pc.filter(c => c.veh).length === 1 && pc.find(c => c.veh).cur, `${tag} ${cat}: the vehicle shows on ${pc.filter(c => c.veh).length} cards, want the next level only`)
+    ok(pc.filter(c => c.locked).every(c => c.filter === 'none' && c.coin), `${tag} ${cat}: a locked level is greyed or its lock is not a centred coin`)
+    const bar = await p.evaluate(() => { const e = document.querySelector('.tlev .tcbar'); return e ? e.getBoundingClientRect().height : 0 })
+    ok(bar > 0 && bar <= 84, `${tag} ${cat}: the vehicle bar is ${Math.round(bar)} px tall, want a slim pill <= 84`)
     const lwd = await p.evaluate(() => { const i = document.querySelector('.tlev .tworld i.on'); return i ? i.style.backgroundImage : '' })
     ok(/url\(/.test(lwd), `${tag} ${cat}: no world drifting behind the levels`)
     await p.evaluate(() => document.querySelector('.tlev .thead .tcirc').click()); await sleep(500)
   }
+  const lj = await p.evaluate(() => { const e = document.querySelector('.tpick .tlanjut'); return e ? getComputedStyle(e).display : 'missing' })
+  ok(W < 700 ? lj !== 'none' && lj !== 'missing' : lj === 'none' || lj === 'missing', `${tag}: LANJUT is ${lj} at this width`)
   await p.close()
+}
+{
+  // LANJUT follows the journey played last, and one tap starts its next level
+  const p = await page(390, 844)
+  await p.evaluate(() => { document.querySelector('.tcat[data-cat=udara]').click() })
+  await p.waitForSelector('.tlev.on .tlvl[data-level="udara-1"]', { timeout: 5000 }).catch(() => {})
+  await sleep(600)
+  await p.evaluate(() => document.querySelector('.tlev.on .tlvl[data-level="udara-1"]').click())
+  await sleep(1500)
+  const last = await p.evaluate(() => (Blippi.state().trip || {}).last)
+  ok(last === 'udara', `starting an UDARA level did not remember the journey (last=${last})`)
+  await p.evaluate(() => Blippi.save && Blippi.save()); await sleep(500)
+  await p.close()
+  const q = await page(390, 844)
+  const hero = await q.evaluate(() => { const e = document.querySelector('.tpick .tlanjut'); return e ? { id: e.dataset.resume, pv: /url\(/.test(e.style.getPropertyValue('--pv')) } : null })
+  ok(hero && /^udara-/.test(hero.id) && hero.pv, `LANJUT does not lead to the journey played last: ${JSON.stringify(hero)}`)
+  if (hero) {
+    await q.evaluate(() => document.querySelector('.tpick .tlanjut').click())
+    let run = false
+    for (let i = 0; i < 40 && !run; i++) { await sleep(100); run = await q.evaluate(() => !!document.querySelector('.tscr.on canvas, .trun.on, canvas.tcv')) }
+    ok(run, 'a tap on LANJUT did not start the level')
+  }
+  await q.close()
 }
 {
   const p = await page(390, 844, true)

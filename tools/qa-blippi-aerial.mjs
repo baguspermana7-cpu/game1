@@ -20,12 +20,13 @@ for (const [w, h] of [[844, 390], [390, 844], [1280, 800]]) {
   await p.setViewport({ width: w, height: h, isMobile: w < 900, hasTouch: w < 900 })
   await p.goto('http://localhost:8090/game1/', { waitUntil: 'load' }); await sleep(1200)
   await p.evaluate(() => BlippiTrip.open()); await sleep(900)
+  await p.waitForFunction(() => !document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity), { timeout: 8000 }).catch(() => {})   // the cards' staggered entrance has settled (under load it outlasts the sleep)
   const g = await p.evaluate(() => [...document.querySelectorAll('.tcat')].map(e => { const r = e.getBoundingClientRect(); return { id: e.dataset.cat, t: Math.round(r.top), b: r.bottom, r: r.right, w: Math.round(r.width) } }))
   const rows = new Set(g.map(x => x.t)).size, wide = g.find(x => x.id === 'balap')
-  // 8 arenas since MOBIL KERTAS (2026-10-19): two full rows of four, every card the same width; a phone scrolls one column
+  // 8 arenas since MOBIL KERTAS (2026-10-19): two full rows of four, every card the same width; a phone scrolls two columns of postcards
   ok(g.length === 8 && g.every(x => x.r <= w + 1) && (w <= 640 || g.every(x => x.b <= h + 1)), `${tag}: 8 arena cards, ${w > 640 ? 'all on screen' : 'none cut sideways'}`)
   if (w > 640) ok(rows === 2 && wide && Math.abs(wide.w - g[0].w) < 4, `${tag}: two aligned rows of four, equal cards (${rows} rows, ${wide && wide.w} vs ${g[0].w})`)
-  else ok(rows === 8, `${tag}: one column on a phone (${rows} rows)`)
+  else ok(rows === 4 && g.every(x => Math.abs(x.w - g[0].w) < 4), `${tag}: two columns of postcards on a phone (${rows} rows; FigCraft mockup 2026-11-07)`)
   // the level picker with 12 levels: every card on the grid, nothing cut off sideways, the last card reachable by scrolling
   await p.evaluate(() => BlippiTrip.open('balap')); await sleep(700)
   const lg = await p.evaluate(async () => {

@@ -136,6 +136,7 @@
     if (PT) PT.world($.pick, D.cats.map(function (c) { var l = PT.cur(c.id); return l ? PT.pv(l.id) : null }))
     header($.pick, 'PETUALANGAN KENDARAAN', close, 'Pilih tempat bermain')
     var grid = el('div', 'tcats', $.pick)
+    if (PT) resume(grid, PT)
     D.cats.forEach(function (c, ci) {
       var b = btn('tcat', grid, c.name, function () { if (PT) PT.go(b, function () { showLevels(c.id) }); else showLevels(c.id) })
       if (PT) PT.card(b, c.id, ci)
@@ -157,6 +158,26 @@
     swap($.pick)
   }
 
+  // a phone's picker opens with the level the child plays next, in the journey played last: one tap goes straight in
+  function resume (grid, PT) {
+    var st = w.Blippi.state ? w.Blippi.state() : null
+    var last = st && st.trip && st.trip.last
+    var cat = D.cats.filter(function (c) { return c.id === last })[0] || D.cats[0]
+    var l = PT.cur(cat.id)
+    if (!l) return
+    var b = btn('tlanjut', grid, 'Lanjut ' + l.name, function () { b.classList.add('tlit'); setTimeout(function () { start(l.id) }, 160) })
+    b.setAttribute('data-resume', l.id)   // not data-level: the gates find a level card by it
+    var u = PT.pv(l.id)
+    if (u) b.style.setProperty('--pv', 'url("' + u + '")')
+    var tx = el('span', 'tlntx', b)
+    el('em', '', tx, 'LANJUT')
+    el('b', '', tx, l.name)
+    el('i', '', tx, cat.name)
+    var ic = el('span', 'tlnveh', b)
+    var cr = myRide(cat.id)
+    if (cr) ridePic(ic, cr, false); else imgEl(l.vui || cat.icon, '', ic)
+    el('span', 'tgo', b, 'MAIN!').setAttribute('aria-hidden', 'true')
+  }
   /* ---------- level picker ---------- */
   /* ---------- the child's own vehicle per journey (space craft 2026-10-14, road vehicle + boat 2026-10-15) ---------- */
   function craftBar (parent, cat) {
@@ -268,6 +289,8 @@
 
   /* ---------- run ---------- */
   function start (id) {
+    var lv = D.levels.filter(function (l) { return l.id === id })[0]
+    if (lv && w.Blippi.commit) w.Blippi.commit(function (s) { s.trip = s.trip || { lv: {}, rw: {} }; s.trip.last = lv.cat })   // the phone picker's LANJUT card resumes this journey
     T.start(id)
   }
   function showRun (lvl) {

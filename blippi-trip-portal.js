@@ -74,8 +74,11 @@
   function level (b, l, i, isCur) {
     var u = pv(l.id)
     b.classList.add('troute')
+    if (b.parentNode) b.parentNode.classList.add('tpost')   // the route as a grid of postcards (FigCraft mockup 2026-11-07)
     if (u) b.style.setProperty('--pv', css(u))
     b.style.setProperty('--i', String(i))
+    var st = T.levelState(l.id)
+    if (st && st.stars) b.classList.add('tdone')
     if (isCur) {
       b.classList.add('tcur')
       var go = doc.createElement('span')
