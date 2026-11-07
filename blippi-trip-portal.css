@@ -2,6 +2,7 @@
    drifting behind the screen, levels as a route through their own worlds. Transform / opacity motion only; reduced motion
    keeps every picture and drops the drift, bob and particles. */
 .tpick>*,.tlev>*{position:relative;z-index:1}
+.tlev>.tcpick{position:absolute;inset:0;z-index:6}   /* the vehicle picker stays a dialog over the whole screen */
 .tpick>.tworld,.tlev>.tworld{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#123A8A}
 .tworld i{position:absolute;inset:-6%;background:center/cover no-repeat;opacity:0;transform:scale(1.04);transition:opacity 1.6s ease}
 .tworld i.on{opacity:1;animation:tdrift 26s ease-in-out infinite alternate}

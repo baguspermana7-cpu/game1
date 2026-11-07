@@ -170,6 +170,29 @@ for (const [W, H] of [[844, 390], [667, 375], [390, 844]]) {
   }
   await p.close()
 }
+// 9. GANTI opens the vehicle picker as a real dialog: it dims the whole screen, the screen behind cannot be tapped, the
+//    card fits the screen and shows a good handful of vehicles whole (2026-11-07 polish)
+for (const [W, H] of [[390, 844], [844, 390], [1180, 820]]) {
+  const tag = `${W}x${H}`
+  const p = await page(W, H)
+  await p.evaluate(() => document.querySelector('.tcat[data-cat=udara]').click())
+  await p.waitForSelector('.tlev.on .tcgo', { timeout: 5000 }).catch(() => {})
+  await sleep(500)
+  await p.evaluate(() => document.querySelector('.tlev.on .tcgo').click()); await sleep(900)
+  const d = await p.evaluate(() => {
+    const o = document.querySelector('.tcpick'), c = o && o.querySelector('.tcpcard'), g = c && c.querySelector('.tcgrid')
+    if (!o) return null
+    const or = o.getBoundingClientRect(), cr = c.getBoundingClientRect(), gr = g.getBoundingClientRect()
+    const whole = [...g.querySelectorAll('.tct')].filter(t => { const r = t.getBoundingClientRect(); return r.top >= gr.top - 1 && r.bottom <= gr.bottom + 1 && r.top >= 0 && r.bottom <= innerHeight }).length
+    const hits = [[8, 8], [innerWidth / 2, 30], [innerWidth - 8, innerHeight - 8]].map(([x, y]) => { const e = document.elementFromPoint(x, y); return !!e && o.contains(e) })
+    return { o: [or.left, or.top, or.right, or.bottom].map(Math.round), c: [cr.top, cr.bottom].map(Math.round), whole, hits, H: innerHeight, W: innerWidth }
+  })
+  ok(d && d.o[0] <= 0 && d.o[1] <= 0 && d.o[2] >= d.W && d.o[3] >= d.H, `${tag}: the vehicle picker does not dim the whole screen ${JSON.stringify(d && d.o)}`)
+  ok(d && d.hits.every(Boolean), `${tag}: the screen behind the vehicle picker can still be tapped ${JSON.stringify(d && d.hits)}`)
+  ok(d && d.c[0] >= 0 && d.c[1] <= d.H, `${tag}: the vehicle picker card runs off the screen ${JSON.stringify(d && d.c)}`)
+  ok(d && d.whole >= 6, `${tag}: only ${d && d.whole} vehicles show whole in the picker, want >= 6`)
+  await p.close()
+}
 ok(!errs.length, 'page errors: ' + errs.slice(0, 3).join(' | '))
 await b.close()
 console.log(`qa-blippi-landing: ${pass}/${pass + fail} checks passed`)
