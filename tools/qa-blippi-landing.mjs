@@ -193,6 +193,56 @@ for (const [W, H] of [[390, 844], [844, 390], [1180, 820]]) {
   ok(d && d.whole >= 6, `${tag}: only ${d && d.whole} vehicles show whole in the picker, want >= 6`)
   await p.close()
 }
+// 10. words read whole and a row reads as one row (2026-11-08 polish): no journey subtitle is cut off with "...", and the
+//     level names in one row of postcards end on one line, whether the level is played, next or locked
+for (const [W, H] of [[390, 844], [768, 1024], [1180, 820], [1366, 768], [1920, 1080]]) {
+  const tag = `${W}x${H}`
+  const p = await page(W, H)
+  const cut = await p.evaluate(() => [...document.querySelectorAll('.tpick .tcat .tctx em')].filter(e => e.scrollHeight > e.clientHeight + 1).map(e => e.closest('.tcat').dataset.cat))
+  ok(!cut.length, `${tag}: journey subtitle cut off on ${cut.join(', ')}`)
+  await p.evaluate(() => Blippi.commit(s => { s.trip = s.trip || { lv: {}, rw: {} }; s.trip.lv = s.trip.lv || {}; s.trip.lv['darat-1'] = { stars: 3, best: 3, n: 1 } }))
+  await p.evaluate(() => BlippiTrip.open()); await sleep(600)
+  await p.evaluate(() => document.querySelector('.tcat[data-cat=darat]').click())
+  await p.waitForSelector('.tlev.on .tlvl', { timeout: 5000 }).catch(() => {})
+  await sleep(700)
+  await p.waitForFunction(() => !document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity), { timeout: 5000 }).catch(() => {})
+  const rows = await p.evaluate(() => {
+    const out = {}
+    for (const c of document.querySelectorAll('.tlev.on .tlvls .tlvl')) {
+      const q = c.getBoundingClientRect(), b = c.querySelector('.tltx b').getBoundingClientRect()
+      const k = Math.round(q.top); (out[k] = out[k] || []).push({ id: c.dataset.level, kind: c.classList.contains('lk') ? 'lk' : c.classList.contains('tcur') ? 'cur' : 'open', bt: Math.round(b.bottom - q.top) })
+    }
+    return Object.values(out).filter(r => r.length > 1)
+  })
+  const mixed = rows.filter(r => new Set(r.map(c => c.kind)).size > 1)
+  const bad = rows.filter(r => Math.max(...r.map(c => c.bt)) - Math.min(...r.map(c => c.bt)) > 2)
+  ok(mixed.length >= 1, `${tag}: no row mixes played, next and locked levels, the law saw nothing`)
+  ok(!bad.length, `${tag}: level names in one row sit on different lines ${JSON.stringify(bad[0])}`)
+  await p.close()
+}
+// 11. a long level name on a small phone wraps to two lines but stays whole inside its postcard and clear of the lock coin
+//     (2026-11-08 polish: "Kaki Gunung Api" ran into the lock at 360 px)
+for (const [W, H] of [[360, 740], [390, 844]]) {
+  const tag = `${W}x${H}`
+  const p = await page(W, H)
+  const cats = await p.evaluate(() => [...document.querySelectorAll('.tpick .tcats .tcat')].map(c => c.dataset.cat))
+  for (const cat of cats) {
+    await p.evaluate(() => BlippiTrip.open()); await sleep(500)
+    await p.evaluate(c => document.querySelector(`.tcat[data-cat=${c}]`).click(), cat)
+    await p.waitForSelector('.tlev.on .tlvl', { timeout: 5000 }).catch(() => {})
+    await sleep(500)
+    await p.waitForFunction(() => !document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity), { timeout: 5000 }).catch(() => {})
+    const bad = await p.evaluate(() => [...document.querySelectorAll('.tlev.on .tlvls .tlvl')].map(c => {
+      const g = document.createRange(); g.selectNodeContents(c.querySelector('.tltx b')); const t = g.getBoundingClientRect()
+      const q = c.getBoundingClientRect(), lk = c.querySelector('.tlock'), l = lk && lk.getBoundingClientRect()
+      const hit = l && t.left < l.right && l.left < t.right && t.top < l.bottom + 4 && l.top - 4 < t.bottom
+      const out = t.left < q.left || t.right > q.right || t.bottom > q.bottom
+      return hit || out ? `${c.dataset.level}${hit ? ' hits lock' : ''}${out ? ' outside card' : ''}` : ''
+    }).filter(Boolean))
+    ok(!bad.length, `${tag} ${cat}: level name ${bad.join('; ')}`)
+  }
+  await p.close()
+}
 ok(!errs.length, 'page errors: ' + errs.slice(0, 3).join(' | '))
 await b.close()
 console.log(`qa-blippi-landing: ${pass}/${pass + fail} checks passed`)

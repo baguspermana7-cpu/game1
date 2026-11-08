@@ -257,7 +257,11 @@
       el('b', '', tx, l.name)
       el('em', '', tx, open ? (cr ? cr.name : l.vname) : 'Selesaikan level sebelumnya')
       if (open) starsRow(b, st ? st.stars : 0)
-      else { var lk = el('span', 'tlock', b); lk.innerHTML = LOCK }
+      else {
+        // an empty, hidden star row keeps a locked level's name on the same line as its open neighbours
+        starsRow(b, 0, 'tsoff').setAttribute('aria-hidden', 'true')
+        var lk = el('span', 'tlock', b); lk.innerHTML = LOCK
+      }
     })
     swap($.lev)
     if (won) wonNote(grid, lvs, won)
